@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Events\MenuUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Ingrediente;
@@ -47,6 +48,9 @@ class MenuController extends Controller
             }
         }
 
+        // 🔥 EL GRITO: Avisar que hay un nuevo platillo
+        event(new MenuUpdated());
+
         return back()->with('success', 'Platillo guardado correctamente');
     }
 
@@ -60,9 +64,11 @@ class MenuController extends Controller
 
         $product->delete();
         
+        // 🔥 EL GRITO: Avisar que se eliminó un platillo
+        event(new MenuUpdated());
+
         return back()->with('success', 'Platillo eliminado correctamente');
     }
-
 
     public function update(Request $request, $id)
     {
@@ -99,6 +105,9 @@ class MenuController extends Controller
             }
         }
 
+        // 🔥 EL GRITO: Avisar que se editó un platillo
+        event(new MenuUpdated());
+        
         return back()->with('success', 'Platillo actualizado correctamente');
     }
 

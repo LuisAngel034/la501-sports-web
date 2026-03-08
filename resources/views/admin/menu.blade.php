@@ -7,7 +7,7 @@
             isEdit: false,
             filter: 'todos',
             action: '{{ route('admin.menu.store') }}',
-            productData: { id: '', name: '', description: '', price: '', category: 'Platillos', available: 1 },
+            productData: { id: '', name: '', description: '', price: '', category: 'Hamburguesas', available: 1 },
             ingredients: [''],
             imagePreview: null,
 
@@ -36,27 +36,18 @@
             </button>
         </div>
 
-        <div class="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <div class="flex gap-2 mb-6 overflow-x-auto pb-2 custom-scrollbar">
             <button @click="filter = 'todos'" 
                 :class="filter === 'todos' ? 'bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition shadow-lg shadow-blue-600/20' : 'bg-white dark:bg-white/5 text-zinc-500 border border-zinc-200 dark:border-white/10'"
-                class="px-6 py-2 rounded-xl font-bold transition-all duration-300 whitespace-nowrap">
+                class="px-6 py-2 rounded-xl font-bold transition-all duration-300 whitespace-nowrap shrink-0">
                 Todos
             </button>
-            <button @click="filter = 'Platillos'" 
-                :class="filter === 'Platillos' ? 'bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition shadow-lg shadow-blue-600/20' : 'bg-white dark:bg-white/5 text-zinc-500 border border-zinc-200 dark:border-white/10'"
-                class="px-6 py-2 rounded-xl font-bold transition-all duration-300 whitespace-nowrap">
-                🍽️ Platillos
-            </button>
-            <button @click="filter = 'Bebidas'" 
-                :class="filter === 'Bebidas' ? 'bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition shadow-lg shadow-blue-600/20' : 'bg-white dark:bg-white/5 text-zinc-500 border border-zinc-200 dark:border-white/10'"
-                class="px-6 py-2 rounded-xl font-bold transition-all duration-300 whitespace-nowrap">
-                🥤 Bebidas
-            </button>
-            <button @click="filter = 'Postres'" 
-                :class="filter === 'Postres' ? 'bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition shadow-lg shadow-blue-600/20' : 'bg-white dark:bg-white/5 text-zinc-500 border border-zinc-200 dark:border-white/10'"
-                class="px-6 py-2 rounded-xl font-bold transition-all duration-300 whitespace-nowrap">
-                🍰 Postres
-            </button>
+            <template x-for="cat in ['Hamburguesas', 'Jochos', 'Burritos', 'Tacos', 'Strombolis', 'Alitas y Costillas', 'Especialidades', 'Opción Fit', 'Algo Dulce', 'Sin Alcohol', 'Cervezas', 'Coctelería', 'Destilados', 'Salsas y Extras']">
+                <button @click="filter = cat" 
+                    :class="filter === cat ? 'bg-blue-700 text-white px-6 py-2 rounded-xl font-bold transition shadow-lg shadow-blue-600/20' : 'bg-white dark:bg-white/5 text-zinc-500 border border-zinc-200 dark:border-white/10'"
+                    class="px-6 py-2 rounded-xl font-bold transition-all duration-300 whitespace-nowrap shrink-0" x-text="cat">
+                </button>
+            </template>
         </div>
 
         <div class="bg-white dark:bg-[#1a1612] border border-zinc-200 dark:border-white/5 rounded-[40px] p-8 space-y-4 shadow-sm">

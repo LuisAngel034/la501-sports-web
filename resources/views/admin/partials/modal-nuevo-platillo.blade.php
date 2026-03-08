@@ -76,10 +76,29 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">Categoría</label>
-                        <select name="category" x-model="productData.category" class="w-full bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none transition">
-                            <option value="Platillos">Platillos</option>
-                            <option value="Bebidas">Bebidas</option>
-                            <option value="Postres">Postres</option>
+                        <select name="category" x-model="productData.category" class="w-full bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none transition font-bold">
+                            <optgroup label="Comida Fuerte">
+                                <option value="Hamburguesas">Hamburguesas</option>
+                                <option value="Jochos">Jochos</option>
+                                <option value="Burritos">Burritos</option>
+                                <option value="Tacos">Tacos</option>
+                                <option value="Strombolis">Strombolis</option>
+                                <option value="Alitas y Costillas">Alitas y Costillas</option>
+                            </optgroup>
+                            <optgroup label="Complementos">
+                                <option value="Especialidades">Especialidades (Papas, Nachos)</option>
+                                <option value="Opción Fit">Opción Fit (Ensaladas)</option>
+                                <option value="Salsas y Extras">Salsas y Extras</option>
+                            </optgroup>
+                            <optgroup label="Postres & Bebidas">
+                                <option value="Algo Dulce">Algo Dulce (Postres)</option>
+                                <option value="Sin Alcohol">Sin Alcohol (Refrescos, Aguas)</option>
+                            </optgroup>
+                            <optgroup label="Bar">
+                                <option value="Cervezas">Cervezas</option>
+                                <option value="Coctelería">Coctelería</option>
+                                <option value="Destilados">Destilados</option>
+                            </optgroup>
                         </select>
                     </div>
                 </div>

@@ -21,7 +21,7 @@
 <body class="bg-zinc-100 dark:bg-darkBg text-zinc-900 dark:text-white min-h-screen pb-24"
       x-data="{ 
           // Recarga la página cada 30 segundos automáticamente
-          init() { setInterval(() => { window.location.reload(); }, 30000); } 
+          // init() { setInterval(() => { window.location.reload(); }, 30000); } 
       }">
 
     {{-- HEADER EXCLUSIVO DEL REPARTIDOR --}}

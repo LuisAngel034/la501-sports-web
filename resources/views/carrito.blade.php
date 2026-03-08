@@ -1,139 +1,479 @@
 @extends('layouts.app')
 
 @section('content')
-<div class="max-w-4xl mx-auto py-12 px-6">
-    <div class="text-center mb-10">
-        <h1 class="text-5xl font-bold text-zinc-900 dark:text-white mb-4">Tu Pedido</h1>
-        <p class="text-zinc-500 text-lg">Revisa tu orden antes de proceder al pago</p>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Barlow:wght@400;500&display=swap');
+
+    .cart-page {
+        --or:   #F97316;
+        --or2:  #EA580C;
+        --gn:   #16A34A;
+        --gn2:  #22C55E;
+
+        --bg:       #0f0d0a;
+        --bg-card:  #161310;
+        --bg-card2: #1e1a14;
+        --txt:      #FFFFFF;
+        --txt-sub:  #A8A29E;
+        --bdr:      rgba(255,255,255,0.07);
+    }
+    :root:not(.dark) .cart-page {
+        --bg:       #F5F3EF;
+        --bg-card:  #FFFFFF;
+        --bg-card2: #EBEBEB;
+        --txt:      #1A1208;
+        --txt-sub:  #6B6560;
+        --bdr:      rgba(0,0,0,0.09);
+    }
+
+    /* ── TOPBAR ── */
+    .cart-topbar {
+        position: relative;
+        background: var(--bg-card);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23F97316' fill-opacity='0.04'%3E%3Cpath d='M28 66L0 49V16L28 0l28 16v33L28 66zm0-2l26-15V18L28 2 2 18v31l26 15zM56 98L28 81 0 98V81L0 66l28-16 28 16v15L28 98l28-17V98z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        border-bottom: 3px solid var(--or);
+        padding: 32px 32px 28px;
+        overflow: hidden;
+    }
+    .cart-topbar::before {
+        content: '';
+        position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+        width: 500px; height: 180px;
+        background: radial-gradient(ellipse, rgba(249,115,22,.14) 0%, transparent 70%);
+        pointer-events: none;
+    }
+    .cart-topbar-inner {
+        max-width: 860px; margin: 0 auto;
+        display: flex; align-items: flex-end;
+        justify-content: space-between; gap: 16px;
+        position: relative; z-index: 1;
+    }
+    .cart-topbar-badge {
+        display: inline-block;
+        background: var(--or); color: #fff;
+        font-family: 'Oswald', sans-serif;
+        font-size: 10px; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase;
+        padding: 4px 16px; margin-bottom: 10px;
+        clip-path: polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
+    }
+    .cart-topbar-text h1 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: clamp(42px, 7vw, 68px);
+        line-height: .95; letter-spacing: 4px;
+        color: var(--txt); margin: 0;
+    }
+    .cart-topbar-text h1 span { color: var(--or); }
+    .cart-topbar-text p {
+        font-size: 14px; color: var(--txt-sub); margin: 8px 0 0;
+    }
+    .cart-count-badge {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 48px; letter-spacing: 2px;
+        color: var(--gn2); line-height: 1;
+        flex-shrink: 0;
+    }
+    .cart-count-badge span {
+        font-family: 'Oswald', sans-serif;
+        font-size: 11px; letter-spacing: 2px;
+        color: var(--txt-sub); display: block; margin-top: 2px;
+        text-transform: uppercase;
+    }
+
+    /* ── MAIN ── */
+    .cart-main {
+        max-width: 860px; margin: 0 auto;
+        padding: 36px 32px 80px;
+        background-color: var(--bg);
+    }
+
+    /* alerts */
+    .cart-alert {
+        border-radius: 10px; padding: 12px 16px;
+        font-size: 13px; font-weight: 600;
+        display: flex; align-items: center; gap: 10px;
+        margin-bottom: 20px;
+    }
+    .cart-alert.success {
+        background: rgba(22,163,74,.1); border: 1px solid rgba(34,197,94,.25);
+        border-left: 4px solid var(--gn2); color: var(--gn2);
+    }
+    .cart-alert.error {
+        background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2);
+        border-left: 4px solid #F87171; color: #F87171;
+    }
+
+    /* ── CART CARD ── */
+    .cart-card {
+        background: var(--bg-card);
+        border: 1px solid var(--bdr);
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .cart-card::before {
+        content: '';
+        display: block; height: 3px;
+        background: linear-gradient(to right, var(--or), var(--gn));
+    }
+
+    /* items list */
+    .cart-items { padding: 0 20px; }
+    .cart-item {
+        display: flex; align-items: center;
+        gap: 14px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--bdr);
+        transition: background .15s;
+    }
+    .cart-item:last-child { border-bottom: none; }
+
+    /* thumbnail */
+    .cart-item-img {
+        width: 60px; height: 60px; border-radius: 9px;
+        overflow: hidden; background: var(--bg-card2);
+        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px;
+    }
+    .cart-item-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+    /* info */
+    .cart-item-info { flex: 1; min-width: 0; }
+    .cart-item-name {
+        font-family: 'Oswald', sans-serif;
+        font-size: 15px; font-weight: 700; letter-spacing: .3px;
+        color: var(--txt); margin: 0 0 3px;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .cart-item-price {
+        font-size: 12px; color: var(--txt-sub);
+    }
+
+    /* qty controls */
+    .cart-qty {
+        display: flex; align-items: center; gap: 6px; flex-shrink: 0;
+    }
+    .cart-qty-btn {
+        width: 32px; height: 32px; border-radius: 7px; border: none;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        font-size: 16px; font-weight: 700; line-height: 1;
+        transition: background .15s, transform .1s;
+    }
+    .cart-qty-btn:hover { transform: scale(1.08); }
+    .cart-qty-btn.minus {
+        background: rgba(239,68,68,.1); color: #F87171;
+        border: 1px solid rgba(239,68,68,.2);
+    }
+    .cart-qty-btn.minus:hover { background: rgba(239,68,68,.2); }
+    .cart-qty-btn.plus {
+        background: var(--gn); color: #fff;
+        box-shadow: 0 2px 8px rgba(22,163,74,.35);
+    }
+    .cart-qty-btn.plus:hover { background: var(--gn2); }
+    .cart-qty-num {
+        width: 36px; text-align: center;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 20px; letter-spacing: 1px;
+        color: var(--txt);
+    }
+
+    /* subtotal + remove */
+    .cart-item-right {
+        display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+    }
+    .cart-subtotal {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 22px; letter-spacing: 1px;
+        color: var(--gn2); min-width: 70px; text-align: right;
+    }
+    .cart-remove-btn {
+        width: 30px; height: 30px; border-radius: 7px;
+        background: var(--bg-card2); border: 1px solid var(--bdr);
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        color: var(--txt-sub); transition: background .15s, color .15s, border-color .15s;
+    }
+    .cart-remove-btn:hover {
+        background: rgba(239,68,68,.1); color: #F87171;
+        border-color: rgba(239,68,68,.25);
+    }
+    .cart-remove-btn svg { width: 13px; height: 13px; }
+
+    /* ── FOOTER ── */
+    .cart-footer {
+        background: var(--bg-card2);
+        border-top: 1px solid var(--bdr);
+        padding: 20px 24px;
+    }
+    .cart-total-row {
+        display: flex; align-items: baseline;
+        justify-content: space-between; margin-bottom: 16px;
+    }
+    .cart-total-label {
+        font-family: 'Oswald', sans-serif;
+        font-size: 12px; font-weight: 700;
+        letter-spacing: 2px; text-transform: uppercase;
+        color: var(--txt-sub);
+    }
+    .cart-total-amount {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 42px; letter-spacing: 2px;
+        color: var(--txt); line-height: 1;
+    }
+    .cart-total-amount span { color: var(--or); }
+
+    /* benefit banner */
+    .cart-benefit {
+        border-radius: 9px; padding: 10px 14px;
+        font-size: 12px; font-weight: 600;
+        display: flex; align-items: center; gap: 8px;
+        margin-bottom: 16px;
+    }
+    .cart-benefit.logged {
+        background: rgba(37,99,235,.08); border: 1px solid rgba(37,99,235,.2);
+        color: #60A5FA;
+    }
+    .cart-benefit.guest {
+        background: rgba(234,179,8,.07); border: 1px solid rgba(234,179,8,.2);
+        color: #FCD34D;
+    }
+    .cart-benefit a { font-weight: 700; text-decoration: underline; color: inherit; }
+    .cart-benefit svg { width: 14px; height: 14px; flex-shrink: 0; opacity: .7; }
+
+    /* action buttons */
+    .cart-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    .cart-btn-clear {
+        padding: 12px 20px;
+        border-radius: 9px;
+        background: transparent;
+        border: 1px solid var(--bdr);
+        font-family: 'Oswald', sans-serif;
+        font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;
+        color: var(--txt-sub); cursor: pointer;
+        transition: border-color .15s, color .15s;
+    }
+    .cart-btn-clear:hover { border-color: #F87171; color: #F87171; }
+
+    .cart-btn-pay {
+        flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 12px 24px;
+        border-radius: 9px;
+        background: var(--gn);
+        font-family: 'Oswald', sans-serif;
+        font-size: 14px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+        color: #fff; text-decoration: none;
+        box-shadow: 0 3px 16px rgba(22,163,74,.4);
+        transition: background .2s, transform .15s, box-shadow .2s;
+    }
+    .cart-btn-pay:hover {
+        background: var(--gn2); transform: translateY(-1px);
+        box-shadow: 0 5px 24px rgba(34,197,94,.45);
+    }
+    .cart-btn-pay svg { width: 16px; height: 16px; }
+
+    /* ── EMPTY ── */
+    .cart-empty {
+        background: var(--bg-card);
+        border: 1px solid var(--bdr);
+        border-radius: 14px; overflow: hidden;
+        text-align: center;
+    }
+    .cart-empty::before {
+        content: '';
+        display: block; height: 3px;
+        background: linear-gradient(to right, var(--or), var(--gn));
+    }
+    .cart-empty-inner { padding: 64px 32px; }
+    .cart-empty-icon {
+        width: 72px; height: 72px; border-radius: 16px;
+        background: var(--bg-card2); border: 1px solid var(--bdr);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 20px; font-size: 36px;
+    }
+    .cart-empty h2 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 42px; letter-spacing: 3px;
+        color: var(--txt); margin: 0 0 8px;
+    }
+    .cart-empty p { font-size: 14px; color: var(--txt-sub); margin: 0 0 28px; }
+    .cart-empty-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: var(--or); color: #fff;
+        font-family: 'Oswald', sans-serif;
+        font-size: 13px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+        padding: 12px 28px; border-radius: 9px; text-decoration: none;
+        box-shadow: 0 3px 16px rgba(249,115,22,.4);
+        clip-path: polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
+        transition: background .2s;
+    }
+    .cart-empty-btn:hover { background: var(--or2); }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+        .cart-topbar { padding: 24px 20px 20px; }
+        .cart-count-badge { display: none; }
+        .cart-main { padding: 24px 16px 60px; }
+        .cart-items { padding: 0 14px; }
+        .cart-item { gap: 10px; }
+        .cart-subtotal { display: none; }
+        .cart-footer { padding: 16px; }
+    }
+</style>
+
+<div class="cart-page" style="background-color: var(--bg);">
+
+    {{-- TOPBAR --}}
+    <div class="cart-topbar">
+        <div class="cart-topbar-inner">
+            <div class="cart-topbar-text">
+                <div class="cart-topbar-badge">La 501 Sports · Pedido</div>
+                <h1>Tu <span>Orden</span></h1>
+                <p>Revisa tu pedido antes de proceder al pago</p>
+            </div>
+            @php $cartCount = count((array) session('cart')); @endphp
+            @if($cartCount > 0)
+            <div class="cart-count-badge">
+                {{ $cartCount }}
+                <span>{{ $cartCount === 1 ? 'Platillo' : 'Platillos' }}</span>
+            </div>
+            @endif
+        </div>
     </div>
 
-    @if(session('success'))
-        <div class="bg-green-500/10 border border-green-500/20 text-green-500 p-4 rounded-2xl mb-8 text-center font-bold">
+    <div class="cart-main">
+
+        {{-- Alerts --}}
+        @if(session('success'))
+        <div class="cart-alert success">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px;flex-shrink:0;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
             {{ session('success') }}
         </div>
-    @endif
-    
-    {{-- MENSAJE DE ERROR/ALERTA (Productos agotados) --}}
-    @if(session('error'))
-        <div class="max-w-3xl mx-auto bg-red-500/10 border border-red-500/20 text-red-500 dark:text-red-400 p-4 rounded-2xl mb-10 text-center font-bold flex items-center justify-center gap-2">
-            ⚠️ {{ session('error') }}
+        @endif
+        @if(session('error'))
+        <div class="cart-alert error">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width:16px;height:16px;flex-shrink:0;">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+            </svg>
+            {{ session('error') }}
         </div>
-    @endif
+        @endif
 
-    @if(count((array) session('cart')) > 0)
-        <div class="bg-white dark:bg-[#1a1612] border border-zinc-200 dark:border-zinc-800 rounded-[40px] shadow-xl overflow-hidden">
-            <div class="p-8">
-                <div class="space-y-6">
-                    @foreach(session('cart') as $id => $details)
-                        <div class="flex flex-col sm:flex-row items-center gap-4 pb-6 border-b border-zinc-100 dark:border-zinc-800/50 last:border-0 last:pb-0">
-                            
-                            {{-- Imagen del platillo --}}
-                            <div class="w-20 h-20 rounded-2xl bg-zinc-100 dark:bg-zinc-800 overflow-hidden flex-shrink-0">
-                                @if($details['image'])
-                                    <img src="{{ asset('storage/' . $details['image']) }}" class="w-full h-full object-cover">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center text-3xl">🍔</div>
-                                @endif
-                            </div>
+        @if(count((array) session('cart')) > 0)
 
-                            {{-- Info --}}
-                            <div class="flex-grow text-center sm:text-left w-full sm:w-auto">
-                                <h3 class="font-bold text-lg text-zinc-900 dark:text-white">{{ $details['name'] }}</h3>
-                                <p class="text-zinc-500 text-sm">${{ number_format($details['price'], 2) }} c/u</p>
-                            </div>
+        <div class="cart-card">
 
-                            {{-- Controles de Cantidad (+ / -) --}}
-                            <div class="flex items-center gap-2">
-                                {{-- Botón Restar --}}
-                                <form action="{{ route('cart.update') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="id" value="{{ $id }}">
-                                    <input type="hidden" name="quantity" value="{{ $details['quantity'] - 1 }}">
-                                    <button type="submit" class="bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-500 h-10 w-10 rounded-xl font-extrabold flex items-center justify-center transition-colors">
-                                        -
-                                    </button>
-                                </form>
+            {{-- Items --}}
+            <div class="cart-items">
+                @foreach(session('cart') as $id => $details)
+                <div class="cart-item">
 
-                                {{-- Cantidad Actual --}}
-                                <div class="w-12 text-center font-bold text-zinc-900 dark:text-white">
-                                    {{ $details['quantity'] }}
-                                </div>
+                    {{-- Imagen --}}
+                    <div class="cart-item-img">
+                        @if($details['image'])
+                            <img src="{{ asset('storage/' . $details['image']) }}" alt="{{ $details['name'] }}">
+                        @else
+                            🍔
+                        @endif
+                    </div>
 
-                                {{-- Botón Sumar --}}
-                                <form action="{{ route('cart.update') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="id" value="{{ $id }}">
-                                    <input type="hidden" name="quantity" value="{{ $details['quantity'] + 1 }}">
-                                    <button type="submit" class="bg-green-100 hover:bg-green-200 dark:bg-green-500/20 dark:hover:bg-green-500/30 text-green-600 h-10 w-10 rounded-xl font-extrabold flex items-center justify-center transition-colors">
-                                        +
-                                    </button>
-                                </form>
-                            </div>
+                    {{-- Info --}}
+                    <div class="cart-item-info">
+                        <p class="cart-item-name">{{ $details['name'] }}</p>
+                        <p class="cart-item-price">${{ number_format($details['price'], 2) }} c/u</p>
+                    </div>
 
-                            {{-- Subtotal y Botón Eliminar --}}
-                            <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 mt-2 sm:mt-0">
-                                <div class="text-right">
-                                    <p class="font-bold text-lg text-green-500">${{ number_format($details['price'] * $details['quantity'], 2) }}</p>
-                                </div>
+                    {{-- Qty --}}
+                    <div class="cart-qty">
+                        <form action="{{ route('cart.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="id" value="{{ $id }}">
+                            <input type="hidden" name="quantity" value="{{ $details['quantity'] - 1 }}">
+                            <button type="submit" class="cart-qty-btn minus">−</button>
+                        </form>
 
-                                <form action="{{ route('cart.remove') }}" method="POST">
-                                    @csrf
-                                    @method('DELETE')
-                                    <input type="hidden" name="id" value="{{ $id }}">
-                                    <button type="submit" class="text-zinc-400 hover:text-red-500 bg-zinc-50 hover:bg-red-50 dark:bg-zinc-800/50 dark:hover:bg-red-500/10 transition p-2.5 rounded-xl" title="Quitar producto">
-                                        🗑️
-                                    </button>
-                                </form>
-                            </div>
+                        <span class="cart-qty-num">{{ $details['quantity'] }}</span>
 
-                        </div>
-                    @endforeach
+                        <form action="{{ route('cart.update') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="id" value="{{ $id }}">
+                            <input type="hidden" name="quantity" value="{{ $details['quantity'] + 1 }}">
+                            <button type="submit" class="cart-qty-btn plus">+</button>
+                        </form>
+                    </div>
+
+                    {{-- Subtotal + Remove --}}
+                    <div class="cart-item-right">
+                        <span class="cart-subtotal">${{ number_format($details['price'] * $details['quantity'], 2) }}</span>
+                        <form action="{{ route('cart.remove') }}" method="POST">
+                            @csrf @method('DELETE')
+                            <input type="hidden" name="id" value="{{ $id }}">
+                            <button type="submit" class="cart-remove-btn" title="Quitar">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </form>
+                    </div>
+
                 </div>
+                @endforeach
             </div>
 
-            {{-- Sección de Total y Pagar --}}
-            <div class="bg-zinc-50 dark:bg-black/20 p-8 border-t border-zinc-200 dark:border-zinc-800">
-                <div class="flex justify-between items-center mb-6">
-                    <span class="text-zinc-500 font-bold uppercase tracking-wider">Total a Pagar</span>
-                    <span class="text-4xl font-extrabold text-zinc-900 dark:text-white">${{ number_format($total, 2) }}</span>
+            {{-- Footer --}}
+            <div class="cart-footer">
+                <div class="cart-total-row">
+                    <span class="cart-total-label">Total a Pagar</span>
+                    <span class="cart-total-amount"><span>$</span>{{ number_format($total, 2) }}</span>
                 </div>
 
-                {{-- Beneficio de estar logueado --}}
                 @auth
-                    <div class="bg-blue-500/10 border border-blue-500/20 text-blue-500 p-3 rounded-xl mb-6 text-sm flex items-center gap-2">
-                        <span>✨</span> Estás acumulando <strong>{{ floor($total / 10) }} Puntos La 501</strong> con esta compra.
-                    </div>
+                <div class="cart-benefit logged">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/>
+                    </svg>
+                    Acumularás <strong>{{ floor($total / 10) }} Puntos La 501</strong> con esta compra.
+                </div>
                 @else
-                    <div class="bg-yellow-500/10 border border-yellow-500/20 text-yellow-600 p-3 rounded-xl mb-6 text-sm flex items-center gap-2">
-                        <span>💡</span> <a href="{{ route('login') }}" class="font-bold underline">Inicia sesión</a> para acumular puntos con esta compra.
-                    </div>
+                <div class="cart-benefit guest">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <a href="{{ route('login') }}">Inicia sesión</a> para acumular puntos con esta compra.
+                </div>
                 @endauth
 
-                <div class="flex flex-col sm:flex-row gap-4">
-                    <form action="{{ route('cart.clear') }}" method="POST" class="w-full sm:w-auto">
+                <div class="cart-actions">
+                    <form action="{{ route('cart.clear') }}" method="POST">
                         @csrf
-                        <button type="submit" class="w-full px-6 py-4 rounded-2xl font-bold text-zinc-500 border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition">
-                            Vaciar Carrito
-                        </button>
+                        <button type="submit" class="cart-btn-clear">Vaciar Carrito</button>
                     </form>
-                    
-                    {{-- Este botón nos llevará a la pasarela de pago (Checkout) --}}
-                    <a href="{{ route('checkout.index') }}" class="flex-1 text-center py-4 bg-green-600 hover:bg-green-500 text-black font-bold rounded-2xl shadow-lg shadow-green-900/20 transition-all transform active:scale-[0.98]">
+                    <a href="{{ route('checkout.index') }}" class="cart-btn-pay">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
                         Proceder al Pago
                     </a>
                 </div>
             </div>
         </div>
-    @else
-        {{-- Si el carrito está vacío --}}
-        <div class="text-center bg-white dark:bg-[#1a1612] border border-zinc-200 dark:border-zinc-800 rounded-[40px] p-16 shadow-xl">
-            <span class="text-6xl block mb-4">🛒</span>
-            <h2 class="text-2xl font-bold text-zinc-900 dark:text-white mb-2">Tu carrito está vacío</h2>
-            <p class="text-zinc-500 mb-8">Parece que aún no has agregado nada delicioso a tu pedido.</p>
-            <a href="/a-domicilio" class="inline-block bg-green-600 text-black px-8 py-3 rounded-2xl font-bold hover:bg-green-500 transition">
-                Ver Menú
-            </a>
+
+        @else
+
+        {{-- Empty state --}}
+        <div class="cart-empty">
+            <div class="cart-empty-inner">
+                <div class="cart-empty-icon">🛒</div>
+                <h2>Carrito Vacío</h2>
+                <p>Aún no has agregado nada delicioso a tu pedido.</p>
+                <a href="/a-domicilio" class="cart-empty-btn">Ver Menú</a>
+            </div>
         </div>
-    @endif
+
+        @endif
+    </div>
 </div>
+
 @endsection

@@ -162,3 +162,13 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::resource('inventario', InventoryController::class)->except(['create', 'show', 'edit'])->names('admin.inventory');
     Route::put('/inventario/{id}/ajustar', [InventoryController::class, 'adjust'])->name('admin.inventory.adjust');
 });
+
+Route::get('/limpiar-magico', function () {
+    \Illuminate\Support\Facades\Artisan::call('view:clear');
+    \Illuminate\Support\Facades\Artisan::call('cache:clear');
+    \Illuminate\Support\Facades\Artisan::call('config:clear'); // <- Esta es la importante para el .env
+    return '¡Caché y configuración de Hostinger borradas con éxito!';
+});
+
+Route::get('/admin/ventas/export-excel', [DashboardController::class, 'exportSalesExcel'])
+    ->name('admin.sales.export.excel');

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\DashboardUpdated;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -102,6 +103,10 @@ class CheckoutController extends Controller
                 $user->points += floor($total / 10);
                 $user->save();
             }
+            
+            // 🔥 AQUÍ FALTABA EL GATILLO PARA EFECTIVO 🔥
+            event(new DashboardUpdated());
+
             return redirect()->route('pedido')->with('success', '¡Pedido recibido! Lo prepararemos enseguida y pagarás al recibir.');
         } 
         
@@ -156,6 +161,8 @@ class CheckoutController extends Controller
                 }
             }
         }
+
+        event(new DashboardUpdated());
 
         return redirect()->route('pedido')->with('success', '¡Pago aprobado! 💳 Tu pedido ya se está preparando en cocina.');
     }

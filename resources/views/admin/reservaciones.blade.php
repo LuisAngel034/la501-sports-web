@@ -3,18 +3,13 @@
 @section('content')
 <div class="p-8 max-w-7xl mx-auto relative">
 
-    {{-- ETIQUETA EN DESARROLLO --}}
-    <div class="absolute top-0 right-8 bg-yellow-500 text-black font-extrabold px-6 py-2 rounded-b-2xl shadow-lg text-sm tracking-widest uppercase flex items-center gap-2 animate-pulse z-10">
-        <span>🚧</span> Módulo en Producción
-    </div>
-
     <div class="mb-10 mt-8 md:mt-0">
         <h1 class="text-3xl font-extrabold text-zinc-900 dark:text-white">Gestión de Reservaciones</h1>
         <p class="text-zinc-500 mt-2">Administra las mesas y eventos de tus clientes.</p>
     </div>
 
     {{-- MOCKUP DE LA TABLA (Bloqueado visualmente) --}}
-    <div class="relative bg-white dark:bg-[#1a1612] border border-zinc-200 dark:border-white/5 rounded-[32px] p-8 shadow-sm opacity-60 cursor-not-allowed select-none">
+    <div class="">
         
         {{-- Bloqueador invisible --}}
         <div class="absolute inset-0 z-10" title="Módulo en desarrollo"></div>

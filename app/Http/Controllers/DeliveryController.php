@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\DashboardUpdated;
 use Illuminate\Http\Request;
 use App\Models\Order;
 use Illuminate\Support\Facades\Auth;
@@ -28,6 +29,7 @@ class DeliveryController extends Controller
         $order = Order::findOrFail($id);
         $order->status = 'delivered';
         $order->save();
+        event(new DashboardUpdated());
 
         return back()->with('success', '¡Pedido entregado y cobrado!');
     }
