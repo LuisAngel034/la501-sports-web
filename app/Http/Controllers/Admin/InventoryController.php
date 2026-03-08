@@ -8,12 +8,15 @@ use App\Models\Inventory;
 
 class InventoryController extends Controller
 {
-    public function index()
+public function index()
     {
         $items = Inventory::orderBy('name', 'asc')->get();
         
         $totalItems = $items->count();
-        $lowStockCount = $items->where('current_stock', '<=', 'min_stock')->count();
+        
+        $lowStockCount = $items->filter(function($item) {
+            return $item->current_stock <= $item->min_stock;
+        })->count();
 
         return view('admin.inventory.index', compact('items', 'totalItems', 'lowStockCount'));
     }

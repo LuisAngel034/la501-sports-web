@@ -100,6 +100,34 @@
                                 <option value="Destilados">Destilados</option>
                             </optgroup>
                         </select>
+                        <div x-show="['Coctelería', 'Destilados'].includes(productData.category)" x-transition>
+                            <label class="block text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-2">Subcategoría</label>
+                            <select name="subcategory" x-model="productData.subcategory" class="w-full bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-2xl px-4 py-3 text-zinc-900 dark:text-white focus:outline-none transition font-bold">
+                                <option value="">-- Sin subcategoría --</option>
+                                <template x-if="productData.category === 'Coctelería'">
+                                    <optgroup label="Coctelería">
+                                        <option value="Ron">Ron</option>
+                                        <option value="Vodka">Vodka</option>
+                                        <option value="Tequila">Tequila</option>
+                                        <option value="Mezcal">Mezcal</option>
+                                        <option value="Ginebra">Ginebra</option>
+                                        <option value="Digestivos">Digestivos</option>
+                                    </optgroup>
+                                </template>
+                                <template x-if="productData.category === 'Destilados'">
+                                    <optgroup label="Destilados">
+                                        <option value="Tequila">Tequila</option>
+                                        <option value="Ron">Ron</option>
+                                        <option value="Brandy">Brandy</option>
+                                        <option value="Vodka">Vodka</option>
+                                        <option value="Whisky">Whisky</option>
+                                        <option value="Mezcal">Mezcal</option>
+                                        <option value="Copeo">Copeo</option>
+                                        <option value="6 Shots">6 Shots</option>
+                                    </optgroup>
+                                </template>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -113,10 +141,34 @@
                     </div>
                     <div class="space-y-2">
                         <template x-for="(ingredient, index) in ingredients" :key="index">
-                            <div class="flex gap-2">
-                                <input type="text" name="ingredients[]" required :placeholder="'Ingrediente ' + (index + 1)"
-                                       x-model="ingredients[index]"
-                                       class="flex-1 bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-zinc-900 dark:text-white focus:ring-1 focus:ring-green-500/50 outline-none">
+                            <div class="flex gap-2 relative" x-data="{ open: false }">
+                                <div class="flex-1 relative">
+                                    
+                                    <input type="text" name="ingredients[]" required :placeholder="'Buscar ingrediente ' + (index + 1)"
+                                        x-model="ingredients[index]"
+                                        @focus="open = true"
+                                        @click.away="open = false"
+                                        autocomplete="off"
+                                        class="w-full bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-zinc-900 dark:text-white focus:ring-1 focus:ring-green-500/50 outline-none">
+                                    
+                                    <ul x-show="open" 
+                                        class="absolute z-50 w-full mt-1 bg-white dark:bg-[#1a1612] border border-zinc-200 dark:border-white/10 rounded-xl shadow-lg max-h-40 overflow-y-auto custom-scrollbar">
+                                        
+                                        <template x-for="item in inventoryList.filter(i => i.name.toLowerCase().includes(ingredients[index].toLowerCase()))" :key="item.id">
+                                            <li @click="ingredients[index] = item.name; open = false"
+                                                class="px-4 py-2 text-sm cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 text-zinc-700 dark:text-zinc-300 transition border-b border-zinc-100 dark:border-white/5 last:border-0">
+                                                <span x-text="item.name"></span>
+                                            </li>
+                                        </template>
+                                        
+                                        <li x-show="inventoryList.filter(i => i.name.toLowerCase().includes(ingredients[index].toLowerCase())).length === 0" 
+                                            class="px-4 py-2 text-sm text-zinc-500 italic bg-zinc-50 dark:bg-black/20">
+                                            No hay coincidencias en inventario...
+                                        </li>
+                                    </ul>
+
+                                </div>
+                                
                                 <button type="button" @click="removeIngredient(index)" x-show="ingredients.length > 1"
                                         class="text-zinc-400 hover:text-red-500 px-2 transition">
                                     &times;

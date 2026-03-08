@@ -49,7 +49,7 @@ class DashboardController extends Controller
 
     // ===================================
     // 2. FUNCIÓN PARA EXPORTAR EL EXCEL
-    // ===================================
+    // =================================== 
     public function exportSalesCSV(Request $request)
     {
         $startDate = $request->start_date . ' 00:00:00';

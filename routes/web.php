@@ -111,7 +111,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
     // Dashboard y API de Gráficas/Estadísticas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
-    Route::get('/exportar-ventas', [DashboardController::class, 'exportSalesCSV'])->name('admin.sales.export');
+    Route::get('/exportar-ventas', [DashboardController::class, 'exportSalesCSV'])->name('admin.sales.export.excel');
     Route::get('/api/stats', [DashboardController::class, 'apiStats'])->name('admin.api.stats');
     Route::get('/api/sales', [DashboardController::class, 'apiSales'])->name('admin.api.sales');
     
@@ -166,9 +166,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 Route::get('/limpiar-magico', function () {
     \Illuminate\Support\Facades\Artisan::call('view:clear');
     \Illuminate\Support\Facades\Artisan::call('cache:clear');
-    \Illuminate\Support\Facades\Artisan::call('config:clear'); // <- Esta es la importante para el .env
+    \Illuminate\Support\Facades\Artisan::call('config:clear');
     return '¡Caché y configuración de Hostinger borradas con éxito!';
 });
-
-Route::get('/admin/ventas/export-excel', [DashboardController::class, 'exportSalesExcel'])
-    ->name('admin.sales.export.excel');

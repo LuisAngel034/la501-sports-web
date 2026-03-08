@@ -12,10 +12,13 @@ use Illuminate\Support\Facades\Storage;
 class MenuController extends Controller
 {
     public function index()
-    {
-        $products = Product::with('ingredientes')->get();
-        return view('admin.menu', compact('products'));
-    }
+{
+    $products = Product::all();
+    
+    $inventario = \App\Models\Inventory::select('id', 'name')->get();
+
+    return view('admin.menu', compact('products', 'inventario'));
+}
 
     public function store(Request $request)
     {
@@ -33,6 +36,7 @@ class MenuController extends Controller
             'description' => $request->description,
             'price' => $request->price,
             'category' => $request->category,
+            'subcategory' => $request->subcategory,
             'image' => $imagePath,
             'available' => $request->has('available') ? 1 : 0,
         ]);
@@ -48,7 +52,6 @@ class MenuController extends Controller
             }
         }
 
-        // 🔥 EL GRITO: Avisar que hay un nuevo platillo
         event(new MenuUpdated());
 
         return back()->with('success', 'Platillo guardado correctamente');
@@ -64,7 +67,6 @@ class MenuController extends Controller
 
         $product->delete();
         
-        // 🔥 EL GRITO: Avisar que se eliminó un platillo
         event(new MenuUpdated());
 
         return back()->with('success', 'Platillo eliminado correctamente');
@@ -90,6 +92,7 @@ class MenuController extends Controller
             'description' => $request->description,
             'price' => $request->price,
             'category' => $request->category,
+            'subcategory' => $request->subcategory,
             'available' => $request->has('available') ? 1 : 0,
         ]);
 
@@ -105,7 +108,6 @@ class MenuController extends Controller
             }
         }
 
-        // 🔥 EL GRITO: Avisar que se editó un platillo
         event(new MenuUpdated());
         
         return back()->with('success', 'Platillo actualizado correctamente');
