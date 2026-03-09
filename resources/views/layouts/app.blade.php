@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La 501 Sports</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('images/logo_501_trasparente.png') }}?v=2">
+
     {{-- Tema antes de pintar --}}
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -212,10 +214,7 @@
 
             {{-- Links — centro absoluto para no depender del tamaño de logo/acciones --}}
             <ul class="hidden lg:flex gap-1 items-center absolute left-1/2 -translate-x-1/2">
-                <li><a href="{{ route('pedido') }}"
-                       class="nav-link px-3 {{ request()->routeIs('pedido') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">
-                    A Domicilio
-                </a></li>
+
                 <li><a href="{{ route('nosotros') }}"
                        class="nav-link px-3 {{ request()->routeIs('nosotros') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">
                     Quienes Somos

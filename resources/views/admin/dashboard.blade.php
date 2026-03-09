@@ -221,19 +221,6 @@
     .ad-btn-save:hover { background: var(--gn2); }
     .ad-btn-save svg { width: 14px; height: 14px; }
 
-    /* live indicator */
-    .ad-live {
-        display: inline-flex; align-items: center; gap: 5px;
-        font-size: 10px; font-weight: 700; letter-spacing: 1px;
-        text-transform: uppercase; color: var(--gn2);
-    }
-    .ad-live-dot {
-        width: 6px; height: 6px; border-radius: 50%;
-        background: var(--gn2);
-        animation: adlive 1.5s ease-in-out infinite;
-    }
-    @keyframes adlive { 0%,100%{opacity:1} 50%{opacity:.25} }
-
     @media (max-width: 900px) {
         .ad-stats { grid-template-columns: repeat(2,1fr); }
     }
@@ -251,10 +238,6 @@
         <div>
             <h1>Panel de Ventas</h1>
             <p>Gestión de La 501 en tiempo real</p>
-        </div>
-        <div class="ad-live">
-            <div class="ad-live-dot"></div>
-            En Vivo
         </div>
     </div>
 

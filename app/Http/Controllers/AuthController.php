@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+// Quitamos Illuminate\Support\Facades\Password porque ya no usamos los enlaces de Laravel
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Validation\Rules\Password as PasswordRule;
+// Agregamos las importaciones necesarias para el OTP
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AuthController extends Controller
 {
@@ -14,7 +20,6 @@ class AuthController extends Controller
     public function showRegistro() { return view('auth.registro'); }
     public function showRecuperar() { return view('auth.recuperar'); }
 
-    // Lógica de Login
     public function login(Request $request) {
         $credentials = $request->validate([
             'email' => 'required|email',
@@ -27,7 +32,6 @@ class AuthController extends Controller
         }
 
         if (Auth::attempt($credentials)) {
-            // VERIFICACIÓN por si el empleado está suspendido
             if (Auth::user()->is_active == 0) {
                 Auth::logout();
                 $request->session()->invalidate();
@@ -35,7 +39,6 @@ class AuthController extends Controller
                 return back()->withErrors(['email' => 'Tu cuenta está suspendida. Contacta a gerencia.']);
             }
 
-            // VERIFICACIÓN para roles sin acceso al sistema 
             $rolesSinAcceso = ['limpieza'];
             if (in_array(Auth::user()->role, $rolesSinAcceso)) {
                 Auth::logout();
@@ -103,16 +106,126 @@ class AuthController extends Controller
 
     public function logout(Request $request) {
         Auth::logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
-
         return redirect('/')->with('status', 'Sesión cerrada con seguridad.');
     }
 
     public function showPerfil() {
-    $user = Auth::user();
-    return view('auth.perfil', compact('user'));
-}
+        $user = Auth::user();
+        return view('auth.perfil', compact('user'));
+    }
+
+    // =========================================================================
+    // NUEVO SISTEMA DE RECUPERACIÓN DE CONTRASEÑA (OTP - 8 Dígitos)
+    // =========================================================================
+
+    // 1. GENERA Y ENVÍA EL CÓDIGO DE 8 DÍGITOS
+    public function enviarCodigo(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+        // Protección contra fuerza bruta
+        $key = 'password-reset-' . $request->ip();
+        if (RateLimiter::tooManyAttempts($key, 3)) {
+            $seconds = RateLimiter::availableIn($key);
+            return back()->withErrors(['email' => "Has excedido el límite de intentos. Por favor espera uno segundos antes de intentar de nuevo."]);
+        }
+        RateLimiter::hit($key, 60);
+
+        $user = User::where('email', $request->email)->first();
+
+        if ($user) {
+            // Generar código aleatorio de 8 dígitos
+            $codigo = str_pad(random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
+
+            // Guardarlo encriptado en la base de datos (reutilizamos la tabla password_reset_tokens)
+            DB::table('password_reset_tokens')->updateOrInsert(
+                ['email' => $user->email],
+                ['token' => Hash::make($codigo), 'created_at' => Carbon::now()]
+            );
+
+            // Enviar el correo
+            Mail::send('emails.otp', ['codigo' => $codigo], function ($message) use ($user) {
+                $message->to($user->email)->subject('Tu código de seguridad - La 501 Sports');
+            });
+        }
+
+        // Guardamos el correo en una sesión persistente
+        session(['email_para_codigo' => $request->email]);
+        return redirect()->route('password.verify.code');
+    }
+
+    // 2. MUESTRA LA PANTALLA PARA ESCRIBIR EL CÓDIGO
+    public function showVerifyCode()
+    {
+        if (!session('email_para_codigo')) return redirect()->route('password.request');
+        return view('auth.verify-code', ['email' => session('email_para_codigo')]);
+    }
+
+    // 3. VALIDA EL CÓDIGO Y SU CADUCIDAD
+    public function verifyCode(Request $request)
+    {
+        // 1. Cambiamos 'digits:8' por 'string|size:8' para que acepte letras y números revueltos
+        $request->validate([
+            'email' => 'required', 
+            'code' => 'required|string|size:8'
+        ], [
+            'code.required' => 'Debes ingresar el código.',
+            'code.size' => 'El código debe tener exactamente 8 caracteres.' // Cambiamos la palabra "números" por "caracteres"
+        ]);
+
+        $record = DB::table('password_reset_tokens')->where('email', $request->email)->first();
+
+        // 2. Si escriben letras, el sistema llegará hasta aquí, las comparará con el hash, 
+        // obviamente no coincidirán, y fallará silenciosamente arrojando el error genérico.
+        if (!$record || !Hash::check($request->code, $record->token) || Carbon::parse($record->created_at)->addMinutes(5)->isPast()) {
+            return back()->withErrors(['code' => 'El código es incorrecto o ha caducado.']);
+        }
+
+        // Éxito: Le damos un pase temporal en la sesión
+        session(['allow_password_reset' => $request->email]);
+        return redirect()->route('password.reset.form');
+    }
+
+    // 4. MUESTRA EL FORMULARIO DE NUEVA CONTRASEÑA
+    public function showCustomResetForm()
+    {
+        if (!session('allow_password_reset')) return redirect()->route('login');
+        return view('auth.reset', ['email' => session('allow_password_reset')]);
+    }
+
+    // 5. GUARDA LA NUEVA CONTRASEÑA
+    public function updateCustomPassword(Request $request)
+    {
+        $email = session('allow_password_reset');
+        if (!$email) return redirect()->route('login');
+
+        // Validación de complejidad requerida
+        $request->validate([
+            'password' => [
+                'required', 
+                'confirmed', 
+                PasswordRule::min(8)->mixedCase()->numbers()->symbols()
+            ],
+        ], [
+            'password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'password.mixed' => 'La contraseña debe incluir al menos una letra mayúscula y una minúscula.',
+            'password.numbers' => 'La contraseña debe incluir al menos un número.',
+            'password.symbols' => 'La contraseña debe incluir al menos un símbolo (!@#$).',
+        ]);
+
+        $user = User::where('email', $email)->first();
+        if ($user) {
+            $user->update([
+                'password' => Hash::make($request->password)
+            ]);
+        }
+
+        // Limpieza: Destruimos el código usado y cerramos el "pase VIP"
+        DB::table('password_reset_tokens')->where('email', $email)->delete();
+        session()->forget('allow_password_reset');
+
+        return redirect()->route('login')->with('status', '¡Tu contraseña ha sido restablecida con éxito! Ya puedes iniciar sesión.');
+    }
 }

@@ -71,5 +71,26 @@ class AdminController extends Controller
 
         return response()->json(['labels' => $labels, 'data' => $data]);
     }
+
+    // Mostrar la bandeja de mensajes
+    public function mensajes()
+    {
+        // Traemos todos los mensajes. Los 'pendientes' salen arriba, y los ordenamos por fecha.
+        $mensajes = \App\Models\ContactMessage::orderByRaw("FIELD(status, 'pendiente', 'respondido')")
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('admin.mensajes', compact('mensajes'));
+    }
+
+    // Cambiar el estado del mensaje a "Respondido"
+    public function marcarRespondido($id)
+    {
+        $mensaje = \App\Models\ContactMessage::findOrFail($id);
+        $mensaje->status = 'respondido';
+        $mensaje->save();
+
+        return back()->with('success', 'Mensaje marcado como respondido.');
+    }
 }
 

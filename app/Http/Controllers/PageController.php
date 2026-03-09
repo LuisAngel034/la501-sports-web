@@ -49,4 +49,32 @@ class PageController extends Controller
 
         return view('promociones', compact('promotions'));
     }
+
+    public function enviarContacto(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255',
+            'type' => 'required|in:pregunta,sugerencia,queja',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string'
+        ]);
+
+        \App\Models\ContactMessage::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'type' => $request->type,
+            'subject' => $request->subject,
+            'message' => $request->message,
+            'status' => 'pendiente'
+        ]);
+
+        $mensajeRespuesta = match($request->type) {
+            'queja' => 'Agradecemos sinceramente que nos compartas esta situación. Estamos trabajando para resolverlo a la brevedad y, de ser necesario, nos pondremos en contacto contigo para darle seguimiento.',
+            'sugerencia' => '¡Muchas gracias por tu sugerencia! Valoramos enormemente las ideas de nuestros clientes para seguir mejorando y brindar la mejor experiencia en La 501 Sports.',
+            'pregunta' => 'Hemos recibido tu consulta. Te daremos respuesta lo más pronto posible a través de tu correo electrónico. Recuerda que también puedes acercarte a cualquier miembro de nuestro equipo durante tu visita.'
+        };
+
+        return back()->with('success', $mensajeRespuesta);
+    }
 }

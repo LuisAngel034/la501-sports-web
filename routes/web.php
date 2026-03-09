@@ -67,15 +67,25 @@ Route::get('/pago/fallido', [CheckoutController::class, 'failure'])->name('payme
 |-----------------------------
 */
 Route::controller(AuthController::class)->group(function () {
+    // Ingreso y Registro
     Route::get('/login', 'showLogin')->name('login');
     Route::post('/login', 'login');
     Route::get('/registro', 'showRegistro')->name('register');
     Route::post('/registro', 'registrar');
-    Route::get('/recuperar', 'showRecuperar')->name('password.request');
-    Route::post('/recuperar', 'enviarEnlace')->name('password.email');
     Route::post('/logout', 'logout')->name('logout');
-});
 
+    // Recuperación - 1. Pedir el código
+    Route::get('/recuperar', 'showRecuperar')->name('password.request');
+    Route::post('/recuperar', 'enviarCodigo')->name('password.email');
+
+    // Recuperación - 2. Escribir el código
+    Route::get('/recuperar/verificar-codigo', 'showVerifyCode')->name('password.verify.code');
+    Route::post('/recuperar/verificar-codigo', 'verifyCode')->name('password.verify.code.post');
+
+    // Recuperación - 3. Cambiar la contraseña
+    Route::get('/recuperar/nueva-password', 'showCustomResetForm')->name('password.reset.form');
+    Route::post('/recuperar/nueva-password', 'updateCustomPassword')->name('password.update');
+});
 
 /*
 |------------------------------------------------
@@ -161,6 +171,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::resource('finanzas', FinanceController::class)->only(['index', 'store', 'destroy'])->names('admin.finances');
     Route::resource('inventario', InventoryController::class)->except(['create', 'show', 'edit'])->names('admin.inventory');
     Route::put('/inventario/{id}/ajustar', [InventoryController::class, 'adjust'])->name('admin.inventory.adjust');
+
+    // Gestión de Mensajes (CRM)
+    Route::get('/mensajes', [AdminController::class, 'mensajes'])->name('admin.mensajes');
+    Route::put('/mensajes/{id}/marcar-leido', [AdminController::class, 'marcarRespondido'])->name('admin.mensajes.leido');
 });
 
 Route::get('/limpiar-magico', function () {
@@ -169,3 +183,6 @@ Route::get('/limpiar-magico', function () {
     \Illuminate\Support\Facades\Artisan::call('config:clear');
     return '¡Caché y configuración de Hostinger borradas con éxito!';
 });
+
+
+Route::post('/contacto/enviar', [PageController::class, 'enviarContacto'])->name('contacto.enviar');

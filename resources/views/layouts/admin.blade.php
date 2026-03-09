@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Panel Admin · La 501</title>
 
+    <link rel="icon" type="image/png" href="{{ asset('images/logo_501_trasparente.png') }}?v=2">
+
     <script>
         if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
             document.documentElement.classList.add('dark');
@@ -248,6 +250,10 @@
             padding: 8px 12px 12px;
             border-top: 1px solid var(--nav-bdr);
             background: var(--nav-bg);
+            position: absolute;
+            top: 56px;
+            left: 0;
+            width: 100%;
         }
         .adm-mobile-menu.open { display: flex; }
         .adm-mobile-link {
@@ -340,6 +346,11 @@
                    class="adm-nav-link {{ request()->routeIs('admin.reservations.index') ? 'active' : '' }}">
                     <span class="adm-notif-dot"></span>
                     Reservaciones
+                </a>
+
+                <a href="{{ route('admin.mensajes') }}"
+                    class="adm-nav-link {{ request()->routeIs('admin.mensajes') ? 'active' : '' }}">
+                    Mensajes
                 </a>
 
                 <a href="{{ route('admin.settings.index') }}"
@@ -437,6 +448,7 @@
             <a href="{{ route('admin.reservations.index') }}" class="adm-mobile-link {{ request()->routeIs('admin.reservations.index') ? 'active' : '' }}">
                 <span class="adm-notif-dot"></span> Reservaciones
             </a>
+            <a href="{{ route('admin.mensajes') }}" class="adm-mobile-link {{ request()->routeIs('admin.mensajes') ? 'active' : '' }}">Mensajes</a>
             <a href="{{ route('admin.settings.index') }}"  class="adm-mobile-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">Información</a>
         </div>
     </nav>

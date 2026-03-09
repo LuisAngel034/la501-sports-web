@@ -94,8 +94,8 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
-            'expire' => 60,
-            'throttle' => 60,
+            'expire' => 5, // Cambiado a 5 minutos para mayor seguridad
+            'throttle' => 60, // Cambiado a 60 segundos para mayor seguridad
         ],
     ],
 

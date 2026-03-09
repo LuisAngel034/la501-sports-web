@@ -5,15 +5,17 @@
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;600;700&family=Inter:wght@400;500&display=swap');
 
-    /* ─── VARIABLES ─── */
+    /* ══════════════════════════════════════════
+       VARIABLES — dark por defecto, light via
+       selector html:not(.dark) (Tailwind class mode)
+    ══════════════════════════════════════════ */
     .s501-page {
         --orange:      #F97316;
         --orange-dark: #C2410C;
         --green:       #16A34A;
         --green-light: #22C55E;
-        --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69V15zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E");
 
-        /* DARK (default) */
+        /* DARK (default — html.dark o sin clase) */
         --bg:       #0A0A0A;
         --bg-card:  #141414;
         --bg-card2: #1C1C1C;
@@ -22,20 +24,20 @@
         --border:   rgba(255,255,255,0.07);
         --glow-o:   rgba(249,115,22,0.22);
         --glow-g:   rgba(22,163,74,0.18);
+        --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69V15zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E");
     }
 
-    /* LIGHT MODE */
-    .light .s501-page,
-    [data-theme="light"] .s501-page {
+    /* ── LIGHT MODE — cuando html NO tiene clase .dark ── */
+    html:not(.dark) .s501-page {
         --bg:       #F4F4F5;
         --bg-card:  #FFFFFF;
         --bg-card2: #EBEBEB;
         --txt:      #111111;
         --txt-sub:  #52525B;
-        --border:   rgba(0,0,0,0.1);
-        --glow-o:   rgba(249,115,22,0.12);
-        --glow-g:   rgba(22,163,74,0.1);
-        --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23000000' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69V15zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E");
+        --border:   rgba(0,0,0,0.09);
+        --glow-o:   rgba(249,115,22,0.10);
+        --glow-g:   rgba(22,163,74,0.09);
+        --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23000000' fill-opacity='0.025'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69V15zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E");
     }
 
     /* ─── BASE ─── */
@@ -44,6 +46,8 @@
         color: var(--txt);
         font-family: 'Inter', sans-serif;
         overflow-x: hidden;
+        /* transición suave al cambiar tema */
+        transition: background-color .3s, color .3s;
     }
 
     /* ─── HERO ─── */
@@ -55,6 +59,7 @@
         padding: 80px 40px 70px;
         text-align: center;
         overflow: hidden;
+        transition: background-color .3s;
     }
     .s501-hero::before {
         content: '';
@@ -86,6 +91,7 @@
         color: var(--txt);
         margin: 0 0 20px;
         position: relative; z-index: 1;
+        transition: color .3s;
     }
     .s501-hero h1 span { color: var(--orange); }
     .s501-hero p {
@@ -95,6 +101,7 @@
         margin: 0 auto;
         line-height: 1.75;
         position: relative; z-index: 1;
+        transition: color .3s;
     }
 
     /* ─── MAIN SECTION ─── */
@@ -115,6 +122,7 @@
         padding: 60px 56px;
         margin-bottom: 80px;
         overflow: hidden;
+        transition: background-color .3s, border-color .3s;
     }
     .s501-banner::after {
         content: '';
@@ -132,7 +140,7 @@
         font-family: 'Bebas Neue', sans-serif;
         font-size: 220px;
         color: var(--orange);
-        opacity: 0.04;
+        opacity: 0.1;
         line-height: 1;
         pointer-events: none;
         z-index: 0;
@@ -150,16 +158,15 @@
         color: var(--txt);
         line-height: 1.1;
         margin: 0 0 20px;
+        transition: color .3s;
     }
-    .s501-banner h2 em {
-        color: var(--orange);
-        font-style: normal;
-    }
+    .s501-banner h2 em { color: var(--orange); font-style: normal; }
     .s501-banner p {
         color: var(--txt-sub);
         font-size: 16px;
         line-height: 1.8;
         margin: 0;
+        transition: color .3s;
     }
 
     /* ─── DIVIDER ─── */
@@ -202,7 +209,7 @@
         text-align: center;
         position: relative;
         overflow: hidden;
-        transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+        transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s, background-color .3s;
         cursor: default;
     }
     .s501-card::before {
@@ -214,12 +221,24 @@
         transition: opacity 0.3s;
         border-radius: 18px;
     }
+    /* línea superior naranja que aparece en hover */
+    .s501-card::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--orange), var(--green));
+        opacity: 0;
+        transition: opacity .3s;
+    }
     .s501-card:hover {
         transform: translateY(-7px);
         border-color: var(--orange);
         box-shadow: 0 10px 40px var(--glow-o);
     }
     .s501-card:hover::before { opacity: 1; }
+    .s501-card:hover::after  { opacity: 1; }
+
     .s501-card-icon {
         width: 64px; height: 64px;
         border-radius: 50%;
@@ -227,7 +246,7 @@
         display: flex; align-items: center; justify-content: center;
         margin: 0 auto 20px;
         font-size: 26px;
-        box-shadow: 0 4px 20px rgba(249,115,22,0.4);
+        box-shadow: 0 4px 20px rgba(249,115,22,0.35);
         transition: transform 0.3s;
         position: relative; z-index: 1;
     }
@@ -282,6 +301,7 @@
         color: var(--txt);
         margin: 0;
         line-height: 1;
+        transition: color .3s;
     }
     .s501-historia-label h2 span { color: var(--green-light); }
     .s501-historia-text p {
@@ -289,6 +309,7 @@
         font-size: 16px;
         line-height: 1.8;
         margin: 0 0 18px;
+        transition: color .3s;
     }
 
     /* ─── IMAGE ─── */
@@ -312,6 +333,7 @@
         overflow: hidden;
         aspect-ratio: 1 / 1;
         background: var(--bg-card2);
+        transition: background-color .3s;
     }
     .s501-img-inner img {
         width: 100%; height: 100%;
@@ -330,6 +352,7 @@
         transform: translateX(-50%);
         background: rgba(0,0,0,0.72);
         backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
         border: 1px solid var(--orange);
         border-radius: 100px;
         padding: 14px 34px;
@@ -338,7 +361,11 @@
         white-space: nowrap;
         box-shadow: 0 4px 30px rgba(249,115,22,0.25);
     }
-    .s501-img-badge .b-icon { font-size: 18px; display:block; margin-bottom:2px; }
+    /* En light mode el badge necesita fondo más visible */
+    html:not(.dark) .s501-img-badge {
+        background: rgba(255,255,255,0.82);
+    }
+    .s501-img-badge .b-icon  { font-size: 18px; display: block; margin-bottom: 2px; }
     .s501-img-badge .b-years {
         font-family: 'Bebas Neue', sans-serif;
         font-size: 38px;
@@ -349,15 +376,20 @@
     }
     .s501-img-badge .b-label {
         font-size: 10px;
-        color: #ccc;
         letter-spacing: 1.5px;
         text-transform: uppercase;
     }
+    /* label del badge: blanco en dark, oscuro en light */
+    .s501-img-badge .b-label { color: #ccc; }
+    html:not(.dark) .s501-img-badge .b-label { color: #52525B; }
 
+    /* ─── RESPONSIVE ─── */
     @media (max-width: 768px) {
         .s501-historia { grid-template-columns: 1fr; gap: 40px; }
-        .s501-banner { padding: 36px 28px; }
+        .s501-banner   { padding: 36px 28px; }
         .s501-banner-deco { display: none; }
+        .s501-section  { padding: 48px 20px; }
+        .s501-hero     { padding: 60px 24px 50px; }
     }
 </style>
 

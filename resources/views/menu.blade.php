@@ -363,21 +363,6 @@
                 channel.bind('menu.updated', () => { this.fetchLiveProducts(); });
             },
 
-            async fetchLiveProducts() {
-                try {
-                    const url = `{{ route('api.menu.products') }}?t=${Date.now()}`;
-                    const res = await fetch(url, {
-                        cache: 'no-store',
-                        headers: { 'Pragma': 'no-cache', 'Cache-Control': 'no-cache' }
-                    });
-                    if (res.ok) {
-                        const data = await res.json();
-                        const hash = JSON.stringify(data);
-                        if (this.lastDataHash !== hash) { this.allProductos = data; this.lastDataHash = hash; }
-                    }
-                } catch(e) { console.error('Error menú en vivo:', e); }
-            },
-
             productosFiltrados() {
                 let lista = this.allProductos.filter(p => p.category === this.filtro);
                 if (this.subcategoriasMap[this.filtro] && this.subfiltro !== 'Todos') {
