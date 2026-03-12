@@ -122,6 +122,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     // Dashboard y API de Gráficas/Estadísticas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/exportar-ventas', [DashboardController::class, 'exportSalesCSV'])->name('admin.sales.export.excel');
+    
+    // 👇 RUTA DE IMPORTACIÓN AGREGADA AQUÍ 👇
+    Route::post('/importar-productos', [DashboardController::class, 'importProductsCSV'])->name('admin.products.import');
+    
     Route::get('/api/stats', [DashboardController::class, 'apiStats'])->name('admin.api.stats');
     Route::get('/api/sales', [DashboardController::class, 'apiSales'])->name('admin.api.sales');
     
@@ -181,7 +185,9 @@ Route::get('/limpiar-magico', function () {
     \Illuminate\Support\Facades\Artisan::call('view:clear');
     \Illuminate\Support\Facades\Artisan::call('cache:clear');
     \Illuminate\Support\Facades\Artisan::call('config:clear');
-    return '¡Caché y configuración de Hostinger borradas con éxito!';
+    // 👇 LÍNEA PARA LIMPIAR RUTAS AGREGADA AQUÍ 👇
+    \Illuminate\Support\Facades\Artisan::call('route:clear'); 
+    return '¡Caché, rutas y configuración de Hostinger borradas con éxito!';
 });
 
 

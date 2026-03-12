@@ -47,20 +47,15 @@ class DashboardController extends Controller
     }
 
 
-    // ===================================
-    // 2. FUNCIÓN PARA EXPORTAR EL EXCEL
-    // =================================== 
+    // ========================================================
+    // 2. EXPORTAR EL EXCEL (COLUMNAS SEPARADAS SIN CLIENTE)
+    // ======================================================== 
     public function exportSalesCSV(Request $request)
     {
         $startDate = $request->start_date . ' 00:00:00';
         $endDate = $request->end_date . ' 23:59:59';
 
-        $orders = Order::whereBetween('created_at', [$startDate, $endDate])
-               ->whereIn('status', ['delivered', 'entregado'])
-               ->orderBy('created_at', 'asc')
-               ->get();
-
-        $fileName = 'Reporte_Ventas_La501_' . date('Y-m-d') . '.csv';
+        $fileName = 'Resumen_Ventas_La501_' . date('Y-m-d') . '.csv';
 
         $headers = [
             "Content-type"        => "text/csv; charset=UTF-8",
@@ -70,26 +65,73 @@ class DashboardController extends Controller
             "Expires"             => "0"
         ];
 
-        $callback = function() use($orders) {
+        $callback = function() use ($startDate, $endDate) {
             $file = fopen('php://output', 'w');
             
+            // BOM para que Excel lea los acentos perfecto
             fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
 
-            fputcsv($file, ['Folio', 'Cliente', 'Fecha', 'Hora', 'Método de Pago', 'Total'], ',');
+            // --- CÁLCULOS DEL RESUMEN (Agrupamos por método de pago) ---
+            $summary = \App\Models\Order::selectRaw('payment_method, COUNT(*) as count, SUM(total) as sum')
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->whereIn('status', ['delivered', 'entregado'])
+                ->groupBy('payment_method')
+                ->get();
 
-            foreach ($orders as $order) {
-                $nombreCliente = $order->customer_name ? ucwords(strtolower($order->customer_name)) : 'Mostrador';
-                $metodoPago = $order->payment_method ? ucfirst(strtolower($order->payment_method)) : 'No registrado';
+            $totalSum = $summary->sum('sum');
+            $totalCount = $summary->sum('count');
 
+            // OJO AQUÍ: Cambiamos la ',' por ';' al final para que Excel lo separe en columnas
+            
+            // --- 1. CABECERA DEL REPORTE ---
+            fputcsv($file, ['Sucursal:', 'La 501 Sports'], ';');
+            fputcsv($file, ['Fecha de Emision:', date('d/m/Y h:i A')], ';');
+            fputcsv($file, ['Rango Reportado:', date('d/m/Y', strtotime($startDate)) . ' al ' . date('d/m/Y', strtotime($endDate))], ';');
+            fputcsv($file, [], ';'); // Fila vacía para separar
+
+            // --- 2. RESUMEN DE VENTAS ---
+            fputcsv($file, ['RESUMEN DE VENTAS'], ';');
+            fputcsv($file, ['Metodo de Pago', 'Cant. Operaciones', 'Monto Total'], ';');
+
+            foreach ($summary as $row) {
+                // Si viene vacío en la BD, lo marcamos como Efectivo
+                $methodName = $row->payment_method ? mb_strtoupper($row->payment_method) : 'EFECTIVO';
+                
                 fputcsv($file, [
-                    '#' . str_pad($order->id, 4, '0', STR_PAD_LEFT), 
-                    $nombreCliente,
-                    $order->created_at->format('d/m/Y'), 
-                    $order->created_at->format('h:i A'), 
-                    $metodoPago,
-                    number_format($order->total, 2, '.', '')
-                ], ','); 
+                    $methodName,
+                    $row->count,
+                    '$ ' . number_format($row->sum, 2, '.', ',')
+                ], ';');
             }
+            
+            // Fila de Total General
+            fputcsv($file, ['TOTAL GENERAL', $totalCount, '$ ' . number_format($totalSum, 2, '.', ',')], ';');
+            fputcsv($file, [], ';'); 
+            fputcsv($file, [], ';'); 
+
+            // --- 3. DESGLOSE DETALLADO (Anexo sin nombre de cliente) ---
+            fputcsv($file, ['DESGLOSE DE MOVIMIENTOS'], ';');
+            // Eliminamos la columna "Cliente"
+            fputcsv($file, ['Folio', 'Fecha', 'Hora', 'Metodo de Pago', 'Total'], ';');
+
+            // Traemos las órdenes con chunk para que soporte miles de registros sin trabarse
+            \App\Models\Order::whereBetween('created_at', [$startDate, $endDate])
+                ->whereIn('status', ['delivered', 'entregado'])
+                ->orderBy('created_at', 'asc')
+                ->chunk(200, function ($ordersChunk) use ($file) {
+                    foreach ($ordersChunk as $order) {
+                        $metodoPago = $order->payment_method ? ucfirst(strtolower($order->payment_method)) : 'Efectivo';
+
+                        // Eliminamos la variable del cliente del arreglo
+                        fputcsv($file, [
+                            '#' . str_pad($order->id, 4, '0', STR_PAD_LEFT), 
+                            $order->created_at->format('d/m/Y'), 
+                            $order->created_at->format('h:i A'), 
+                            $metodoPago,
+                            '$ ' . number_format($order->total, 2, '.', '')
+                        ], ';'); 
+                    }
+                });
 
             fclose($file);
         };
@@ -104,7 +146,6 @@ class DashboardController extends Controller
     {
         $totalVentas = Order::whereIn('status', ['delivered', 'entregado'])->sum('total');
         $pedidosHoy = Order::whereDate('created_at', Carbon::today())->count();
-        
         $enProceso = Order::where('status', 'pending')->count(); 
 
         return response()->json([
@@ -120,14 +161,11 @@ class DashboardController extends Controller
     public function apiSales(Request $request)
     {
         $period = $request->get('period', 'day');
-        
         $query = Order::whereIn('status', ['delivered', 'entregado']);
-
         $labels = [];
         $data = [];
 
         if ($period == 'day') {
-            // Agrupar por día (Últimos 30 días)
             $start = Carbon::now()->subDays(29)->startOfDay();
             $orders = clone $query->where('created_at', '>=', $start)
                                   ->get()
@@ -140,14 +178,12 @@ class DashboardController extends Controller
                 $data[] = isset($orders[$dateLabel]) ? $orders[$dateLabel]->sum('total') : 0;
             }
         } elseif ($period == 'month') {
-            // Agrupar por mes (Este año)
             $start = Carbon::now()->startOfYear();
             $orders = clone $query->where('created_at', '>=', $start)
                                   ->get()
                                   ->groupBy(function($date) {
                                       return Carbon::parse($date->created_at)->format('M Y');
                                   });
-
             $currentMonth = Carbon::now()->month;
             for ($i = 1; $i <= $currentMonth; $i++) {
                 $dateLabel = Carbon::create(null, $i, 1)->format('M Y');
@@ -155,14 +191,12 @@ class DashboardController extends Controller
                 $data[] = isset($orders[$dateLabel]) ? $orders[$dateLabel]->sum('total') : 0;
             }
         } elseif ($period == 'year') {
-            // Agrupar por año (Últimos 5 años)
             $start = Carbon::now()->subYears(4)->startOfYear();
             $orders = clone $query->where('created_at', '>=', $start)
                                   ->get()
                                   ->groupBy(function($date) {
                                       return Carbon::parse($date->created_at)->format('Y');
                                   });
-
             for ($i = 4; $i >= 0; $i--) {
                 $dateLabel = Carbon::now()->subYears($i)->format('Y');
                 $labels[] = $dateLabel;
