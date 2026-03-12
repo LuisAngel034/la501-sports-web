@@ -188,6 +188,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::post('/sistema/base-de-datos/auto', [AdminController::class, 'saveAuto'])->name('admin.database.saveAuto');
     // Motor automático de respaldos (Cron Job)
     Route::get('/sistema/base-de-datos/auto-backup', [AdminController::class, 'runAutoBackup']);
+    // Restauración de Base de Datos
+    Route::post('/sistema/base-de-datos/restaurar', [AdminController::class, 'restore'])->name('admin.database.restore');
+    Route::post('/sistema/base-de-datos/restaurar-subida', [AdminController::class, 'restoreUpload'])->name('admin.database.restore.upload');
 });
 
 Route::get('/limpiar-magico', function () {

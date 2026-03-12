@@ -102,7 +102,28 @@ class AdminController extends Controller
             return redirect()->route('admin.dashboard')->with('error', 'No tienes permisos para acceder a esta área.');
         }
 
-        return view('admin.database');
+        // Leer todos los archivos de la bóveda secreta
+        $files = \Illuminate\Support\Facades\Storage::disk('local')->files('backups');
+        $backups = [];
+        
+        foreach ($files as $file) {
+            $backups[] = [
+                'name' => basename($file),
+                'path' => $file,
+                // Calculamos el peso en KB/MB
+                'size' => round(\Illuminate\Support\Facades\Storage::disk('local')->size($file) / 1024, 2) . ' KB',
+                // Extraemos la fecha exacta en la que se creó
+                'date' => \Carbon\Carbon::createFromTimestamp(\Illuminate\Support\Facades\Storage::disk('local')->lastModified($file))->format('Y-m-d H:i:s')
+            ];
+        }
+        
+        // Ordenamos el arreglo para que el respaldo más nuevo salga hasta arriba
+        usort($backups, function ($a, $b) {
+            return $b['date'] <=> $a['date'];
+        });
+
+        // Le pasamos la lista de respaldos a la vista
+        return view('admin.database', compact('backups'));
     }
 
     // =====================================================================
@@ -232,6 +253,71 @@ class AdminController extends Controller
         }
 
         return response('Backup guardado en servidor y limpieza completada exitosamente.', 200);
+    }
+
+    // =====================================================================
+    // 5. RESTAURAR DESDE EL HISTORIAL DEL SERVIDOR
+    // =====================================================================
+    public function restore(\Illuminate\Http\Request $request)
+    {
+        if (\Illuminate\Support\Facades\Auth::id() !== 2) return back()->with('error', 'Denegado.');
+
+        $path = $request->file_path;
+        
+        // Verificamos que el archivo realmente exista en el servidor
+        if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
+            return back()->with('error', 'El archivo de respaldo no fue encontrado.');
+        }
+
+        // Leemos todo el texto del archivo .sql
+        $sql = \Illuminate\Support\Facades\Storage::disk('local')->get($path);
+        
+        try {
+            // Limpiamos los delimitadores que PHP no entiende nativamente
+            $sql = str_replace(['DELIMITER $$', 'DELIMITER ;', '$$'], '', $sql);
+            
+            // DB::unprepared ejecuta código SQL puro y crudo directamente en el motor
+            DB::unprepared($sql);
+            
+            return back()->with('success', '¡Base de datos restaurada con éxito desde el historial automático!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error crítico al restaurar: ' . $e->getMessage());
+        }
+    }
+
+    // =====================================================================
+    // 6. RESTAURAR DESDE UN ARCHIVO SUBIDO MANUALMENTE
+    // =====================================================================
+    public function restoreUpload(\Illuminate\Http\Request $request)
+    {
+        if (\Illuminate\Support\Facades\Auth::id() !== 2) return back()->with('error', 'Denegado.');
+
+        // Validamos que obligatoriamente hayan subido un archivo
+        if (!$request->hasFile('sql_file')) {
+            return back()->with('error', 'Por favor selecciona un archivo .sql');
+        }
+
+        $file = $request->file('sql_file');
+        
+        // Validamos que la extensión sea .sql para evitar hackeos
+        if (strtolower($file->getClientOriginalExtension()) !== 'sql') {
+            return back()->with('error', 'El archivo debe ser un formato .sql válido.');
+        }
+
+        // Leemos el contenido del archivo que el usuario subió
+        $sql = file_get_contents($file->getRealPath());
+
+        try {
+            // Limpiamos los delimitadores
+            $sql = str_replace(['DELIMITER $$', 'DELIMITER ;', '$$'], '', $sql);
+            
+            // Ejecutamos la restauración
+            DB::unprepared($sql);
+            
+            return back()->with('success', '¡Base de datos restaurada exitosamente con tu archivo manual!');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Error crítico al restaurar: ' . $e->getMessage());
+        }
     }
 }
 

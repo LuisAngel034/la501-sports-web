@@ -120,18 +120,74 @@
             </form>
         </div>
 
-        {{-- TARJETA 3: RESTAURACIÓN --}}
-        <div class="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm opacity-80">
+        {{-- TARJETA 3: RESTAURACIÓN AVANZADA --}}
+        <div class="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm" x-data="{ tab: 'historial' }">
             <div class="w-12 h-12 bg-orange-500/10 text-orange-500 rounded-xl flex items-center justify-center mb-4 border border-orange-500/20">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
             </div>
+            
             <h2 class="text-lg font-bold text-zinc-900 dark:text-white mb-2">Restauración de Datos</h2>
-            <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-6">
-                Sube un archivo .sql generado previamente para sobreescribir la base de datos actual en caso de emergencia.
+            <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
+                Sobreescribe la base de datos actual. <strong class="text-red-500">Advertencia:</strong> Esta acción es irreversible.
             </p>
-            <button class="w-full py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-500 cursor-not-allowed text-sm font-bold rounded-xl flex justify-center items-center gap-2" disabled>
-                Módulo en construcción
-            </button>
+
+            {{-- Pestañas (Tabs) --}}
+            <div class="flex gap-2 mb-4 border-b border-zinc-200 dark:border-white/10 pb-2">
+                <button @click="tab = 'historial'" 
+                        class="px-4 py-2 text-sm font-bold rounded-lg transition"
+                        :class="tab === 'historial' ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-white'">
+                    Historial del Servidor
+                </button>
+                <button @click="tab = 'subir'" 
+                        class="px-4 py-2 text-sm font-bold rounded-lg transition"
+                        :class="tab === 'subir' ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-600' : 'text-zinc-500 hover:text-zinc-800 dark:hover:text-white'">
+                    Subir Archivo Manual
+                </button>
+            </div>
+
+            {{-- CONTENIDO: Historial --}}
+            <div x-show="tab === 'historial'" x-transition.opacity>
+                @if(count($backups) > 0)
+                    <div class="max-h-[220px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                        @foreach($backups as $backup)
+                            <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#1a1612] border border-zinc-200 dark:border-white/5 rounded-xl">
+                                <div>
+                                    <div class="text-sm font-bold text-zinc-800 dark:text-zinc-200">{{ \Carbon\Carbon::parse($backup['date'])->diffForHumans() }}</div>
+                                    <div class="text-xs text-zinc-500 font-mono">{{ $backup['date'] }} • {{ $backup['size'] }}</div>
+                                </div>
+                                <form action="{{ route('admin.database.restore') }}" method="POST" onsubmit="return confirm('⚠️ ¿ESTÁS SEGURO?\n\nEsto borrará la base de datos actual y la reemplazará por esta copia de seguridad. Todos los datos nuevos se perderán.');">
+                                    @csrf
+                                    <input type="hidden" name="file_path" value="{{ $backup['path'] }}">
+                                    <button type="submit" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                        Restaurar
+                                    </button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <div class="text-center py-8 text-sm text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-white/10 rounded-xl">
+                        Aún no hay copias automáticas guardadas en el servidor.
+                    </div>
+                @endif
+            </div>
+
+            {{-- CONTENIDO: Subir Manual --}}
+            <div x-show="tab === 'subir'" x-transition.opacity style="display: none;">
+                <form action="{{ route('admin.database.restore.upload') }}" method="POST" enctype="multipart/form-data" onsubmit="return confirm('⚠️ ¿ESTÁS SEGURO?\n\nEsto reemplazará la base de datos actual con el archivo que estás subiendo.');">
+                    @csrf
+                    <div class="mb-4">
+                        <label class="block text-xs font-bold text-zinc-500 uppercase mb-2">Selecciona tu archivo .sql</label>
+                        <input type="file" name="sql_file" accept=".sql" required
+                               class="w-full text-sm text-zinc-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-bold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 dark:file:bg-orange-500/10 dark:file:text-orange-500">
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-white dark:hover:bg-zinc-200 dark:text-black text-white text-sm font-bold rounded-xl transition shadow-lg flex justify-center items-center gap-2">
+                        Subir y Restaurar
+                    </button>
+                </form>
+            </div>
+            
         </div>
 
         {{-- TARJETA 4: AUTOMATIZACIÓN DE TAREAS --}}
