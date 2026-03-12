@@ -374,8 +374,8 @@
                 </button>
 
                 {{-- User menu --}}
-                <div class="relative" x-data="{ open: false }">
-                    <button @click="open = !open" @click.away="open = false" class="adm-user-btn">
+                <div class="relative" x-data="{ userMenu: false }">
+                    <button @click="userMenu = !userMenu" @click.away="userMenu = false" class="adm-user-btn">
                         <div class="adm-avatar">{{ substr(Auth::user()->name, 0, 2) }}</div>
                         <div class="hidden sm:block text-left">
                             <div class="adm-user-name">{{ Auth::user()->name }}</div>
@@ -386,7 +386,7 @@
                         </svg>
                     </button>
 
-                    <div x-show="open"
+                    <div x-show="userMenu"
                          x-transition:enter="transition ease-out duration-100"
                          x-transition:enter-start="opacity-0 scale-95"
                          x-transition:enter-end="opacity-100 scale-100"
