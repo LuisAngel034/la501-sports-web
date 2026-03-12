@@ -36,48 +36,57 @@
     .ad-stat.flashing .ad-stat-flash { opacity: 1; }
 
     /* ── GRÁFICA Y CONTROLES ── */
-    .ad-chart-card { background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 10px; overflow: hidden; }
+    .ad-chart-card { background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
     .ad-chart-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--bdr); gap: 12px; flex-wrap: wrap; }
     .ad-chart-title { display: flex; align-items: center; gap: 8px; }
     .ad-chart-title-icon { width: 28px; height: 28px; border-radius: 7px; background: rgba(37,99,235,.08); border: 1px solid rgba(37,99,235,.15); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .ad-chart-title-icon svg { width: 14px; height: 14px; color: var(--accent); }
     .ad-chart-title h2 { font-size: 14px; font-weight: 700; color: var(--txt); margin: 0; }
-    .ad-chart-controls { display: flex; align-items: center; gap: 8px; }
+    .ad-chart-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     
-    .ad-period-group { display: flex; background: var(--bg-input); border: 1px solid var(--bdr); border-radius: 7px; padding: 3px; gap: 2px; }
-    .ad-period-btn { padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 600; letter-spacing: .3px; border: none; background: transparent; color: var(--txt-sub); cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; }
+    .ad-period-group { display: flex; background: var(--bg-input); border: 1px solid var(--bdr); border-radius: 8px; padding: 3px; gap: 2px; }
+    .ad-period-btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; letter-spacing: .3px; border: none; background: transparent; color: var(--txt-sub); cursor: pointer; transition: background .15s, color .15s; white-space: nowrap; }
     .ad-period-btn.active, .ad-period-btn:hover { background: var(--bg-card); color: var(--txt); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
     .dark .ad-period-btn.active, .dark .ad-period-btn:hover { box-shadow: 0 1px 3px rgba(0,0,0,.3); }
 
-    .ad-export-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px; border-radius: 7px; background: var(--bg-input); border: 1px solid var(--bdr); font-size: 11px; font-weight: 600; color: var(--txt-sub); cursor: pointer; transition: background .15s, border-color .15s, color .15s; }
-    .ad-export-btn:hover { border-color: var(--gn); color: var(--gn); }
+    /* Botón de exportación mejorado */
+    .ad-export-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; background: var(--accent); color: #fff; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; box-shadow: 0 1px 3px rgba(37,99,235,0.2); }
+    .ad-export-btn:hover { background: var(--accent2); transform: translateY(-1px); }
+    .ad-export-btn svg { width: 16px; height: 16px; }
 
     .ad-chart-body { padding: 20px 18px; position: relative; }
     .ad-chart-canvas { height: 280px; width: 100%; }
 
-    /* ── MODAL SEGURO (VANILLA JS) ── */
+    /* ── MODAL SEGURO (MÁS SÓLIDO Y ELEGANTE) ── */
     .mi-modal-seguro {
         display: none; 
         position: fixed !important;
         inset: 0 !important;
         z-index: 9999999 !important;
-        background: rgba(0,0,0,0.6) !important;
-        backdrop-filter: blur(4px) !important;
+        /* Fondo azul muy oscuro casi sólido */
+        background: #212127) !important;
+        /* Blur fuerte para desenfocar lo de atrás */
+        backdrop-filter: blur(8px) !important;
         align-items: center;
         justify-content: center;
         padding: 16px;
     }
-    .ad-modal { background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
-    .ad-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--bdr); }
-    .ad-modal-head h3 { font-size: 15px; font-weight: 700; color: var(--txt); margin: 0; }
-    .ad-modal-head p  { font-size: 12px; color: var(--txt-sub); margin: 3px 0 0; }
-    .ad-modal-close { width: 26px; height: 26px; border-radius: 6px; background: var(--bg-input); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--txt-sub); }
-    .ad-modal-close:hover { background: var(--bdr); }
-    .ad-modal-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
-    .ad-modal-foot { padding: 14px 18px; border-top: 1px solid var(--bdr); }
-    .ad-label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; color: var(--txt-sub); margin-bottom: 4px; }
-    .ad-input { width: 100%; padding: 8px 10px; background: var(--bg-input); border: 1px solid var(--bdr); border-radius: 7px; font-size: 13px; color: var(--txt); outline: none; }
-    .ad-btn-save { width: 100%; padding: 9px; border-radius: 7px; background: var(--gn); color: #fff; border: none; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+    .ad-modal { background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 16px; width: 100%; max-width: 420px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); overflow: hidden; }
+    .ad-modal-head { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--bdr); background: var(--bg); }
+    .ad-modal-head h3 { font-size: 18px; font-weight: 800; color: var(--txt); margin: 0; }
+    .ad-modal-head p  { font-size: 13px; color: var(--txt-sub); margin: 4px 0 0; }
+    .ad-modal-close { width: 30px; height: 30px; border-radius: 50%; background: var(--bg-input); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--txt-sub); font-weight: bold; transition: background 0.2s; }
+    .ad-modal-close:hover { background: var(--bdr); color: var(--txt); }
+    
+    .ad-modal-body { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .ad-modal-foot { padding: 16px 24px; border-top: 1px solid var(--bdr); background: var(--bg); }
+    
+    .ad-label { display: block; font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--txt-sub); margin-bottom: 6px; }
+    .ad-input { width: 100%; padding: 12px; background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 8px; font-size: 14px; color: var(--txt); outline: none; transition: border-color 0.2s; }
+    .ad-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    
+    .ad-btn-save { width: 100%; padding: 14px; border-radius: 10px; background: var(--accent); color: #fff; border: none; font-size: 15px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; }
+    .ad-btn-save:hover { background: var(--accent2); }
 
     @media (max-width: 900px) { .ad-stats { grid-template-columns: repeat(2,1fr); } }
     @media (max-width: 540px) { .ad-stats { grid-template-columns: 1fr 1fr; gap: 8px; } .ad-stat-value { font-size: 20px; } .ad-chart-head { flex-direction: column; align-items: flex-start; } }
@@ -138,8 +147,8 @@
 
                 <div style="display: flex; gap: 8px;">
                     <button type="button" onclick="abrirVentanita('modal-export')" class="ad-export-btn">
-                        <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                        Exportar CSV
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                        Exportar Reporte
                     </button>
                 </div>
             </div>
@@ -152,16 +161,16 @@
 </div> 
 
 
-{{-- Modal de Exportar --}}
+{{-- Modal de Exportar (AHORA MUCHO MÁS SÓLIDO Y PROFESIONAL) --}}
 <div id="modal-export" class="mi-modal-seguro">
     <div class="ad-modal">
         <div class="ad-modal-head">
             <div>
-                <h3>Exportar Ventas</h3>
-                <p>Descarga un reporte en Excel (CSV)</p>
+                <h3>Exportar Reporte</h3>
+                <p>Selecciona el rango de fechas</p>
             </div>
             <button type="button" onclick="cerrarVentanita('modal-export')" class="ad-modal-close">
-                <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
         <form action="{{ route('admin.sales.export.excel') }}" method="GET" onsubmit="setTimeout(() => cerrarVentanita('modal-export'), 500)">
@@ -176,7 +185,10 @@
                 </div>
             </div>
             <div class="ad-modal-foot">
-                <button type="submit" class="ad-btn-save">Descargar Reporte</button>
+                <button type="submit" class="ad-btn-save">
+                    <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Descargar en Excel
+                </button>
             </div>
         </form>
     </div>

@@ -20,15 +20,22 @@
 .am-hd { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
 .am-hd h1 { font-size:20px; font-weight:700; margin:0 0 2px; color:var(--txt); }
 .am-hd p  { font-size:13px; color:var(--sub); margin:0; }
-.am-btn-add {
+
+.am-btn-add, .am-btn-export, .am-btn-import {
     display:inline-flex; align-items:center; gap:6px;
     padding:8px 16px; border-radius:7px;
-    background:var(--ac); color:#fff; border:none;
-    font-size:13px; font-weight:600; cursor:pointer;
-    transition:background .15s; box-shadow:0 1px 4px rgba(37,99,235,.25);
+    color:#fff; border:none; font-size:13px; font-weight:600; cursor:pointer;
+    transition:background .15s; box-shadow:0 1px 4px rgba(0,0,0,.15); text-decoration: none;
 }
+.am-btn-add { background:var(--ac); }
 .am-btn-add:hover { background:var(--ac2); }
-.am-btn-add svg { width:14px; height:14px; }
+
+.am-btn-export { background:#475569; }
+.am-btn-export:hover { background:#334155; }
+
+.am-btn-import { background:var(--gn); }
+.am-btn-import:hover { background:#15803D; }
+.am-btn-add svg, .am-btn-export svg, .am-btn-import svg { width:14px; height:14px; }
 
 /* ── STATS ───────────────────────────────── */
 .am-stats { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px; }
@@ -103,7 +110,7 @@
 .am-empty p { font-size:13px; color:var(--sub); margin:0; }
 
 /* ══════════════════════════════════════════════
-   MODAL
+   MODAL ALPINE (EDICIÓN)
 ══════════════════════════════════════════════ */
 .am-overlay {
     position:fixed; inset:0; z-index:50;
@@ -144,8 +151,6 @@
 .am-inp:focus, .am-sel:focus, .am-ta:focus { border-color:var(--ac); box-shadow:0 0 0 3px rgba(37,99,235,.1); }
 .am-ta  { resize:vertical; min-height:72px; }
 .am-sel { cursor:pointer; }
-
-/* subcategoría notice */
 .am-subnotice { margin-top:6px; padding:6px 10px; border-radius:6px; font-size:11px; color:var(--ac); background:rgba(37,99,235,.06); border:1px solid rgba(37,99,235,.14); }
 
 /* toggle */
@@ -159,75 +164,31 @@
 .am-tog input:checked + .am-tog-sl { background:var(--gn); }
 .am-tog input:checked + .am-tog-sl::before { transform:translateX(16px); }
 
-/* ── INGREDIENTES con autocomplete ───────── */
+/* ── INGREDIENTES ───────── */
 .am-ing-wrap { position:relative; }
-.am-ing-search {
-    position:relative;
-}
-.am-ing-search-ico {
-    position:absolute; left:9px; top:50%; transform:translateY(-50%);
-    width:13px; height:13px; color:var(--sub); pointer-events:none;
-}
+.am-ing-search { position:relative; }
+.am-ing-search-ico { position:absolute; left:9px; top:50%; transform:translateY(-50%); width:13px; height:13px; color:var(--sub); pointer-events:none; }
 .am-ing-search .am-inp { padding-left:30px; }
-
-/* dropdown lista */
-.am-ing-dropdown {
-    position:absolute; top:calc(100% + 4px); left:0; right:0;
-    background:var(--card); border:1px solid var(--bdr);
-    border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.12);
-    z-index:60; overflow:hidden;
-    max-height:200px; display:flex; flex-direction:column;
-}
-.am-ing-dd-search {
-    padding:8px 10px; border-bottom:1px solid var(--bdr);
-    display:flex; align-items:center; gap:8px; flex-shrink:0;
-}
+.am-ing-dropdown { position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card); border:1px solid var(--bdr); border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,.12); z-index:60; overflow:hidden; max-height:200px; display:flex; flex-direction:column; }
+.am-ing-dd-search { padding:8px 10px; border-bottom:1px solid var(--bdr); display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .am-ing-dd-search svg { width:13px; height:13px; color:var(--sub); flex-shrink:0; }
-.am-ing-dd-search input {
-    flex:1; background:none; border:none; outline:none;
-    font-size:12px; color:var(--txt); font-family:inherit;
-}
-.am-ing-dd-search input::placeholder { color:var(--sub); }
+.am-ing-dd-search input { flex:1; background:none; border:none; outline:none; font-size:12px; color:var(--txt); font-family:inherit; }
 .am-ing-dd-list { overflow-y:auto; flex:1; scrollbar-width:thin; scrollbar-color:var(--bdr) transparent; }
 .am-ing-dd-list::-webkit-scrollbar { width:4px; }
 .am-ing-dd-list::-webkit-scrollbar-thumb { background:var(--bdr); border-radius:4px; }
-.am-ing-dd-item {
-    padding:8px 12px; font-size:12px; font-weight:500; color:var(--txt);
-    cursor:pointer; display:flex; align-items:center; gap:8px;
-    border-bottom:1px solid var(--bdr); transition:background .1s;
-}
+.am-ing-dd-item { padding:8px 12px; font-size:12px; font-weight:500; color:var(--txt); cursor:pointer; display:flex; align-items:center; gap:8px; border-bottom:1px solid var(--bdr); transition:background .1s; }
 .am-ing-dd-item:last-child { border-bottom:none; }
 .am-ing-dd-item:hover { background:rgba(37,99,235,.06); color:var(--ac); }
 .am-ing-dd-item svg { width:11px; height:11px; color:var(--sub); flex-shrink:0; }
 .am-ing-dd-empty { padding:14px 12px; font-size:12px; color:var(--sub); text-align:center; font-style:italic; }
-
-/* chip ingrediente seleccionado */
 .am-ing-chips { display:flex; flex-wrap:wrap; gap:6px; }
-.am-ing-chip {
-    display:inline-flex; align-items:center; gap:5px;
-    padding:4px 10px; border-radius:20px;
-    background:rgba(37,99,235,.08); border:1px solid rgba(37,99,235,.18);
-    font-size:12px; font-weight:600; color:var(--ac);
-}
-.am-ing-chip button {
-    width:14px; height:14px; border-radius:50%;
-    background:rgba(37,99,235,.15); border:none; cursor:pointer;
-    display:flex; align-items:center; justify-content:center;
-    color:var(--ac); line-height:1; padding:0;
-    transition:background .15s;
-}
+.am-ing-chip { display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; background:rgba(37,99,235,.08); border:1px solid rgba(37,99,235,.18); font-size:12px; font-weight:600; color:var(--ac); }
+.am-ing-chip button { width:14px; height:14px; border-radius:50%; background:rgba(37,99,235,.15); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--ac); line-height:1; padding:0; transition:background .15s; }
 .am-ing-chip button:hover { background:rgba(220,38,38,.2); color:var(--rd); }
 .am-ing-chip button svg { width:8px; height:8px; }
-.am-ing-add-btn {
-    display:inline-flex; align-items:center; gap:5px;
-    font-size:12px; font-weight:600; color:var(--ac);
-    background:rgba(37,99,235,.07); border:1px solid rgba(37,99,235,.14);
-    border-radius:20px; padding:5px 12px; cursor:pointer; transition:background .15s;
-}
+.am-ing-add-btn { display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:600; color:var(--ac); background:rgba(37,99,235,.07); border:1px solid rgba(37,99,235,.14); border-radius:20px; padding:5px 12px; cursor:pointer; transition:background .15s; }
 .am-ing-add-btn:hover { background:rgba(37,99,235,.13); }
 .am-ing-add-btn svg { width:11px; height:11px; }
-
-/* modal footer */
 .am-mfoot { padding:14px 20px; border-top:1px solid var(--bdr); display:flex; align-items:center; justify-content:flex-end; gap:8px; }
 .am-btn-cancel { padding:8px 16px; border-radius:7px; background:var(--inp); border:1px solid var(--bdr); font-size:13px; font-weight:600; color:var(--sub); cursor:pointer; transition:background .15s; }
 .am-btn-cancel:hover { background:var(--bdr); }
@@ -235,13 +196,34 @@
 .am-btn-save:hover { background:var(--ac2); }
 .am-btn-save svg { width:14px; height:14px; }
 
+/* ── MODAL SEGURO (Nativo para Importación) ── */
+.mi-modal-seguro { 
+    display: none; 
+    position: fixed !important; 
+    inset: 0 !important; 
+    z-index: 9999999 !important; 
+    background: #18181B !important; 
+    backdrop-filter: blur(8px) !important; 
+    align-items: center; 
+    justify-content: center; 
+    padding: 16px; 
+}
+
 @media(max-width:640px){
     .am { padding:20px 16px 40px; }
     .am-stats { display:grid; grid-template-columns:1fr 1fr; }
     .am-g2 { grid-template-columns:1fr; }
     .am-overlay { padding:20px 12px 40px; }
+    .am-hd { flex-direction: column; align-items: flex-start; }
 }
 </style>
+
+{{-- MENSAJES DE ÉXITO --}}
+@if(session('success'))
+    <div style="background: var(--gn); color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        {{ session('success') }}
+    </div>
+@endif
 
 <div class="am" x-data="menuAdmin()" x-init="init()">
 
@@ -251,10 +233,25 @@
             <h1>Gestionar Menú</h1>
             <p>{{ $products->count() }} platillos registrados</p>
         </div>
-        <button @click="openNew()" class="am-btn-add">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Agregar Platillo
-        </button>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            {{-- BOTÓN IMPORTAR (Abre Modal Seguro) --}}
+            <button type="button" onclick="abrirModalImportar()" class="am-btn-import">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                Importar Menú
+            </button>
+
+            {{-- BOTÓN EXPORTAR (Descarga Directa) --}}
+            <a href="{{ route('admin.menu.export') }}" class="am-btn-export">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                Descargar Excel
+            </a>
+
+            {{-- BOTÓN AGREGAR ORIGINAL (Alpine) --}}
+            <button @click="openNew()" class="am-btn-add">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Agregar Platillo
+            </button>
+        </div>
     </div>
 
     {{-- STATS --}}
@@ -353,6 +350,8 @@
         </div>
         @endif
     </div>
+
+    {{-- MODAL ORIGINAL DE EDICIÓN (ALPINE) --}}
     <div x-show="modalOpen" x-cloak class="am-overlay" @click.self="modalOpen=false">
         <div class="am-modal" @click.stop>
 
@@ -372,14 +371,12 @@
                     <input type="hidden" name="_method" value="PUT">
                 </template>
 
-                {{-- hidden inputs para ingredientes seleccionados --}}
                 <template x-for="(ing, idx) in ingredients" :key="idx">
                     <input type="hidden" :name="'ingredients['+idx+']'" :value="ing">
                 </template>
 
                 <div class="am-mbody">
 
-                    {{-- ── Imagen ── --}}
                     <div>
                         <p class="am-sec">Imagen</p>
                         <div class="am-imgbox" style="margin-top:10px" @click="$refs.imgFile.click()">
@@ -402,7 +399,6 @@
                         </div>
                     </div>
 
-                    {{-- ── Disponible ── --}}
                     <div class="am-trow">
                         <div>
                             <p class="am-tlbl">Disponible en menú</p>
@@ -414,41 +410,30 @@
                         </label>
                     </div>
 
-                    {{-- ── Info básica ── --}}
                     <div>
                         <p class="am-sec">Información básica</p>
                         <div class="am-g2" style="margin-top:10px">
                             <div>
                                 <label class="am-lbl">Nombre <span class="req">*</span></label>
-                                <input type="text" name="name" class="am-inp"
-                                       x-model="formData.name" placeholder="Ej: Hamburguesa La 501" required>
+                                <input type="text" name="name" class="am-inp" x-model="formData.name" placeholder="Ej: Hamburguesa La 501" required>
                             </div>
                             <div>
                                 <label class="am-lbl">Precio ($) <span class="req">*</span></label>
-                                <input type="number" name="price" class="am-inp"
-                                       step="0.01" min="0" x-model="formData.price"
-                                       placeholder="0.00" required>
+                                <input type="number" name="price" class="am-inp" step="0.01" min="0" x-model="formData.price" placeholder="0.00" required>
                             </div>
                         </div>
                         <div style="margin-top:12px">
                             <label class="am-lbl">Descripción</label>
-                            <textarea name="description" class="am-ta"
-                                      x-model="formData.description"
-                                      placeholder="Describe brevemente el platillo..."></textarea>
+                            <textarea name="description" class="am-ta" x-model="formData.description" placeholder="Describe brevemente el platillo..."></textarea>
                         </div>
                     </div>
 
-                    {{-- ── Clasificación ── --}}
                     <div>
                         <p class="am-sec">Clasificación</p>
                         <div class="am-g2" style="margin-top:10px">
-
-                            {{-- Categoría --}}
                             <div>
                                 <label class="am-lbl">Categoría <span class="req">*</span></label>
-                                <select name="category" class="am-sel"
-                                        x-model="formData.category"
-                                        @change="formData.subcategory=''">
+                                <select name="category" class="am-sel" x-model="formData.category" @change="formData.subcategory=''">
                                     <optgroup label="Comida Fuerte">
                                         <option value="Hamburguesas">Hamburguesas</option>
                                         <option value="Jochos">Jochos</option>
@@ -474,15 +459,11 @@
                                 </select>
                             </div>
 
-                            {{-- Subcategoría — SOLO para Coctelería / Destilados --}}
                             <div>
                                 <label class="am-lbl">
                                     Subcategoría
-                                    <template x-if="subcatMap[formData.category]">
-                                        <span class="req"> *</span>
-                                    </template>
+                                    <template x-if="subcatMap[formData.category]"><span class="req"> *</span></template>
                                 </label>
-
                                 <template x-if="subcatMap[formData.category]">
                                     <div>
                                         <select name="subcategory" class="am-sel" x-model="formData.subcategory">
@@ -494,28 +475,18 @@
                                         <p class="am-subnotice">Selecciona la base de la bebida.</p>
                                     </div>
                                 </template>
-
                                 <template x-if="!subcatMap[formData.category]">
-                                    <input type="text" name="subcategory" class="am-inp"
-                                           x-model="formData.subcategory" placeholder="Opcional">
+                                    <input type="text" name="subcategory" class="am-inp" x-model="formData.subcategory" placeholder="Opcional">
                                 </template>
                             </div>
                         </div>
                     </div>
 
-                    {{-- ══════════════════════════════════════════
-                         INGREDIENTES — búsqueda en inventario
-                         Todo en el scope de menuAdmin(), sin x-data anidado
-                    ══════════════════════════════════════════ --}}
                     <div>
                         <p class="am-sec">Ingredientes</p>
-
-                        {{-- Chips de ingredientes seleccionados --}}
                         <div class="am-ing-chips" style="margin-top:10px; margin-bottom:10px; min-height:28px;">
                             <template x-if="ingredients.length === 0">
-                                <span style="font-size:12px; color:var(--sub); font-style:italic;">
-                                    Ningún ingrediente añadido aún
-                                </span>
+                                <span style="font-size:12px; color:var(--sub); font-style:italic;">Ningún ingrediente añadido aún</span>
                             </template>
                             <template x-for="(ing, idx) in ingredients" :key="idx">
                                 <span class="am-ing-chip">
@@ -527,32 +498,16 @@
                             </template>
                         </div>
 
-                        {{-- Buscador — lógica directamente en menuAdmin() --}}
                         <div class="am-ing-wrap">
                             <div class="am-ing-search">
                                 <svg class="am-ing-search-ico" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
-                                <input type="text" class="am-inp"
-                                       placeholder="Buscar ingrediente del inventario..."
-                                       x-model="ingQuery"
-                                       @focus="ingOpen=true"
-                                       @input="ingOpen=true"
-                                       @keydown.escape="ingOpen=false"
-                                       @keydown.enter.prevent="ingPickFirst()"
-                                       autocomplete="off"
-                                       x-ref="ingInput">
+                                <input type="text" class="am-inp" placeholder="Buscar ingrediente del inventario..." x-model="ingQuery" @focus="ingOpen=true" @input="ingOpen=true" @keydown.escape="ingOpen=false" @keydown.enter.prevent="ingPickFirst()" autocomplete="off" x-ref="ingInput">
                             </div>
 
-                            {{-- Dropdown — se cierra con @mousedown.prevent en los items
-                                 para que el click llegue ANTES de que el blur del input lo cierre --}}
-                            <div class="am-ing-dropdown"
-                                 x-show="ingOpen && ingFiltered().length > 0"
-                                 x-transition:enter="transition ease-out duration-100"
-                                 x-transition:enter-start="opacity-0 scale-95"
-                                 x-transition:enter-end="opacity-100 scale-100">
+                            <div class="am-ing-dropdown" x-show="ingOpen && ingFiltered().length > 0" x-transition:enter="transition ease-out duration-100" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
                                 <div class="am-ing-dd-list">
                                     <template x-for="item in ingFiltered()" :key="item.id">
-                                        <div class="am-ing-dd-item"
-                                             @mousedown.prevent="ingSelect(item)">
+                                        <div class="am-ing-dd-item" @mousedown.prevent="ingSelect(item)">
                                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                                             <span x-text="item.name"></span>
                                             <template x-if="ingredients.includes(item.name)">
@@ -562,25 +517,18 @@
                                     </template>
                                 </div>
                             </div>
-
-                            {{-- Sin resultados --}}
-                            <div x-show="ingOpen && ingQuery.trim() && ingFiltered().length === 0"
-                                 class="am-ing-dd-empty" style="border:1px solid var(--bdr); border-radius:8px; margin-top:4px;">
+                            <div x-show="ingOpen && ingQuery.trim() && ingFiltered().length === 0" class="am-ing-dd-empty" style="border:1px solid var(--bdr); border-radius:8px; margin-top:4px;">
                                 Sin coincidencias en inventario
                             </div>
                         </div>
 
-                        {{-- Botón ingrediente libre --}}
-                        <button type="button" class="am-ing-add-btn" style="margin-top:8px"
-                                @click.prevent="ingAddFree()">
+                        <button type="button" class="am-ing-add-btn" style="margin-top:8px" @click.prevent="ingAddFree()">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
                             Escribir ingrediente libre
                         </button>
-
                     </div>
-                    {{-- /INGREDIENTES --}}
 
-                </div>{{-- /am-mbody --}}
+                </div>
 
                 <div class="am-mfoot">
                     <button type="button" @click="modalOpen=false" class="am-btn-cancel">Cancelar</button>
@@ -590,18 +538,66 @@
                     </button>
                 </div>
             </form>
-
         </div>
     </div>
+</div>
 
+{{-- ==========================================
+     MODAL SEGURO DE IMPORTACIÓN (FUERA DE ALPINE) 
+========================================== --}}
+<div id="modal-import-menu" class="mi-modal-seguro">
+    <div class="am-modal">
+        <div class="am-mhd">
+            <div>
+                <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--txt);">Importar Menú desde Excel</h3>
+            </div>
+            <button type="button" onclick="cerrarModalImportar()" class="am-mclose">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <form action="{{ route('admin.menu.import') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            <div class="am-mbody">
+                <div style="background: rgba(37,99,235,.06); border: 1px solid rgba(37,99,235,.15); padding: 12px; border-radius: 8px;">
+                    <p style="font-size: 12px; color: var(--ac); margin: 0; line-height: 1.5;">
+                        <b>💡 Instrucciones:</b><br>
+                        1. Seleccione El archivo correspondiente al menú que desea importar.<br>
+                        2. Una vez seleccionado, haz clic en "Subir y Actualizar Todo".<br>
+                        3. El sistema procesará el archivo y actualizará el menú automáticamente.<br>
+                        <b style="color: var(--rd);">⚠️ Advertencia:</b><br>
+                        - Asegúrate de que el archivo esté en formato CSV y siga la estructura correcta para evitar errores en la importación.
+                    </p>
+                </div>
+                
+                <div style="margin-top: 10px;">
+                    <label class="am-lbl">Archivo CSV <span class="req">*</span></label>
+                    <input type="file" name="csv_file" accept=".csv" required class="am-inp" style="padding: 20px 10px; border: 2px dashed var(--bdr); text-align: center; cursor: pointer;">
+                </div>
+            </div>
+            <div class="am-mfoot">
+                <button type="submit" class="am-btn-save" style="background: var(--gn); width: 100%; justify-content: center;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    Subir y Actualizar Todo
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <script>
-const INVENTARIO = @json($inventario);   {{-- [{id, name}, ...] --}}
+// --- Funciones nativas para el modal de Importar ---
+function abrirModalImportar() {
+    document.getElementById('modal-import-menu').style.setProperty('display', 'flex', 'important');
+}
+function cerrarModalImportar() {
+    document.getElementById('modal-import-menu').style.setProperty('display', 'none', 'important');
+}
+
+// --- Código Original de Alpine.js ---
+const INVENTARIO = @json($inventario);   
 
 function menuAdmin() {
     return {
-        /* Lista */
         filter: 'todos',
         categorias: [
             'Hamburguesas','Jochos','Burritos','Tacos','Strombolis',
@@ -609,26 +605,17 @@ function menuAdmin() {
             'Algo Dulce','Sin Alcohol','Cervezas','Coctelería',
             'Destilados','Salsas y Extras',
         ],
-
-        /* Modal */
         modalOpen:    false,
         isEdit:       false,
         formAction:   '{{ route('admin.menu.store') }}',
         imagePreview: null,
-
         formData: {
             name:'', description:'', price:'',
             category:'Hamburguesas', subcategory:'', available:true,
         },
-
-        /* Ingredientes seleccionados */
         ingredients: [],
-
-        /* Buscador de ingredientes */
         ingQuery: '',
         ingOpen:  false,
-
-        /* Subcategorías predefinidas solo para Bar */
         subcatMap: {
             'Coctelería': ['Ron','Vodka','Tequila','Mezcal','Ginebra','Digestivos'],
             'Destilados': ['Tequila','Ron','Brandy','Vodka','Whisky','Mezcal','Copeo','6 Shots'],

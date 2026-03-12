@@ -12,13 +12,12 @@ use Illuminate\Support\Facades\Storage;
 class MenuController extends Controller
 {
     public function index()
-{
-    $products = Product::all();
-    
-    $inventario = \App\Models\Inventory::select('id', 'name')->get();
+    {
+        $products = Product::all();
+        $inventario = \App\Models\Inventory::select('id', 'name')->get();
 
-    return view('admin.menu', compact('products', 'inventario'));
-}
+        return view('admin.menu', compact('products', 'inventario'));
+    }
 
     public function store(Request $request)
     {
@@ -117,5 +116,84 @@ class MenuController extends Controller
     {
         $products = Product::where('available', 1)->get(); 
         return response()->json($products);
+    }
+
+    // ==========================================
+    // EXPORTAR MENÚ (Plantilla Excel)
+    // ==========================================
+    public function exportCSV()
+    {
+        $fileName = 'Menu_La501_' . date('Y-m-d') . '.csv';
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() {
+            $file = fopen('php://output', 'w');
+            
+            // BOM para Excel
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
+
+            // Cabeceras (Separado por punto y coma)
+            fputcsv($file, ['Nombre', 'Precio', 'Categoria', 'Subcategoria', 'Descripcion', 'Disponible'], ';');
+
+            $products = \App\Models\Product::all();
+
+            foreach ($products as $product) {
+                fputcsv($file, [
+                    $product->name,
+                    $product->price,
+                    $product->category,
+                    $product->subcategory,
+                    $product->description,
+                    $product->available ? 'Si' : 'No'
+                ], ';');
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // ==========================================
+    // IMPORTAR MENÚ (Actualizar o Crear masivo)
+    // ==========================================
+    public function importCSV(Request $request)
+    {
+        $request->validate(['csv_file' => 'required|mimes:csv,txt|max:2048']);
+        $file = fopen($request->file('csv_file')->getRealPath(), 'r');
+        
+        $isFirstRow = true;
+
+        while (($data = fgetcsv($file, 2000, ";")) !== false) {
+            if ($isFirstRow) { $isFirstRow = false; continue; }
+
+            // Si la fila está vacía, saltar
+            if (!isset($data[0]) || trim($data[0]) === '') continue;
+
+            $disponible = (isset($data[5]) && strtolower(trim($data[5])) === 'no') ? 0 : 1;
+
+            \App\Models\Product::updateOrCreate(
+                ['name' => trim($data[0])], // Busca por nombre
+                [
+                    'price'       => isset($data[1]) ? (float)$data[1] : 0,
+                    'category'    => trim($data[2] ?? 'General'),
+                    'subcategory' => trim($data[3] ?? ''),
+                    'description' => trim($data[4] ?? ''),
+                    'available'   => $disponible
+                ]
+            );
+        }
+
+        fclose($file);
+        
+        event(new MenuUpdated()); // Para que se refresque en vivo a los meseros
+
+        return redirect()->back()->with('success', '¡El menú fue importado y actualizado con éxito!');
     }
 }

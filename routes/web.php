@@ -122,10 +122,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     // Dashboard y API de Gráficas/Estadísticas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/exportar-ventas', [DashboardController::class, 'exportSalesCSV'])->name('admin.sales.export.excel');
-    
-    // 👇 RUTA DE IMPORTACIÓN AGREGADA AQUÍ 👇
-    Route::post('/importar-productos', [DashboardController::class, 'importProductsCSV'])->name('admin.products.import');
-    
     Route::get('/api/stats', [DashboardController::class, 'apiStats'])->name('admin.api.stats');
     Route::get('/api/sales', [DashboardController::class, 'apiSales'])->name('admin.api.sales');
     
@@ -139,6 +135,8 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
     // Gestión del Menú
     Route::get('/menu', [AdminMenuController::class, 'index'])->name('admin.menu');
+    Route::get('/menu/exportar', [AdminMenuController::class, 'exportCSV'])->name('admin.menu.export');
+    Route::post('/menu/importar', [AdminMenuController::class, 'importCSV'])->name('admin.menu.import');
     Route::post('/menu/store', [AdminMenuController::class, 'store'])->name('admin.menu.store');
     Route::put('/menu/{id}', [AdminMenuController::class, 'update'])->name('admin.menu.update');
     Route::delete('/menu/{id}', [AdminMenuController::class, 'destroy'])->name('admin.menu.destroy');
@@ -171,8 +169,12 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::post('/horarios', 'updateSchedule')->name('admin.settings.schedule');
     });
 
-    // Gestión de Finanzas e Inventario
+    // Gestión de Finanzas
     Route::resource('finanzas', FinanceController::class)->only(['index', 'store', 'destroy'])->names('admin.finances');
+
+    // 👇 SECCIÓN DE INVENTARIO CORREGIDA 👇
+    Route::get('/inventario/exportar', [InventoryController::class, 'exportCSV'])->name('admin.inventory.export');
+    Route::post('/inventario/importar', [InventoryController::class, 'importCSV'])->name('admin.inventory.import');
     Route::resource('inventario', InventoryController::class)->except(['create', 'show', 'edit'])->names('admin.inventory');
     Route::put('/inventario/{id}/ajustar', [InventoryController::class, 'adjust'])->name('admin.inventory.adjust');
 
@@ -185,10 +187,8 @@ Route::get('/limpiar-magico', function () {
     \Illuminate\Support\Facades\Artisan::call('view:clear');
     \Illuminate\Support\Facades\Artisan::call('cache:clear');
     \Illuminate\Support\Facades\Artisan::call('config:clear');
-    // 👇 LÍNEA PARA LIMPIAR RUTAS AGREGADA AQUÍ 👇
     \Illuminate\Support\Facades\Artisan::call('route:clear'); 
-    return '¡Caché, rutas y configuración de Hostinger borradas con éxito!';
+    return '¡Caché, configuración y rutas de Hostinger borradas con éxito!';
 });
-
 
 Route::post('/contacto/enviar', [PageController::class, 'enviarContacto'])->name('contacto.enviar');
