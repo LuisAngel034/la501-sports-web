@@ -397,7 +397,7 @@
 
     {{-- HERO --}}
     <div class="s501-hero">
-        <div class="s501-hero-badge">La 501 Sports Restaurant Alan</div>
+        <div class="s501-hero-badge">La 501 Sports Restaurant</div>
         <h1>Quienes<br><span>Somos</span></h1>
         <p>Bienvenidos a Restaurant La 501 Sports, donde la pasión por el deporte y la buena comida se unen para crear momentos inolvidables en familia.</p>
     </div>
