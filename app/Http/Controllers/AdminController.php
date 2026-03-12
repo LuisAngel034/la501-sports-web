@@ -107,13 +107,18 @@ class AdminController extends Controller
         $backups = [];
         
         foreach ($files as $file) {
+            // 1. Obtenemos el "timestamp" crudo (los segundos transcurridos desde 1970)
+            $timestamp = \Illuminate\Support\Facades\Storage::disk('local')->lastModified($file);
+            
+            // 2. Creamos un objeto Carbon a partir de ese timestamp y FORZAMOS que se traduzca a la hora de México
+            $carbonDate = \Carbon\Carbon::createFromTimestamp($timestamp)->setTimezone('America/Mexico_City');
+
             $backups[] = [
                 'name' => basename($file),
                 'path' => $file,
-                // Calculamos el peso en KB/MB
                 'size' => round(\Illuminate\Support\Facades\Storage::disk('local')->size($file) / 1024, 2) . ' KB',
-                // Extraemos la fecha exacta en la que se creó
-                'date' => \Carbon\Carbon::createFromTimestamp(\Illuminate\Support\Facades\Storage::disk('local')->lastModified($file))->format('Y-m-d H:i:s')
+                // Pasamos el string de la fecha ya formateado con la hora correcta
+                'date' => $carbonDate->format('Y-m-d H:i:s')
             ];
         }
         
@@ -122,7 +127,9 @@ class AdminController extends Controller
             return $b['date'] <=> $a['date'];
         });
 
-        // Le pasamos la lista de respaldos a la vista
+        // Limitar la lista a solo los 3 primeros (los más recientes)
+        $backups = array_slice($backups, 0, 3);
+
         return view('admin.database', compact('backups'));
     }
 
@@ -133,7 +140,7 @@ class AdminController extends Controller
     {
         $sql = "-- ========================================================\n";
         $sql .= "-- RESPALDO COMPLETO DE BASE DE DATOS: La 501 Sports\n";
-        $sql .= "-- Fecha de generación: " . now()->format('Y-m-d H:i:s') . "\n";
+        $sql .= "-- Fecha de generación: " . now('America/Mexico_City')->format('Y-m-d H:i:s') . "\n";
         $sql .= "-- Incluye: Tablas, Vistas, Procedimientos, Funciones, Triggers y Eventos\n";
         $sql .= "-- ========================================================\n\n";
         $sql .= "SET FOREIGN_KEY_CHECKS=0;\n";
@@ -188,8 +195,9 @@ class AdminController extends Controller
     {
         if (\Illuminate\Support\Facades\Auth::id() !== 2) return redirect()->route('admin.dashboard')->with('error', 'Denegado.');
 
-        $sql = $this->generarSQLCompleto(); // Llama al motor privado
-        $fileName = 'backup_manual_la501_' . date('Y-m-d_H-i-s') . '.sql';
+        $sql = $this->generarSQLCompleto(); 
+        // Usamos now con zona horaria en lugar de date()
+        $fileName = 'backup_manual_la501_' . now('America/Mexico_City')->format('Y-m-d_H-i-s') . '.sql';
 
         return response($sql)
             ->header('Content-Type', 'text/plain')
@@ -222,30 +230,76 @@ class AdminController extends Controller
     // =====================================================================
     public function runAutoBackup()
     {
-        // 1. Revisar si el administrador encendió el interruptor
+        // 1. Revisar si el interruptor general está encendido
         $isEnabled = \App\Models\Setting::where('key', 'backup_enabled')->value('value');
         if ($isEnabled !== '1') {
             return response('El respaldo automático está apagado en el panel.', 200);
         }
 
-        // 2. Generar el archivo SQL usando el motor principal
-        $sql = $this->generarSQLCompleto();
-        $fileName = 'autobackup_' . date('Y-m-d_H-i-s') . '.sql';
+        // 2. Leer las reglas que configuraste en tu panel
+        $frecuencia = \App\Models\Setting::where('key', 'backup_frecuencia')->value('value') ?? 'diario';
+        $horaDeseada = \App\Models\Setting::where('key', 'backup_hora')->value('value') ?? '03:00';
+        $intervalo = \App\Models\Setting::where('key', 'backup_intervalo')->value('value') ?? '60';
+        
+        // Ver cuándo fue la última vez que este robot hizo un respaldo exitoso
+        $lastRun = \App\Models\Setting::where('key', 'backup_last_run')->value('value');
+        
+        $ahora = now('America/Mexico_City');
+        $debeEjecutarse = false;
 
-        // 3. Guardar el archivo en la bóveda secreta del servidor
+        // 3. EL CEREBRO: Decidir si ya es hora o no
+        if (!$lastRun) {
+            $debeEjecutarse = true; // Si nunca en la vida se ha ejecutado, que lo haga ya
+        } else {
+            $ultimaVez = \Carbon\Carbon::parse($lastRun, 'America/Mexico_City');
+
+            if ($frecuencia === 'intervalo') {
+                // Si pasaron los minutos que elegiste (ej. 15, 30, 60)
+                if ($ahora->diffInMinutes($ultimaVez) >= (int)$intervalo) {
+                    $debeEjecutarse = true;
+                }
+            } elseif ($frecuencia === 'diario') {
+                // Si es un día diferente al último respaldo, y el reloj ya pasó la hora que elegiste
+                if (!$ahora->isSameDay($ultimaVez) && $ahora->format('H:i') >= $horaDeseada) {
+                    $debeEjecutarse = true;
+                }
+            } elseif ($frecuencia === 'semanal') {
+                if ($ahora->diffInDays($ultimaVez) >= 7 && $ahora->format('H:i') >= $horaDeseada) {
+                    $debeEjecutarse = true;
+                }
+            } elseif ($frecuencia === 'mensual') {
+                if ($ahora->diffInMonths($ultimaVez) >= 1 && $ahora->format('H:i') >= $horaDeseada) {
+                    $debeEjecutarse = true;
+                }
+            }
+        }
+
+        // Si el cadenero dice que no es hora, cancelamos todo silenciosamente
+        if (!$debeEjecutarse) {
+            return response('Hostinger visitó la URL, pero aún no es momento según las reglas del panel.', 200);
+        }
+
+        // 4. Registrar en la base de datos que "Ahorita" se está ejecutando
+        \App\Models\Setting::updateOrCreate(
+            ['key' => 'backup_last_run'], 
+            ['value' => $ahora->format('Y-m-d H:i:s')]
+        );
+
+        // 5. Generar el archivo SQL
+        $sql = $this->generarSQLCompleto();
+        $fileName = 'autobackup_' . $ahora->format('Y-m-d_H-i-s') . '.sql';
+
+        // 6. Guardar el archivo en la bóveda secreta
         \Illuminate\Support\Facades\Storage::disk('local')->put('backups/' . $fileName, $sql);
 
-        // 4. LIMPIEZA INTELIGENTE (Borrar los que tengan más de 3 días)
+        // 7. LIMPIEZA INTELIGENTE (Borrar los que tengan más de 3 días)
         $shouldDelete = \App\Models\Setting::where('key', 'backup_delete_old')->value('value');
         if ($shouldDelete === '1') {
             $files = \Illuminate\Support\Facades\Storage::disk('local')->files('backups');
-            $ahora = \Carbon\Carbon::now();
-
             foreach ($files as $file) {
-                // Obtenemos la fecha exacta en la que se creó el archivo
-                $fechaArchivo = \Carbon\Carbon::createFromTimestamp(\Illuminate\Support\Facades\Storage::disk('local')->lastModified($file));
+                $fechaArchivo = \Carbon\Carbon::createFromTimestamp(\Illuminate\Support\Facades\Storage::disk('local')->lastModified($file))
+                                ->timezone('America/Mexico_City');
                 
-                // Si la diferencia entre hoy y la fecha del archivo es de 3 días o más, lo eliminamos
                 if ($ahora->diffInDays($fechaArchivo) >= 3) {
                     \Illuminate\Support\Facades\Storage::disk('local')->delete($file);
                 }
@@ -260,24 +314,23 @@ class AdminController extends Controller
     // =====================================================================
     public function restore(\Illuminate\Http\Request $request)
     {
-        if (\Illuminate\Support\Facades\Auth::id() !== 2) return back()->with('error', 'Denegado.');
+        $userId = \Illuminate\Support\Facades\Auth::id(); // 1. Guardamos tu ID actual
+        if ($userId !== 2) return back()->with('error', 'Denegado.');
 
         $path = $request->file_path;
         
-        // Verificamos que el archivo realmente exista en el servidor
         if (!\Illuminate\Support\Facades\Storage::disk('local')->exists($path)) {
             return back()->with('error', 'El archivo de respaldo no fue encontrado.');
         }
 
-        // Leemos todo el texto del archivo .sql
         $sql = \Illuminate\Support\Facades\Storage::disk('local')->get($path);
         
         try {
-            // Limpiamos los delimitadores que PHP no entiende nativamente
             $sql = str_replace(['DELIMITER $$', 'DELIMITER ;', '$$'], '', $sql);
             
-            // DB::unprepared ejecuta código SQL puro y crudo directamente en el motor
-            DB::unprepared($sql);
+            DB::unprepared($sql); // 2. Destruimos y reconstruimos el mundo
+            
+            \Illuminate\Support\Facades\Auth::loginUsingId($userId); // 3. Te volvemos a loguear mágicamente
             
             return back()->with('success', '¡Base de datos restaurada con éxito desde el historial automático!');
         } catch (\Exception $e) {
@@ -290,34 +343,81 @@ class AdminController extends Controller
     // =====================================================================
     public function restoreUpload(\Illuminate\Http\Request $request)
     {
-        if (\Illuminate\Support\Facades\Auth::id() !== 2) return back()->with('error', 'Denegado.');
+        $userId = \Illuminate\Support\Facades\Auth::id(); // 1. Guardamos tu ID
+        if ($userId !== 2) return back()->with('error', 'Denegado.');
 
-        // Validamos que obligatoriamente hayan subido un archivo
         if (!$request->hasFile('sql_file')) {
             return back()->with('error', 'Por favor selecciona un archivo .sql');
         }
 
         $file = $request->file('sql_file');
         
-        // Validamos que la extensión sea .sql para evitar hackeos
         if (strtolower($file->getClientOriginalExtension()) !== 'sql') {
             return back()->with('error', 'El archivo debe ser un formato .sql válido.');
         }
 
-        // Leemos el contenido del archivo que el usuario subió
         $sql = file_get_contents($file->getRealPath());
 
         try {
-            // Limpiamos los delimitadores
             $sql = str_replace(['DELIMITER $$', 'DELIMITER ;', '$$'], '', $sql);
             
-            // Ejecutamos la restauración
             DB::unprepared($sql);
+            
+            \Illuminate\Support\Facades\Auth::loginUsingId($userId);
             
             return back()->with('success', '¡Base de datos restaurada exitosamente con tu archivo manual!');
         } catch (\Exception $e) {
             return back()->with('error', 'Error crítico al restaurar: ' . $e->getMessage());
         }
+    }
+
+    // =====================================================================
+    // 7. HISTORIAL COMPLETO Y FILTROS
+    // =====================================================================
+    public function databaseHistory(\Illuminate\Http\Request $request)
+    {
+        if (\Illuminate\Support\Facades\Auth::id() !== 2) return redirect()->route('admin.dashboard')->with('error', 'Denegado.');
+
+        // 1. Obtener lo que el usuario está buscando (si aplicó filtros)
+        $fechaFiltro = $request->input('fecha'); // Ej: 2026-03-12
+        $horaFiltro = $request->input('hora');   // Ej: 14:30
+
+        $files = \Illuminate\Support\Facades\Storage::disk('local')->files('backups');
+        $backups = [];
+        
+        foreach ($files as $file) {
+            // CORRECCIÓN: Obtenemos el timestamp crudo y forzamos la zona horaria directamente
+            $timestamp = \Illuminate\Support\Facades\Storage::disk('local')->lastModified($file);
+            $carbonDate = \Carbon\Carbon::createFromTimestamp($timestamp)->setTimezone('America/Mexico_City');
+            
+            // Extraemos la fecha y la hora del archivo para compararlas
+            $dateString = $carbonDate->format('Y-m-d');
+            $horaArchivo = $carbonDate->format('H'); // Ej: '14'
+
+            // Aplicamos Filtro de Fecha (Si el usuario eligió una, y no coincide, saltamos este archivo)
+            if ($fechaFiltro && $dateString !== $fechaFiltro) continue;
+            
+            // Aplicamos Filtro de Hora (Si el usuario eligió 14:30, comparamos que el archivo sea de las 14 hrs)
+            if ($horaFiltro) {
+                $horaSeleccionada = substr($horaFiltro, 0, 2); 
+                if ($horaSeleccionada !== $horaArchivo) continue;
+            }
+
+            $backups[] = [
+                'name' => basename($file),
+                'path' => $file,
+                'size' => round(\Illuminate\Support\Facades\Storage::disk('local')->size($file) / 1024, 2) . ' KB',
+                'date' => $carbonDate->format('Y-m-d H:i:s'),
+                'carbon' => $carbonDate
+            ];
+        }
+        
+        // Ordenamos SIEMPRE del más reciente al más antiguo
+        usort($backups, function ($a, $b) {
+            return $b['date'] <=> $a['date'];
+        });
+
+        return view('admin.database-history', compact('backups', 'fechaFiltro', 'horaFiltro'));
     }
 }
 

@@ -41,7 +41,8 @@
         <div class="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm" 
              x-data="{ 
                  autoEnabled: {{ \App\Models\Setting::where('key', 'backup_enabled')->value('value') == '1' ? 'true' : 'false' }}, 
-                 frecuencia: '{{ \App\Models\Setting::where('key', 'backup_frecuencia')->value('value') ?? 'intervalo' }}' 
+                 frecuencia: '{{ \App\Models\Setting::where('key', 'backup_frecuencia')->value('value') ?? 'intervalo' }}',
+                 intervalo: '{{ \App\Models\Setting::where('key', 'backup_intervalo')->value('value') ?? '60' }}'
              }">
             
             <div class="flex justify-between items-start mb-4">
@@ -60,11 +61,25 @@
             </div>
             
             <h2 class="text-lg font-bold text-zinc-900 dark:text-white mb-2">Respaldo Automático</h2>
-            <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-6">El sistema guardará copias de seguridad de forma invisible y limpiará automáticamente los archivos con más de 3 días de antigüedad para optimizar el almacenamiento.</p>
+            <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-6">El sistema guardará copias de seguridad de forma invisible basándose en tus reglas.</p>
+
+            {{-- Estado actual del motor (Última ejecución) --}}
+            @php $lastRun = \App\Models\Setting::where('key', 'backup_last_run')->value('value'); @endphp
+            <div class="mb-6 flex items-center gap-2 p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-lg border border-zinc-200 dark:border-white/5">
+                <div class="w-2 h-2 rounded-full {{ $lastRun ? 'bg-green-500 animate-pulse' : 'bg-orange-500' }}"></div>
+                <div class="text-xs text-zinc-600 dark:text-zinc-400">
+                    <strong>Última ejecución del robot:</strong> 
+                    @if($lastRun)
+                        {{ \Carbon\Carbon::parse($lastRun)->timezone('America/Mexico_City')->diffForHumans() }}
+                    @else
+                        Nunca se ha ejecutado
+                    @endif
+                </div>
+            </div>
 
             {{-- Mensaje cuando está apagado --}}
-            <div x-show="!autoEnabled" class="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl border border-zinc-200 dark:border-white/5 text-sm text-zinc-500 text-center">
-                El respaldo automático está desactivado. Usa el interruptor de arriba para configurarlo.
+            <div x-show="!autoEnabled" class="bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400 p-4 rounded-xl border border-red-200 dark:border-red-500/20 text-sm text-center font-bold">
+                El motor automático está APAGADO.
             </div>
 
             {{-- Formulario de Configuración --}}
@@ -73,8 +88,6 @@
                   class="space-y-4" style="display: none;">
                 @csrf
                 <input type="hidden" name="auto_backup" value="1">
-                
-                {{-- Obligamos al sistema a borrar los respaldos viejos sin preguntarle al usuario --}}
                 <input type="hidden" name="delete_old" value="1">
 
                 {{-- Opciones de Frecuencia --}}
@@ -92,17 +105,26 @@
                 <div x-show="frecuencia !== 'intervalo'">
                     <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Hora de ejecución</label>
                     <input type="time" name="hora" value="{{ \App\Models\Setting::where('key', 'backup_hora')->value('value') ?? '03:00' }}" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-green-500">
+                    <p class="text-[11px] text-zinc-500 mt-1">El respaldo se creará la primera vez que el servidor revise la cola después de esta hora.</p>
                 </div>
 
                 {{-- Campo: Intervalos (Se muestra SOLO si elige 'intervalo') --}}
-                @php $savedInterval = \App\Models\Setting::where('key', 'backup_intervalo')->value('value') ?? '60'; @endphp
                 <div x-show="frecuencia === 'intervalo'">
                     <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Cada cuánto tiempo</label>
-                    <select name="intervalo" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-green-500">
-                        <option value="15" {{ $savedInterval == '15' ? 'selected' : '' }}>Cada 15 minutos</option>
-                        <option value="30" {{ $savedInterval == '30' ? 'selected' : '' }}>Cada 30 minutos</option>
-                        <option value="60" {{ $savedInterval == '60' ? 'selected' : '' }}>Cada hora (Recomendado)</option>
+                    <select name="intervalo" x-model="intervalo" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-green-500">
+                        <option value="15">Cada 15 minutos</option>
+                        <option value="30">Cada 30 minutos</option>
+                        <option value="60">Cada hora (Recomendado)</option>
                     </select>
+                    
+                    {{-- Mensaje de ayuda dinámico --}}
+                    <div class="mt-2 p-2 bg-blue-50 dark:bg-blue-500/10 rounded border border-blue-100 dark:border-blue-500/20">
+                        <p class="text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                            <span x-show="intervalo == '15'">El sistema generará un respaldo 15 minutos después de la última ejecución exitosa.</span>
+                            <span x-show="intervalo == '30'">El sistema generará un respaldo 30 minutos después de la última ejecución exitosa.</span>
+                            <span x-show="intervalo == '60'">El sistema generará un respaldo 1 hora después de la última ejecución exitosa.</span>
+                        </p>
+                    </div>
                 </div>
 
                 {{-- Información de limpieza --}}
@@ -148,7 +170,7 @@
             {{-- CONTENIDO: Historial --}}
             <div x-show="tab === 'historial'" x-transition.opacity>
                 @if(count($backups) > 0)
-                    <div class="max-h-[220px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                    <div class="space-y-2">
                         @foreach($backups as $backup)
                             <div class="flex items-center justify-between p-3 bg-zinc-50 dark:bg-[#1a1612] border border-zinc-200 dark:border-white/5 rounded-xl">
                                 <div>
@@ -165,6 +187,14 @@
                                 </form>
                             </div>
                         @endforeach
+                    </div>
+                    
+                    {{-- Botón de Ver Historial Completo --}}
+                    <div class="mt-4 text-center border-t border-zinc-200 dark:border-white/10 pt-4">
+                        <a href="{{ route('admin.database.history') }}" 
+                           class="inline-block text-xs font-bold text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 uppercase tracking-wider">
+                            Ver historial
+                        </a>
                     </div>
                 @else
                     <div class="text-center py-8 text-sm text-zinc-500 border-2 border-dashed border-zinc-200 dark:border-white/10 rounded-xl">
@@ -187,26 +217,7 @@
                     </button>
                 </form>
             </div>
-            
         </div>
-
-        {{-- TARJETA 4: AUTOMATIZACIÓN DE TAREAS --}}
-        <div class="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm md:col-span-2">
-            <div class="w-12 h-12 bg-green-500/10 text-green-500 rounded-xl flex items-center justify-center mb-4 border border-green-500/20">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            </div>
-            <h2 class="text-lg font-bold text-zinc-900 dark:text-white mb-2">Automatización (Cron Jobs)</h2>
-            <p class="text-sm text-zinc-500 dark:text-zinc-400 mb-4">
-                Instrucciones para automatizar procesos recurrentes (como mantenimiento de índices o reportes) en el servidor de Hostinger.
-            </p>
-            <div class="bg-zinc-50 dark:bg-[#1a1612] p-4 rounded-xl border border-zinc-200 dark:border-white/5 text-sm text-zinc-600 dark:text-zinc-300 font-mono">
-                1. Inicia sesión en Hostinger (hPanel).<br>
-                2. Ve a Avanzado > Tareas Cron (Cron Jobs).<br>
-                3. Ejecutar el siguiente comando cada 24 horas:<br>
-                <span class="text-blue-600 dark:text-blue-400 font-bold mt-2 block">php /home/u734437104_la501Prueba/artisan schedule:run</span>
-            </div>
-        </div>
-
     </div>
 </div>
 @endsection
