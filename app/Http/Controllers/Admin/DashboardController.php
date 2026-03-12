@@ -48,7 +48,8 @@ class DashboardController extends Controller
         $startDate = $request->start_date . ' 00:00:00';
         $endDate = $request->end_date . ' 23:59:59';
         
-        $summary = Order::selectRaw('payment_method, COUNT(*) as count, SUM(total) as sum')
+        // --- 1. Obtener Datos ---
+        $summary = \App\Models\Order::selectRaw('payment_method, COUNT(*) as count, SUM(total) as sum')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->whereIn('status', ['delivered', 'entregado'])
             ->groupBy('payment_method')
@@ -57,39 +58,123 @@ class DashboardController extends Controller
         $totalSum = $summary->sum('sum');
         $totalCount = $summary->sum('count');
 
-        $spreadsheet = new Spreadsheet();
+        // --- 2. Crear Excel ---
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Corte de Caja');
-
-        // Estilos
-        $styleTitle = ['font' => ['bold' => true, 'size' => 14, 'color' => ['argb' => 'FFFFFFFF']], 'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF0F172A']], 'alignment' => ['horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER]];
         
+        // --- ESTILOS PALETA LA 501 ---
+        $styleTitle = [
+            'font' => ['bold' => true, 'size' => 15, 'color' => ['argb' => 'FFFFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF18181B']], // Negro Corporativo
+            'alignment' => [
+                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
+                'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER
+            ],
+        ];
+        $styleHeader = [
+            'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFDD3A1D']], // Naranja Rojizo
+        ];
+        $styleTotal = [
+            'font' => ['bold' => true, 'color' => ['argb' => 'FF15803D']], // Texto Verde Oscuro
+            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFDCFCE7']], // Fondo Verde Claro
+        ];
+
+        // --- 3. Cabecera Principal ---
         $sheet->mergeCells('A1:E2');
-        $sheet->setCellValue('A1', '📊 REPORTE DE VENTAS - LA 501');
+        $sheet->setCellValue('A1', '📊 REPORTE DE VENTAS - LA 501 SPORTS BAR');
         $sheet->getStyle('A1:E2')->applyFromArray($styleTitle);
+        
+        $sheet->setCellValue('A4', 'Sucursal:'); $sheet->setCellValue('B4', 'La 501');
+        $sheet->setCellValue('A5', 'Fecha de Emisión:'); $sheet->setCellValue('B5', date('d/m/Y h:i A'));
+        $sheet->setCellValue('A6', 'Rango Reportado:'); $sheet->setCellValue('B6', date('d/m/Y', strtotime($startDate)) . ' al ' . date('d/m/Y', strtotime($endDate)));
+        
+        $sheet->getStyle('A4:A6')->getFont()->setBold(true);
 
-        $sheet->setCellValue('A4', 'Rango:'); $sheet->setCellValue('B4', $startDate . ' al ' . $endDate);
+        // --- 4. Resumen de Cobros ---
+        $sheet->setCellValue('A8', 'RESUMEN DE COBROS');
+        $sheet->mergeCells('A8:E8');
+        $sheet->getStyle('A8:E8')->applyFromArray($styleHeader);
+        
+        $sheet->setCellValue('A9', 'Método de Pago');
+        $sheet->mergeCells('A9:B9');
+        $sheet->setCellValue('C9', 'Cant. Operaciones');
+        $sheet->setCellValue('D9', 'Monto Total');
+        $sheet->mergeCells('D9:E9');
+        $sheet->getStyle('A9:E9')->getFont()->setBold(true);
 
-        $row = 6;
-        $sheet->setCellValue('A'.$row, 'Método de Pago'); $sheet->setCellValue('B'.$row, 'Operaciones'); $sheet->setCellValue('C'.$row, 'Total');
-        $sheet->getStyle("A{$row}:C{$row}")->getFont()->setBold(true);
-        $row++;
-
+        $row = 10;
         foreach ($summary as $item) {
-            $sheet->setCellValue('A'.$row, $item->payment_method ?: 'EFECTIVO');
-            $sheet->setCellValue('B'.$row, $item->count);
-            $sheet->setCellValue('C'.$row, $item->sum);
-            $sheet->getStyle('C'.$row)->getNumberFormat()->setFormatCode('"$"#,##0.00');
+            $methodName = $item->payment_method ? mb_strtoupper($item->payment_method) : 'EFECTIVO';
+            $sheet->setCellValue('A'.$row, $methodName);
+            $sheet->mergeCells("A{$row}:B{$row}");
+            $sheet->setCellValue('C'.$row, $item->count);
+            $sheet->setCellValue('D'.$row, $item->sum);
+            $sheet->mergeCells("D{$row}:E{$row}");
+            $sheet->getStyle('D'.$row)->getNumberFormat()->setFormatCode('"$"#,##0.00_-');
             $row++;
         }
+        
+        // Fila Total Ingresos
+        $sheet->setCellValue('A'.$row, 'TOTAL INGRESOS');
+        $sheet->mergeCells("A{$row}:B{$row}");
+        $sheet->setCellValue('C'.$row, $totalCount);
+        $sheet->setCellValue('D'.$row, $totalSum);
+        $sheet->mergeCells("D{$row}:E{$row}");
+        $sheet->getStyle("A{$row}:E{$row}")->applyFromArray($styleTotal);
+        $sheet->getStyle('D'.$row)->getNumberFormat()->setFormatCode('"$"#,##0.00_-');
+        
+        $row += 3; // Espacio visual
 
-        foreach(range('A','C') as $col) { $sheet->getColumnDimension($col)->setAutoSize(true); }
+        // --- 5. Desglose de Movimientos (Todos los tickets) ---
+        $sheet->setCellValue('A'.$row, 'DESGLOSE DE MOVIMIENTOS');
+        $sheet->mergeCells('A'.$row.':E'.$row);
+        $sheet->getStyle('A'.$row.':E'.$row)->applyFromArray($styleHeader);
+        $row++;
+        
+        $sheet->setCellValue('A'.$row, 'Folio');
+        $sheet->setCellValue('B'.$row, 'Fecha');
+        $sheet->setCellValue('C'.$row, 'Hora');
+        $sheet->setCellValue('D'.$row, 'Método Pago');
+        $sheet->setCellValue('E'.$row, 'Total');
+        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true);
+        $row++;
 
-        $fileName = 'Corte_La501_' . date('d_m_Y') . '.xlsx';
-        if (ob_get_length()) { ob_end_clean(); }
+        // Usamos chunk por si hay miles de ventas, no saturar la memoria
+        \App\Models\Order::whereBetween('created_at', [$startDate, $endDate])
+            ->whereIn('status', ['delivered', 'entregado'])
+            ->orderBy('created_at', 'asc')
+            ->chunk(200, function ($ordersChunk) use ($sheet, &$row) {
+                foreach ($ordersChunk as $order) {
+                    $metodoPago = $order->payment_method ? ucfirst(strtolower($order->payment_method)) : 'Efectivo';
+                    $sheet->setCellValue('A'.$row, '#' . str_pad($order->id, 4, '0', STR_PAD_LEFT));
+                    $sheet->setCellValue('B'.$row, $order->created_at->format('d/m/Y'));
+                    $sheet->setCellValue('C'.$row, $order->created_at->format('h:i A'));
+                    $sheet->setCellValue('D'.$row, $metodoPago);
+                    
+                    // Solo pasamos el número puro, Excel pone el signo de pesos
+                    $sheet->setCellValue('E'.$row, $order->total);
+                    $sheet->getStyle('E'.$row)->getNumberFormat()->setFormatCode('"$"#,##0.00_-');
+                    $row++;
+                }
+            });
+
+        // --- 6. Auto-ajustar columnas ---
+        foreach(range('A','E') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        // --- 7. Descargar Archivo Limpio ---
+        $fileName = 'Corte_Ventas_La501_' . date('d_m_Y') . '.xlsx';
+        
+        if (ob_get_length()) { ob_end_clean(); } // Limpia basura oculta antes de descargar
+        
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         header('Content-Disposition: attachment;filename="'. $fileName .'"');
-        $writer = new Xlsx($spreadsheet);
+        header('Cache-Control: max-age=0');
+        
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
         $writer->save('php://output');
         exit;
     }
