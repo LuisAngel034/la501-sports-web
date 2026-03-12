@@ -181,6 +181,13 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     // Gestión de Mensajes (CRM)
     Route::get('/mensajes', [AdminController::class, 'mensajes'])->name('admin.mensajes');
     Route::put('/mensajes/{id}/marcar-leido', [AdminController::class, 'marcarRespondido'])->name('admin.mensajes.leido');
+    
+    // Sistema y Base de Datos (Solo ID 2 - Lo protegeremos en el controlador)
+    Route::get('/sistema/base-de-datos', [AdminController::class, 'database'])->name('admin.database');
+    Route::post('/sistema/base-de-datos/backup', [AdminController::class, 'createBackup'])->name('admin.database.backup');
+    Route::post('/sistema/base-de-datos/auto', [AdminController::class, 'saveAuto'])->name('admin.database.saveAuto');
+    // Motor automático de respaldos (Cron Job)
+    Route::get('/sistema/base-de-datos/auto-backup', [AdminController::class, 'runAutoBackup']);
 });
 
 Route::get('/limpiar-magico', function () {
