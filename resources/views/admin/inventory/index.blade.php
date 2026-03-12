@@ -288,20 +288,62 @@
 </div>
 
 {{-- MODAL IMPORTAR (Nativo) --}}
-<div id="modal-import-inv" class="mi-modal-seguro">
-    <div class="am-modal">
-        <div class="inv-mhd">
-            <div><h3 style="margin:0; font-size:18px; font-weight:800;">Importar Inventario</h3><p style="margin:0; font-size:13px; color:var(--sub);">Sube tu archivo .csv</p></div>
-            <button type="button" onclick="document.getElementById('modal-import-inv').style.display='none'" class="inv-mclose">×</button>
+<div id="modal-import-inv" style="display:none; position:fixed; inset:0; z-index:9999999; background:rgba(0,0,0,.6); backdrop-filter:blur(8px); align-items:center; justify-content:center; padding:16px;">
+    <div style="background:#fff; border-radius:16px; width:100%; max-width:480px; box-shadow:0 32px 80px rgba(0,0,0,.18); overflow:hidden; font-family:inherit;">
+
+        <div style="height:4px; background:linear-gradient(90deg,#2563EB,#16A34A);"></div>
+
+        <div style="padding:24px 24px 0;">
+            <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:20px;">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:40px; height:40px; border-radius:10px; background:#eff6ff; border:1px solid #bfdbfe; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <svg style="width:18px;height:18px;color:#2563EB;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    </div>
+                    <div>
+                        <p style="margin:0 0 2px; font-size:15px; font-weight:700; color:#111827;">Importar Inventario</p>
+                        <p style="margin:0; font-size:12px; color:#6b7280;">Actualiza el inventario desde un archivo CSV</p>
+                    </div>
+                </div>
+                <button type="button" onclick="document.getElementById('modal-import-inv').style.display='none'" style="width:30px; height:30px; border-radius:8px; background:#f9fafb; border:1px solid #e5e7eb; cursor:pointer; display:flex; align-items:center; justify-content:center; color:#6b7280; flex-shrink:0; font-size:18px; line-height:1;">×</button>
+            </div>
+
+            <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; padding:12px 14px; margin-bottom:12px;">
+                <p style="margin:0 0 4px; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#1d4ed8;">📋 Formato requerido</p>
+                <code style="font-size:12px; color:#1e40af; background:#dbeafe; padding:4px 8px; border-radius:6px; display:inline-block;">Nombre;Categoría;StockActual;StockMínimo;Unidad</code>
+            </div>
+
+            <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:10px; padding:10px 14px; margin-bottom:20px; display:flex; gap:8px; align-items:center;">
+                <svg style="width:15px;height:15px;color:#dc2626;flex-shrink:0;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <p style="margin:0; font-size:12px; color:#dc2626; line-height:1.5;">Solo archivos <strong>.csv</strong> — verifica la estructura antes de subir.</p>
+            </div>
         </div>
+
         <form action="{{ route('admin.inventory.import') }}" method="POST" enctype="multipart/form-data">
             @csrf
-            <div class="inv-mbody">
-                <p style="font-size:13px; color:var(--sub); background: var(--inp); padding: 12px; border-radius: 8px;">Formato requerido:<br><b>Nombre;Categoria;StockActual;StockMinimo;Unidad</b></p>
-                <input type="file" name="csv_file" accept=".csv" required class="inv-inp" style="border:2px dashed #cbd5e1; padding:24px; height:auto; text-align:center; cursor:pointer;">
+            <div style="padding:0 24px 20px;">
+                <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6b7280; margin-bottom:8px;">
+                    Seleccionar archivo <span style="color:#2563EB;">*</span>
+                </label>
+                <label style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:28px 20px; background:#f9fafb; border:2px dashed #d1d5db; border-radius:10px; cursor:pointer;" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#d1d5db'">
+                    <svg style="width:28px;height:28px;color:#9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                    <span style="font-size:13px; font-weight:600; color:#374151;">Haz clic para seleccionar</span>
+                    <span style="font-size:11px; color:#9ca3af;" id="inv-csv-filename">Ningún archivo seleccionado</span>
+                    <input type="file" name="csv_file" accept=".csv" required style="display:none;"
+                           onchange="document.getElementById('inv-csv-filename').textContent = this.files[0] ? this.files[0].name : 'Ningún archivo seleccionado'">
+                </label>
             </div>
-            <div class="inv-mfoot"><button type="submit" class="inv-btn-save" style="background: var(--ac); color: white; padding: 12px 20px; border-radius: 8px; cursor: pointer; border:none; font-weight:bold; width:100%; font-size:15px;">Subir Archivo</button></div>
+
+            <div style="padding:14px 24px 20px; border-top:1px solid #f3f4f6; display:flex; gap:8px; justify-content:flex-end;">
+                <button type="button" onclick="document.getElementById('modal-import-inv').style.display='none'" style="padding:9px 18px; border-radius:8px; background:#f9fafb; border:1px solid #e5e7eb; font-size:13px; font-weight:600; color:#6b7280; cursor:pointer;">
+                    Cancelar
+                </button>
+                <button type="submit" style="padding:9px 20px; border-radius:8px; background:#2563EB; color:#fff; border:none; font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:6px; box-shadow:0 2px 8px rgba(37,99,235,.3);">
+                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+                    Subir Archivo
+                </button>
+            </div>
         </form>
+
     </div>
 </div>
 
