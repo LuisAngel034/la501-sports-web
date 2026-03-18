@@ -264,13 +264,14 @@
                             <div class="py-1">
                                 {{-- 🌟 ACCESO INTELIGENTE A PANEL ADMINISTRATIVO --}}
                                 @if(in_array(auth()->user()->role, ['admin', 'mesero', 'empleado']))
-                                    @php
-                                        $panelRoute = auth()->user()->role === 'admin' ? route('admin.dashboard') : (auth()->user()->role === 'mesero' ? route('mesero.mesas'));
-                                    @endphp
-                                    <a href="{{ $panelRoute }}" class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-600 dark:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition">
-                                        💼 Panel de Empleado
-                                    </a>
-                                @endif
+    @php
+        // Si es admin va a su dashboard, TODOS los demás (mesero/empleado) van a mesas
+        $panelRoute = auth()->user()->role === 'admin' ? route('admin.dashboard') : route('mesero.mesas');
+    @endphp
+    <a href="{{ $panelRoute }}" class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-600 dark:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition">
+        💼 Panel de Empleado
+    </a>
+@endif
 
                                 <a href="{{ route('perfil') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition">
                                     👤 Mi Perfil
@@ -329,10 +330,12 @@
             <div class="flex flex-col gap-2 pt-4">
                 
                 {{-- 🌟 ACCESO INTELIGENTE MÓVIL --}}
+                {{-- 🌟 ACCESO INTELIGENTE MÓVIL --}}
                 @auth
                     @if(in_array(auth()->user()->role, ['admin', 'mesero', 'empleado']))
                         @php
-                            $panelRoute = auth()->user()->role === 'admin' ? route('admin.dashboard') : (auth()->user()->role === 'mesero' ? route('mesero.mesas'));
+                            // Simplificado: Admin va a su dashboard, el resto a mesas
+                            $panelRoute = auth()->user()->role === 'admin' ? route('admin.dashboard') : route('mesero.mesas');
                         @endphp
                         <a href="{{ $panelRoute }}" class="mobile-nav-link text-white bg-orange-600 hover:bg-orange-700 shadow-md mb-2">
                             💼 Ir a Panel de Empleado
