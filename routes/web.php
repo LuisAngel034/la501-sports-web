@@ -192,6 +192,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::post('/sistema/base-de-datos/restaurar-subida', [AdminController::class, 'restoreUpload'])->name('admin.database.restore.upload');
     // Historial completo de respaldos
     Route::get('/sistema/base-de-datos/historial', [AdminController::class, 'databaseHistory'])->name('admin.database.history');
+
+    // En tu grupo de rutas de admin:
+    Route::post('/database/backup', [AdminController::class, 'createBackup'])->name('admin.database.backup');
+    Route::post('/database/download', [AdminController::class, 'downloadBackup'])->name('admin.database.download');
 });
 
 Route::get('/limpiar-magico', function () {

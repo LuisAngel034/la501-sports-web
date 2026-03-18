@@ -406,9 +406,10 @@
                             </svg>
                             Gestionar Personal
                         </a>
-                        <a href="{{ route('admin.database') }}"
-                        class="adm-nav-link {{ request()->routeIs('admin.database') ? 'active' : '' }}">
-                            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+                        <a href="{{ route('admin.database') }}" class="adm-nav-link {{ request()->routeIs('admin.database') ? 'active' : '' }}">
+                            <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/>
+                            </svg>
                             Sistema
                         </a>
                         @endif
@@ -465,7 +466,6 @@
     </main>
 
     <script>
-        /* theme toggle */
         const themeBtn  = document.getElementById('theme-toggle');
         const darkIcon  = document.getElementById('theme-toggle-dark-icon');
         const lightIcon = document.getElementById('theme-toggle-light-icon');

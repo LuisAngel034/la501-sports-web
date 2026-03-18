@@ -3,7 +3,6 @@
 @section('content')
 <div class="max-w-5xl mx-auto">
     
-    {{-- Botón de regreso y Encabezado --}}
     <div class="mb-8">
         <a href="{{ route('admin.database') }}" class="inline-flex items-center gap-1 text-sm font-bold text-zinc-500 hover:text-zinc-800 dark:hover:text-white mb-4 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
@@ -27,20 +26,16 @@
         </div>
     @endif
 
-    {{-- BARRA DE FILTROS --}}
     <div class="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 shadow-sm mb-6">
         <form action="{{ route('admin.database.history') }}" method="GET" class="flex flex-col sm:flex-row items-end gap-4">
-            
             <div class="w-full sm:w-1/3">
                 <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Filtrar por Día</label>
-                <input type="date" name="fecha" value="{{ $fechaFiltro }}" 
-                       class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-orange-500">
+                <input type="date" name="fecha" value="{{ $fechaFiltro }}" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-orange-500">
             </div>
 
             <div class="w-full sm:w-1/3">
                 <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Filtrar por Hora aprox.</label>
-                <input type="time" name="hora" value="{{ $horaFiltro }}" 
-                       class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-orange-500">
+                <input type="time" name="hora" value="{{ $horaFiltro }}" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-orange-500">
             </div>
 
             <div class="w-full sm:w-auto flex gap-2">
@@ -56,7 +51,6 @@
         </form>
     </div>
 
-    {{-- LISTA DE RESULTADOS --}}
     <div class="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl p-6 shadow-sm">
         @if(count($backups) > 0)
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -78,14 +72,25 @@
                             <p class="text-xs text-zinc-500 font-mono mt-0.5">Peso: {{ $backup['size'] }}</p>
                         </div>
 
-                        <form action="{{ route('admin.database.restore') }}" method="POST" onsubmit="return confirm('⚠️ ¿ESTÁS SEGURO?\n\nLa base de datos se reemplazará completamente por esta versión.');">
-                            @csrf
-                            <input type="hidden" name="file_path" value="{{ $backup['path'] }}">
-                            <button type="submit" class="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                Restaurar esta versión
-                            </button>
-                        </form>
+                        <div class="flex items-center gap-2 mt-auto">
+                            <form action="{{ route('admin.database.restore') }}" method="POST" class="w-1/2" onsubmit="return confirm('⚠️ ¿ESTÁS SEGURO?\n\nLa base de datos se reemplazará completamente por esta versión.');">
+                                @csrf
+                                <input type="hidden" name="file_path" value="{{ $backup['path'] }}">
+                                <button type="submit" class="w-full py-2 bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    Restaurar
+                                </button>
+                            </form>
+
+                            <form action="{{ route('admin.database.download') }}" method="POST" class="w-1/2">
+                                @csrf
+                                <input type="hidden" name="file_path" value="{{ $backup['path'] }}">
+                                <button type="submit" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition shadow-md flex items-center justify-center gap-1">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                    Descargar
+                                </button>
+                            </form>
+                        </div>
 
                     </div>
                 @endforeach
