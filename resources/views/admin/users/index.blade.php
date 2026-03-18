@@ -102,13 +102,11 @@
     .au-role-admin      { background: rgba(139,92,246,.12); color: #7C3AED; }
     .au-role-cajero     { background: rgba(22,163,74,.1);   color: #15803D; }
     .au-role-cocinero   { background: rgba(249,115,22,.1);  color: #C2410C; }
-    .au-role-repartidor { background: rgba(37,99,235,.1);   color: #1D4ED8; }
     .au-role-limpieza   { background: rgba(20,184,166,.1);  color: #0F766E; }
     .au-role-empleado   { background: rgba(113,113,122,.12);color: #52525B; }
     .dark .au-role-admin      { color: #A78BFA; }
     .dark .au-role-cajero     { color: #4ADE80; }
     .dark .au-role-cocinero   { color: #FB923C; }
-    .dark .au-role-repartidor { color: #60A5FA; }
     .dark .au-role-limpieza   { color: #2DD4BF; }
     .dark .au-role-empleado   { color: #A1A1AA; }
 
@@ -305,7 +303,6 @@
                             'admin'      => '#7C3AED',
                             'cajero'     => '#16A34A',
                             'cocinero'   => '#EA580C',
-                            'repartidor' => '#2563EB',
                             'limpieza'   => '#0D9488',
                             'empleado'   => '#52525B',
                         ];
@@ -450,7 +447,6 @@
                                 <option value="cocinero">Cocinero</option>
                                 <option value="limpieza">Limpieza</option>
                                 <option value="empleado">Mesero</option>
-                                <option value="repartidor">Repartidor</option>
                             </select>
                         </div>
                     </div>

@@ -55,9 +55,6 @@ class AuthController extends Controller
             if ($role === 'cliente') {
                 return redirect()->intended('/a-domicilio'); 
             } 
-            elseif ($role === 'repartidor') {
-                return redirect()->route('repartidor.index');
-            }
             elseif ($role === 'empleado') {
                 return redirect()->route('mesero.mesas');
             }
