@@ -188,7 +188,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
     // En tu grupo de rutas de admin:
     Route::post('/database/backup', [AdminController::class, 'createBackup'])->name('admin.database.backup');
-    Route::post('/database/download', [AdminController::class, 'downloadBackup'])->name('admin.database.download');
+    Route::get('/database/download', [AdminController::class, 'downloadBackup'])->name('admin.database.download');
 });
 
 Route::get('/limpiar-magico', function () {
