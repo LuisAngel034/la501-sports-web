@@ -450,6 +450,7 @@
                                 <option value="cocinero">Cocinero</option>
                                 <option value="limpieza">Limpieza</option>
                                 <option value="empleado">Mesero</option>
+                                <option value="repartidor">Repartidor</option>
                             </select>
                         </div>
                     </div>

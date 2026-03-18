@@ -11,7 +11,6 @@ use App\Http\Controllers\MenuController;
 
 // 2. Empleados
 use App\Http\Controllers\WaiterController;
-use App\Http\Controllers\DeliveryController;
 
 // 3. Administrador
 use App\Http\Controllers\AdminController;
@@ -102,12 +101,6 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/mesas/{id}/pedido', [WaiterController::class, 'tomarPedido'])->name('mesero.pedido');
         Route::put('/mesas/{id}/cobrar', [WaiterController::class, 'cobrar'])->name('mesero.cobrar');
         Route::post('/mesas/{id}/pedido', [WaiterController::class, 'guardarPedido'])->name('mesero.guardar_pedido');
-    });
-
-    // Repartidores
-    Route::prefix('entregas')->group(function () {
-        Route::get('/', [DeliveryController::class, 'index'])->name('repartidor.index');
-        Route::put('/{id}/completar', [DeliveryController::class, 'deliver'])->name('repartidor.deliver');
     });
 });
 

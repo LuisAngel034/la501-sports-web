@@ -11,44 +11,66 @@ class WaiterController extends Controller
 {
     public function index()
     {
-        if (Auth::user()->role !== 'empleado' && Auth::id() !== 2) return abort(403);
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) return abort(403);
 
-        $mesasOcupadas = Order::whereIn('status', ['pending', 'ready'])
-                              ->whereNotNull('table_number')
-                              ->get()
-                              ->groupBy('table_number');
+        // Traemos todas las órdenes pendientes
+        $ordenesActivas = Order::whereIn('status', ['pending', 'preparing', 'ready'])
+                               ->whereNotNull('table_number')
+                               ->get();
 
-        return view('mesero.mesas', compact('mesasOcupadas'));
+        $mesas = [];
+        $totalMesas = 6; 
+
+        for ($i = 1; $i <= $totalMesas; $i++) {
+            
+            // FILTRO BLINDADO: Compara forzando a que ambos sean números enteros
+            $ordenesMesa = $ordenesActivas->filter(function($orden) use ($i) {
+                return (int) $orden->table_number === $i;
+            });
+            
+            $mesas[] = [
+                'id' => $i,
+                'ocupada' => $ordenesMesa->count() > 0,
+                'total' => $ordenesMesa->sum('total')
+            ];
+        }
+
+        return view('mesero.mesas', compact('mesas'));
     }
 
     public function tomarPedido($mesaId)
     {
-        if (Auth::user()->role !== 'empleado' && Auth::id() !== 2) return abort(403);
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) return abort(403);
 
         $menu = Product::all()->groupBy('category');
         return view('mesero.tomar_pedido', compact('mesaId', 'menu'));
     }
 
-    public function cobrar($mesaId)
+    public function cobrar(Request $request, $mesaId)
     {
-        if (Auth::user()->role !== 'empleado' && Auth::id() !== 2) return abort(403);
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) return abort(403);
+
+        // Validamos que venga el método de pago del modal
+        $request->validate([
+            'payment_method' => 'required|string'
+        ]);
 
         $orders = Order::where('table_number', $mesaId)
-                       ->whereIn('status', ['pending', 'ready'])
+                       ->whereIn('status', ['pending', 'preparing', 'ready'])
                        ->get();
 
         foreach ($orders as $order) {
-            $order->status = 'delivered';
-            $order->payment_method = 'efectivo';
+            $order->status = 'delivered'; // Al ponerlo en delivered, se va al dashboard de ventas
+            $order->payment_method = $request->payment_method; // Guarda Efectivo, Tarjeta, etc.
             $order->save();
         }
 
-        return back()->with('success', "Mesa $mesaId cobrada y liberada.");
+        return back()->with('success', "Mesa $mesaId cobrada exitosamente.");
     }
 
     public function guardarPedido(Request $request, $mesaId)
     {
-        if (Auth::user()->role !== 'empleado' && Auth::id() !== 2) return abort(403);
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) return abort(403);
 
         $request->validate([
             'carrito' => 'required',

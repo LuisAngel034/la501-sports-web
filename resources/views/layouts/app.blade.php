@@ -198,10 +198,9 @@
     <nav x-data="{ mobileMenuOpen: false }"
          class="sticky top-0 z-50 bg-white/90 dark:bg-black/85 backdrop-blur-md nav-bottom-border">
 
-        {{-- 3 columnas: logo | links centrados | acciones --}}
         <div class="relative flex items-center justify-between px-6 py-4 w-full">
 
-            {{-- Logo — izquierda --}}
+            {{-- Logo --}}
             <a href="/" class="flex-shrink-0 z-10">
                 @php
                     $logoSetting = \App\Models\Setting::where('key', 'logo')->first();
@@ -212,52 +211,27 @@
                 <img src="{{ $logoSrc }}" alt="Logo La 501" class="h-14 w-auto nav-logo-img">
             </a>
 
-            {{-- Links — centro absoluto para no depender del tamaño de logo/acciones --}}
+            {{-- Links Escritorio --}}
             <ul class="hidden lg:flex gap-1 items-center absolute left-1/2 -translate-x-1/2">
-
-                <li><a href="{{ route('nosotros') }}"
-                       class="nav-link px-3 {{ request()->routeIs('nosotros') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">
-                    Quienes Somos
-                </a></li>
-                <li><a href="{{ route('contacto') }}"
-                       class="nav-link px-3 {{ request()->routeIs('contacto') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">
-                    Contacto
-                </a></li>
-                <li><a href="{{ route('reservaciones') }}"
-                       class="nav-link px-3 {{ request()->routeIs('reservaciones') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">
-                    Reservaciones
-                </a></li>
-                <li><a href="{{ route('promociones') }}"
-                       class="nav-link px-3 {{ request()->routeIs('promociones') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">
-                    Promociones
-                </a></li>
-                <li><a href="{{ route('novedades') }}"
-                       class="nav-link px-3 {{ request()->routeIs('novedades') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">
-                    Novedades
-                </a></li>
-                <li><a href="{{ route('ubicacion') }}"
-                       class="nav-link px-3 {{ request()->routeIs('ubicacion') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">
-                    Ubicación
-                </a></li>
+                <li><a href="{{ route('nosotros') }}" class="nav-link px-3 {{ request()->routeIs('nosotros') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Quienes Somos</a></li>
+                <li><a href="{{ route('contacto') }}" class="nav-link px-3 {{ request()->routeIs('contacto') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Contacto</a></li>
+                <li><a href="{{ route('reservaciones') }}" class="nav-link px-3 {{ request()->routeIs('reservaciones') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Reservaciones</a></li>
+                <li><a href="{{ route('promociones') }}" class="nav-link px-3 {{ request()->routeIs('promociones') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Promociones</a></li>
+                <li><a href="{{ route('novedades') }}" class="nav-link px-3 {{ request()->routeIs('novedades') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Novedades</a></li>
+                <li><a href="{{ route('ubicacion') }}" class="nav-link px-3 {{ request()->routeIs('ubicacion') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Ubicación</a></li>
             </ul>
 
-            {{-- Acciones — derecha --}}
+            {{-- Acciones --}}
             <div class="flex gap-3 items-center flex-shrink-0 z-10">
 
-                {{-- CTA visible solo desktop --}}
                 <a href="{{ route('pedido') }}" class="hidden lg:inline-flex nav-cta-btn">
                     🛵 Pedir Ahora
                 </a>
 
                 {{-- Theme toggle --}}
-                <button id="theme-toggle"
-                        class="theme-toggle-btn bg-zinc-100 dark:bg-zinc-800">
-                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/>
-                    </svg>
-                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-zinc-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
-                    </svg>
+                <button id="theme-toggle" class="theme-toggle-btn bg-zinc-100 dark:bg-zinc-800">
+                    <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
+                    <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-zinc-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
                 </button>
 
                 {{-- Usuario autenticado --}}
@@ -270,11 +244,9 @@
                             </div>
                             <div class="hidden sm:block text-left">
                                 <p class="text-xs font-bold leading-none text-zinc-800 dark:text-white">{{ Auth::user()->name }}</p>
-                                <p class="text-[10px] text-zinc-500">{{ Auth::user()->role === 'admin' ? 'Administrador' : 'Cliente' }}</p>
+                                <p class="text-[10px] text-zinc-500 uppercase">{{ Auth::user()->role }}</p>
                             </div>
-                            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M19 9l-7 7-7-7"/>
-                            </svg>
+                            <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
                         </button>
 
                         <div x-show="open"
@@ -288,7 +260,18 @@
                                 <p class="text-xs text-zinc-500 italic">Puntos La 501</p>
                                 <p class="text-lg font-bold text-orange-500">🏆 {{ Auth::user()->points ?? 0 }} pts</p>
                             </div>
+                            
                             <div class="py-1">
+                                {{-- 🌟 ACCESO INTELIGENTE A PANEL ADMINISTRATIVO --}}
+                                @if(in_array(auth()->user()->role, ['admin', 'mesero', 'empleado']))
+                                    @php
+                                        $panelRoute = auth()->user()->role === 'admin' ? route('admin.dashboard') : (auth()->user()->role === 'mesero' ? route('mesero.mesas'));
+                                    @endphp
+                                    <a href="{{ $panelRoute }}" class="flex items-center gap-2 px-4 py-2 text-sm font-bold text-orange-600 dark:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-500/10 transition">
+                                        💼 Panel de Empleado
+                                    </a>
+                                @endif
+
                                 <a href="{{ route('perfil') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition">
                                     👤 Mi Perfil
                                 </a>
@@ -296,6 +279,7 @@
                                     ⚙️ Configuración
                                 </a>
                             </div>
+                            
                             <div class="border-t border-zinc-100 dark:border-white/5">
                                 <form action="{{ route('logout') }}" method="POST">
                                     @csrf
@@ -307,8 +291,7 @@
                         </div>
                     </div>
                 @else
-                    <a href="{{ route('login') }}"
-                       class="hidden sm:flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-orange-500 transition font-medium">
+                    <a href="{{ route('login') }}" class="hidden sm:flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-orange-500 transition font-medium">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
@@ -317,8 +300,7 @@
                 @endauth
 
                 {{-- Carrito --}}
-                <a href="{{ route('cart.index') }}"
-                   class="cart-link bg-zinc-100 dark:bg-zinc-800">
+                <a href="{{ route('cart.index') }}" class="cart-link bg-zinc-100 dark:bg-zinc-800">
                     <span class="text-xl">🛒</span>
                     @if(count((array) session('cart')) > 0)
                         <span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-[#0f0d0a] animate-bounce">
@@ -330,12 +312,8 @@
                 {{-- Hamburguesa --}}
                 <button @click="mobileMenuOpen = !mobileMenuOpen"
                         class="lg:hidden w-9 h-9 flex items-center justify-center rounded-10 bg-zinc-100 dark:bg-zinc-800 border border-transparent hover:border-orange-500 transition-all">
-                    <svg x-show="!mobileMenuOpen" class="w-5 h-5 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                    </svg>
-                    <svg x-show="mobileMenuOpen" class="w-5 h-5 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none;">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                    <svg x-show="!mobileMenuOpen" class="w-5 h-5 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                    <svg x-show="mobileMenuOpen" class="w-5 h-5 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
 
             </div>
@@ -349,6 +327,19 @@
              class="lg:hidden px-5 pb-5 border-t border-orange-500/10 dark:border-orange-500/10"
              style="display:none;">
             <div class="flex flex-col gap-2 pt-4">
+                
+                {{-- 🌟 ACCESO INTELIGENTE MÓVIL --}}
+                @auth
+                    @if(in_array(auth()->user()->role, ['admin', 'mesero', 'empleado']))
+                        @php
+                            $panelRoute = auth()->user()->role === 'admin' ? route('admin.dashboard') : (auth()->user()->role === 'mesero' ? route('mesero.mesas'));
+                        @endphp
+                        <a href="{{ $panelRoute }}" class="mobile-nav-link text-white bg-orange-600 hover:bg-orange-700 shadow-md mb-2">
+                            💼 Ir a Panel de Empleado
+                        </a>
+                    @endif
+                @endauth
+
                 <a href="{{ route('pedido') }}"       class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">A Domicilio</a>
                 <a href="{{ route('menu') }}"         class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">Menú</a>
                 <a href="{{ route('nosotros') }}"     class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">Quienes Somos</a>
@@ -359,8 +350,7 @@
                 <a href="{{ route('ubicacion') }}"    class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">Ubicación</a>
 
                 @guest
-                    <a href="{{ route('login') }}"
-                       class="mt-2 nav-cta-btn text-center py-3">
+                    <a href="{{ route('login') }}" class="mt-2 nav-cta-btn text-center py-3">
                         Iniciar Sesión
                     </a>
                 @endguest
@@ -380,39 +370,20 @@
          FOOTER
     ══════════════════════════════════════ --}}
     <footer class="border-t border-orange-500/15 dark:border-orange-500/10 bg-white dark:bg-[#0f0d0a]">
-        <div class="max-w-screen-xl mx-auto px-8 py-10
-                    flex flex-col md:flex-row justify-between items-center gap-6
-                    text-center md:text-left">
-
-            {{-- Marca --}}
+        <div class="max-w-screen-xl mx-auto px-8 py-10 flex flex-col md:flex-row justify-between items-center gap-6 text-center md:text-left">
             <div>
                 <div class="footer-or-bar"></div>
-                <p class="footer-brand-name text-zinc-900 dark:text-white">
-                    Restaurant La 501 Sports
-                </p>
-                <p class="text-xs text-zinc-500 mt-1 tracking-wide">
-                    Donde el deporte y la familia se unen
-                </p>
+                <p class="footer-brand-name text-zinc-900 dark:text-white">Restaurant La 501 Sports</p>
+                <p class="text-xs text-zinc-500 mt-1 tracking-wide">Donde el deporte y la familia se unen</p>
             </div>
-
-            {{-- Links --}}
             <div class="flex gap-6">
-                <a href="#" class="footer-link text-zinc-500 dark:text-zinc-500">
-                    Políticas y Términos
-                </a>
-                <a href="{{ route('nosotros') }}" class="footer-link text-zinc-500 dark:text-zinc-500">
-                    Quienes Somos
-                </a>
-                <a href="{{ route('contacto') }}" class="footer-link text-zinc-500 dark:text-zinc-500">
-                    Contacto
-                </a>
+                <a href="#" class="footer-link text-zinc-500 dark:text-zinc-500">Políticas y Términos</a>
+                <a href="{{ route('nosotros') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Quienes Somos</a>
+                <a href="{{ route('contacto') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Contacto</a>
             </div>
-
-            {{-- Copyright --}}
             <p class="text-xs text-zinc-400 dark:text-zinc-600 tracking-wide">
                 © {{ date('Y') }} La 501 Sports.<br class="md:hidden"> Todos los derechos reservados.
             </p>
-
         </div>
     </footer>
 
@@ -420,17 +391,14 @@
          SCRIPTS
     ══════════════════════════════════════ --}}
     <script>
-        /* evitar flash de transición al cargar */
         document.body.classList.remove('theme-ready');
         setTimeout(() => document.body.classList.add('theme-ready'), 120);
 
-        /* ── theme toggle ── */
         const themeBtn  = document.getElementById('theme-toggle');
         const darkIcon  = document.getElementById('theme-toggle-dark-icon');
         const lightIcon = document.getElementById('theme-toggle-light-icon');
         const html      = document.documentElement;
 
-        /* aplicar estado guardado */
         if (localStorage.getItem('theme') === 'dark') {
             html.classList.add('dark');
         } else {
@@ -457,6 +425,5 @@
 
         tailwind.config = { darkMode: 'class' };
     </script>
-
 </body>
 </html>

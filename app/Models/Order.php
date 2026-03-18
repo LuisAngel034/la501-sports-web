@@ -14,10 +14,11 @@ class Order extends Model
         'customer_name',
         'customer_phone',
         'customer_address',
+        'table_number',    // <--- ¡ESTO ES LO QUE SEGURAMENTE FALTA!
         'total',
         'status',
         'payment_method',
-        'payment_id'
+        'payment_id',
     ];
 
     public function items()
