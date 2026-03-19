@@ -170,16 +170,29 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::resource('inventario', InventoryController::class)->except(['create', 'show', 'edit'])->names('admin.inventory');
     Route::put('/inventario/{id}/ajustar', [InventoryController::class, 'adjust'])->name('admin.inventory.adjust');
 
-    // --- SISTEMA Y BASE DE DATOS (BackupController) ---
+    // ==========================================================
+    // SISTEMA Y BASE DE DATOS (Módulo Avanzado)
+    // ==========================================================
     Route::prefix('sistema/base-de-datos')->group(function () {
-        Route::get('/', [BackupController::class, 'database'])->name('admin.database');
-        Route::get('/historial', [BackupController::class, 'databaseHistory'])->name('admin.database-history');
-        Route::post('/backup', [BackupController::class, 'createBackup'])->name('admin.database.backup');
-        Route::post('/restaurar', [BackupController::class, 'restore'])->name('admin.database.restore');
-        Route::post('/restaurar-subida', [BackupController::class, 'restoreUpload'])->name('admin.database.restore-upload');
-        Route::get('/download', [BackupController::class, 'downloadBackup'])->name('admin.database.download');
-        Route::post('/auto', [BackupController::class, 'saveAuto'])->name('admin.database.auto');
+        // Vistas principales
+        Route::get('/', [AdminController::class, 'database'])->name('admin.database');
+        Route::get('/historial', [AdminController::class, 'databaseHistory'])->name('admin.database.history');
+        
+        // 👇 El nuevo monitor que agregamos
+        Route::get('/monitoreo', [AdminController::class, 'monitor'])->name('admin.database.monitor');
+
+        // Acciones de Respaldo
+        Route::post('/backup', [AdminController::class, 'createBackup'])->name('admin.database.backup');
+        Route::post('/descargar', [AdminController::class, 'downloadBackup'])->name('admin.database.download');
+        
+        // 👇 ESTA ES LA RUTA QUE LARAVEL DICE QUE NO ENCUENTRA
+        Route::post('/auto', [AdminController::class, 'saveAuto'])->name('admin.database.saveAuto');
+
+        // Acciones de Restauración
+        Route::post('/restaurar', [AdminController::class, 'restore'])->name('admin.database.restore');
+        Route::post('/restaurar-subida', [AdminController::class, 'restoreUpload'])->name('admin.database.restore.upload');
     });
+    
 });
 
 /*
@@ -191,7 +204,7 @@ Route::get('/limpiar-magico', function () {
     \Illuminate\Support\Facades\Artisan::call('view:clear');
     \Illuminate\Support\Facades\Artisan::call('cache:clear');
     \Illuminate\Support\Facades\Artisan::call('config:clear');
-    \Illuminate\Support\Facades\Artisan::call('route:clear'); 
+    \Illuminate\Support\Facades\Artisan::call('route:clear');
     return '¡Caché, configuración y rutas de Hostinger borradas con éxito!';
 });
 
