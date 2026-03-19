@@ -303,15 +303,15 @@
                     <label class="login-lbl" for="password">Contraseña</label>
                     <div class="login-inp-wrap">
                         <input
-                            :type="showPwd ? 'text' : 'password'"
-                            id="password"
-                            name="password"
-                            class="login-inp has-icon {{ $errors->has('password') ? 'is-error' : '' }}"
-                            placeholder="••••••••"
-                            required
-                            autocomplete="current-password"
-                            x-model="pwd"
-                            @input="typing=true">
+                        :type="showPwd ? 'text' : 'password'"
+                        id="password"
+                        name="password"
+                        class="login-inp has-icon {{ $errors->has('password') ? 'is-error' : '' }}"
+                        placeholder="••••••••"
+                        required
+                        :autocomplete="showPwd ? 'off' : 'current-password'"
+                        x-model="pwd"
+                        @input="typing=true">
 
                         {{-- Botón ojo --}}
                         <button type="button" class="login-eye"

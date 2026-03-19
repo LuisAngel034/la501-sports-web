@@ -357,7 +357,7 @@
 
             <div class="am-mhd">
                 <div>
-                    <h3 x-text="isEdit ? 'Editar Platillo' : 'Nuevo Platillo'"></h3>
+                    <h3 x-text="isEdit ? 'Editar Platillo' : 'Nuevo Platillo'" :aria-label="isEdit ? 'Editar Platillo' : 'Nuevo Platillo'">Platillo</h3>
                     <p x-text="isEdit ? 'Modifica los datos del platillo seleccionado' : 'Completa la información del nuevo platillo'"></p>
                 </div>
                 <button @click="modalOpen=false" class="am-mclose">
@@ -414,17 +414,17 @@
                         <p class="am-sec">Información básica</p>
                         <div class="am-g2" style="margin-top:10px">
                             <div>
-                                <label class="am-lbl">Nombre <span class="req">*</span></label>
-                                <input type="text" name="name" class="am-inp" x-model="formData.name" placeholder="Ej: Hamburguesa La 501" required>
+                                <label for="menu-name" class="am-lbl">Nombre <span class="req">*</span></label>
+                                <input id="menu-name" type="text" name="name" class="am-inp" x-model="formData.name" placeholder="Ej: Hamburguesa La 501" required>
                             </div>
                             <div>
-                                <label class="am-lbl">Precio ($) <span class="req">*</span></label>
-                                <input type="number" name="price" class="am-inp" step="0.01" min="0" x-model="formData.price" placeholder="0.00" required>
+                                <label for="menu-price" class="am-lbl">Precio ($) <span class="req">*</span></label>
+                                <input id="menu-price" type="number" name="price" class="am-inp" step="0.01" min="0" x-model="formData.price" placeholder="0.00" required>
                             </div>
                         </div>
                         <div style="margin-top:12px">
-                            <label class="am-lbl">Descripción</label>
-                            <textarea name="description" class="am-ta" x-model="formData.description" placeholder="Describe brevemente el platillo..."></textarea>
+                            <label for="menu-description" class="am-lbl">Descripción</label>
+                            <textarea id="menu-description" name="description" class="am-ta" x-model="formData.description" placeholder="Describe brevemente el platillo..."></textarea>
                         </div>
                     </div>
 
@@ -432,8 +432,8 @@
                         <p class="am-sec">Clasificación</p>
                         <div class="am-g2" style="margin-top:10px">
                             <div>
-                                <label class="am-lbl">Categoría <span class="req">*</span></label>
-                                <select name="category" class="am-sel" x-model="formData.category" @change="formData.subcategory=''">
+                                <label for="menu-category" class="am-lbl">Categoría <span class="req">*</span></label>
+                                <select id="menu-category" name="category" class="am-sel" x-model="formData.category" @change="formData.subcategory=''">
                                     <optgroup label="Comida Fuerte">
                                         <option value="Hamburguesas">Hamburguesas</option>
                                         <option value="Jochos">Jochos</option>
@@ -460,13 +460,13 @@
                             </div>
 
                             <div>
-                                <label class="am-lbl">
+                                <label for="menu-subcategory" class="am-lbl">
                                     Subcategoría
                                     <template x-if="subcatMap[formData.category]"><span class="req"> *</span></template>
                                 </label>
                                 <template x-if="subcatMap[formData.category]">
                                     <div>
-                                        <select name="subcategory" class="am-sel" x-model="formData.subcategory">
+                                        <select id="menu-subcategory" name="subcategory" class="am-sel" x-model="formData.subcategory">
                                             <option value="">— Selecciona base —</option>
                                             <template x-for="opt in subcatMap[formData.category]" :key="opt">
                                                 <option :value="opt" x-text="opt"></option>
@@ -582,16 +582,16 @@
         <form action="{{ route('admin.menu.import') }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div style="padding:0 24px 20px;">
-                <label style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6b7280; margin-bottom:8px;">
+                <label for="menu-csv-file" style="display:block; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; color:#6b7280; margin-bottom:8px;">
                     Seleccionar archivo <span style="color:#2563EB;">*</span>
                 </label>
-                <label style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:28px 20px; background:#f9fafb; border:2px dashed #d1d5db; border-radius:10px; cursor:pointer; transition:border-color .2s;" onmouseover="this.style.borderColor='#2563EB'" onmouseout="this.style.borderColor='#d1d5db'">
+                <div id="menu-csv-dropzone" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:28px 20px; background:#f9fafb; border:2px dashed #d1d5db; border-radius:10px; cursor:pointer; transition:border-color .2s;">
                     <svg style="width:28px;height:28px;color:#9ca3af;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                     <span style="font-size:13px; font-weight:600; color:#374151;">Haz clic para seleccionar</span>
                     <span style="font-size:11px; color:#9ca3af;" id="csv-filename">Ningún archivo seleccionado</span>
-                    <input type="file" name="csv_file" accept=".csv" required style="display:none;"
-                           onchange="document.getElementById('csv-filename').textContent = this.files[0] ? this.files[0].name : 'Ningún archivo seleccionado'">
-                </label>
+                    <input type="file" id="menu-csv-file" name="csv_file" accept=".csv" required style="display:none;"
+                        onchange="document.getElementById('csv-filename').textContent = this.files[0] ? this.files[0].name : 'Ningún archivo seleccionado'">
+                </div>
             </div>
 
             <div style="padding:14px 24px 20px; border-top:1px solid #f3f4f6; display:flex; gap:8px; justify-content:flex-end;">
@@ -618,7 +618,14 @@ function cerrarModalImportar() {
 }
 
 // --- Código Original de Alpine.js ---
-const INVENTARIO = @json($inventario);   
+const INVENTARIO = @json($inventario);
+
+const menuDz = document.getElementById('menu-csv-dropzone');
+    if (menuDz) {
+        menuDz.addEventListener('mouseenter', () => menuDz.style.borderColor = '#2563EB');
+        menuDz.addEventListener('mouseleave', () => menuDz.style.borderColor = '#d1d5db');
+        menuDz.addEventListener('click', () => document.getElementById('menu-csv-file').click());
+    }
 
 function menuAdmin() {
     return {

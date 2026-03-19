@@ -206,6 +206,14 @@
         -webkit-box-orient: vertical; overflow: hidden;
     }
 
+    /* fallback img */
+    .nov-card-img-fallback {
+        width: 100%; height: 100%;
+        display: flex; align-items: center; justify-content: center;
+        background: var(--bg-card2);
+        color: var(--txt-sub); font-size: 13px;
+    }
+
     /* ── EMPTY STATE ── */
     .nov-empty {
         background: var(--bg-card);
@@ -247,27 +255,35 @@
         <section>
             <div class="nov-sec-header">
                 <div class="nov-sec-header-left">
-                    <div class="nov-sec-bar bar-avisos"></div>
+                    <div class="nov-sec-bar bar-avisos" aria-hidden="true"></div>
                     <h2>⚠️ Avisos Importantes</h2>
                 </div>
-                <div class="nov-sec-divider"></div>
+                <div class="nov-sec-divider" aria-hidden="true"></div>
             </div>
             <div class="nov-grid">
                 @foreach($avisos as $item)
                 <article class="nov-card avisos">
                     <div class="nov-card-img">
-                        <img src="{{ asset('storage/' . $item->image) }}"
-                             onerror="this.src='https://via.placeholder.com/600x400?text=Sin+Imagen'"
-                             alt="{{ $item->title }}">
-                        <div class="nov-card-img-overlay"></div>
+                        <div x-data="{ imgError: false }">
+                            <img x-show="!imgError"
+                                 src="{{ asset('storage/' . $item->image) }}"
+                                 alt="{{ $item->title }}"
+                                 x-on:error="imgError = true">
+                            <div x-show="imgError" class="nov-card-img-fallback" aria-hidden="true">
+                                Sin imagen
+                            </div>
+                        </div>
+                        <div class="nov-card-img-overlay" aria-hidden="true"></div>
                         <div class="nov-chip chip-avisos">{{ $item->category }}</div>
                     </div>
                     <div class="nov-card-body">
                         <div class="nov-card-date">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
-                            {{ \Carbon\Carbon::parse($item->created_at)->format('d M, Y') }}
+                            <time datetime="{{ $item->created_at->toDateString() }}">
+                                {{ \Carbon\Carbon::parse($item->created_at)->format('d M, Y') }}
+                            </time>
                         </div>
                         <h3>{{ $item->title }}</h3>
                         <p>{{ $item->content }}</p>
@@ -283,27 +299,36 @@
         <section>
             <div class="nov-sec-header">
                 <div class="nov-sec-header-left">
-                    <div class="nov-sec-bar bar-deportes"></div>
+                    <div class="nov-sec-bar bar-deportes" aria-hidden="true"></div>
                     <h2>⚽ Deportes</h2>
                 </div>
-                <div class="nov-sec-divider"></div>
+                <div class="nov-sec-divider" aria-hidden="true"></div>
             </div>
             <div class="nov-grid">
                 @foreach($deportes as $item)
                 <article class="nov-card deportes">
                     <div class="nov-card-img">
-                        <img src="{{ asset('storage/' . $item->image) }}"
-                             onerror="this.src='https://via.placeholder.com/600x400?text=Sin+Imagen'"
-                             alt="{{ $item->title }}">
-                        <div class="nov-card-img-overlay"></div>
+                        {{-- FIX L295: mismo patrón Alpine sin onerror --}}
+                        <div x-data="{ imgError: false }">
+                            <img x-show="!imgError"
+                                 src="{{ asset('storage/' . $item->image) }}"
+                                 alt="{{ $item->title }}"
+                                 x-on:error="imgError = true">
+                            <div x-show="imgError" class="nov-card-img-fallback" aria-hidden="true">
+                                Sin imagen
+                            </div>
+                        </div>
+                        <div class="nov-card-img-overlay" aria-hidden="true"></div>
                         <div class="nov-chip chip-deportes">{{ $item->category }}</div>
                     </div>
                     <div class="nov-card-body">
                         <div class="nov-card-date">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
-                            {{ \Carbon\Carbon::parse($item->created_at)->format('d M, Y') }}
+                            <time datetime="{{ $item->created_at->toDateString() }}">
+                                {{ \Carbon\Carbon::parse($item->created_at)->format('d M, Y') }}
+                            </time>
                         </div>
                         <h3>{{ $item->title }}</h3>
                         <p>{{ $item->content }}</p>
@@ -319,27 +344,36 @@
         <section>
             <div class="nov-sec-header">
                 <div class="nov-sec-header-left">
-                    <div class="nov-sec-bar bar-eventos"></div>
+                    <div class="nov-sec-bar bar-eventos" aria-hidden="true"></div>
                     <h2>🎉 Próximos Eventos</h2>
                 </div>
-                <div class="nov-sec-divider"></div>
+                <div class="nov-sec-divider" aria-hidden="true"></div>
             </div>
             <div class="nov-grid">
                 @foreach($eventos as $item)
                 <article class="nov-card eventos">
                     <div class="nov-card-img">
-                        <img src="{{ asset('storage/' . $item->image) }}"
-                             onerror="this.src='https://via.placeholder.com/600x400?text=Sin+Imagen'"
-                             alt="{{ $item->title }}">
-                        <div class="nov-card-img-overlay"></div>
+                        {{-- FIX L331: mismo patrón Alpine sin onerror --}}
+                        <div x-data="{ imgError: false }">
+                            <img x-show="!imgError"
+                                 src="{{ asset('storage/' . $item->image) }}"
+                                 alt="{{ $item->title }}"
+                                 x-on:error="imgError = true">
+                            <div x-show="imgError" class="nov-card-img-fallback" aria-hidden="true">
+                                Sin imagen
+                            </div>
+                        </div>
+                        <div class="nov-card-img-overlay" aria-hidden="true"></div>
                         <div class="nov-chip chip-eventos">{{ $item->category }}</div>
                     </div>
                     <div class="nov-card-body">
                         <div class="nov-card-date">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                             </svg>
-                            {{ \Carbon\Carbon::parse($item->created_at)->format('d M, Y') }}
+                            <time datetime="{{ $item->created_at->toDateString() }}">
+                                {{ \Carbon\Carbon::parse($item->created_at)->format('d M, Y') }}
+                            </time>
                         </div>
                         <h3>{{ $item->title }}</h3>
                         <p>{{ $item->content }}</p>
@@ -353,7 +387,7 @@
         {{-- ══ EMPTY STATE ══ --}}
         @if($deportes->isEmpty() && $avisos->isEmpty() && $eventos->isEmpty())
         <div class="nov-empty">
-            <span class="nov-empty-icon">📭</span>
+            <span class="nov-empty-icon" aria-hidden="true">📭</span>
             <h3>Sin Novedades Por Ahora</h3>
             <p>Estamos preparando contenido nuevo para ti. ¡Regresa pronto!</p>
         </div>

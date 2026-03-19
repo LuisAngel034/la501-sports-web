@@ -364,8 +364,12 @@
         <div class="ap-modal" @click.stop>
 
             <div class="ap-modal-head">
-                <h3 x-text="isEdit ? 'Editar Promoción' : 'Nueva Promoción'"></h3>
-                <button @click="openModal = false" class="ap-modal-close">
+                {{-- FIX L367: aria-label como fallback para lectores de pantalla --}}
+                <h3
+                    x-text="isEdit ? 'Editar Promoción' : 'Nueva Promoción'"
+                    x-bind:aria-label="isEdit ? 'Editar Promoción' : 'Nueva Promoción'">
+                </h3>
+                <button @click="openModal = false" class="ap-modal-close" aria-label="Cerrar modal">
                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
@@ -381,21 +385,22 @@
 
                     {{-- Imagen --}}
                     <div>
-                        <label class="ap-label">Imagen (opcional — reemplaza ícono y color)</label>
-                        <label class="ap-upload-zone">
+                        {{-- FIX L384: label apunta al input con for="promo-image" --}}
+                        <label class="ap-label" for="promo-image">Imagen (opcional — reemplaza ícono y color)</label>
+                        <label class="ap-upload-zone" for="promo-image">
                             <template x-if="imagePreview">
-                                <img :src="imagePreview" class="ap-upload-img">
+                                <img :src="imagePreview" class="ap-upload-img" alt="Vista previa de la imagen seleccionada">
                             </template>
                             <template x-if="imagePreview">
                                 <div class="ap-upload-overlay"><span>Cambiar imagen</span></div>
                             </template>
                             <div x-show="!imagePreview" class="ap-upload-placeholder">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                                 </svg>
                                 <span>Subir imagen</span>
                             </div>
-                            <input type="file" name="image" class="hidden" accept="image/*"
+                            <input type="file" id="promo-image" name="image" class="hidden" accept="image/*"
                                    @change="const f=$event.target.files[0];if(f){const r=new FileReader();r.onload=e=>imagePreview=e.target.result;r.readAsDataURL(f)}">
                         </label>
                     </div>
@@ -403,14 +408,16 @@
                     {{-- Título + Etiqueta --}}
                     <div class="ap-row ap-row-2">
                         <div>
-                            <label class="ap-label">Título *</label>
-                            <input type="text" name="title" x-model="promoData.title"
+                            {{-- FIX L406: label for="promo-title" + id en el input --}}
+                            <label class="ap-label" for="promo-title">Título *</label>
+                            <input type="text" id="promo-title" name="title" x-model="promoData.title"
                                    required placeholder="Ej: Jueves de Alitas"
                                    class="ap-input">
                         </div>
                         <div>
-                            <label class="ap-label">Etiqueta</label>
-                            <input type="text" name="tag" x-model="promoData.tag"
+                            {{-- FIX L412: label for="promo-tag" + id en el input --}}
+                            <label class="ap-label" for="promo-tag">Etiqueta</label>
+                            <input type="text" id="promo-tag" name="tag" x-model="promoData.tag"
                                    placeholder="Ej: ¡Solo Jueves!"
                                    class="ap-input">
                         </div>
@@ -419,27 +426,31 @@
                     {{-- Ícono + Precio + Caducidad --}}
                     <div class="ap-row ap-row-3">
                         <div>
-                            <label class="ap-label">Ícono</label>
-                            <input type="text" name="icon" x-model="promoData.icon"
+                            {{-- FIX L422: label for="promo-icon" + id en el input --}}
+                            <label class="ap-label" for="promo-icon">Ícono</label>
+                            <input type="text" id="promo-icon" name="icon" x-model="promoData.icon"
                                    placeholder="🔥" class="ap-input text-center text-xl">
                         </div>
                         <div>
-                            <label class="ap-label">Precio *</label>
-                            <input type="text" name="price_text" x-model="promoData.price_text"
+                            {{-- FIX L427: label for="promo-price" + id en el input --}}
+                            <label class="ap-label" for="promo-price">Precio *</label>
+                            <input type="text" id="promo-price" name="price_text" x-model="promoData.price_text"
                                    required placeholder="Ej: 2x$150"
                                    class="ap-input">
                         </div>
                         <div>
-                            <label class="ap-label">Caduca</label>
-                            <input type="date" name="end_date" x-model="promoData.end_date"
+                            {{-- FIX L433: label for="promo-end-date" + id en el input --}}
+                            <label class="ap-label" for="promo-end-date">Caduca</label>
+                            <input type="date" id="promo-end-date" name="end_date" x-model="promoData.end_date"
                                    class="ap-input">
                         </div>
                     </div>
 
                     {{-- Color --}}
                     <div>
-                        <label class="ap-label">Color de fondo (sin imagen)</label>
-                        <select name="color_gradient" x-model="promoData.color_gradient" class="ap-input">
+                        {{-- FIX L441: label for="promo-color" + id en el select --}}
+                        <label class="ap-label" for="promo-color">Color de fondo (sin imagen)</label>
+                        <select id="promo-color" name="color_gradient" x-model="promoData.color_gradient" class="ap-input">
                             <option value="from-green-600 to-green-900">Verde</option>
                             <option value="from-orange-500 to-red-700">Naranja / Rojo</option>
                             <option value="from-purple-600 to-indigo-900">Morado / Indigo</option>
@@ -449,8 +460,9 @@
 
                     {{-- Descripción --}}
                     <div>
-                        <label class="ap-label">Descripción *</label>
-                        <textarea name="description" x-model="promoData.description"
+                        {{-- FIX L452: label for="promo-desc" + id en el textarea --}}
+                        <label class="ap-label" for="promo-desc">Descripción *</label>
+                        <textarea id="promo-desc" name="description" x-model="promoData.description"
                                   rows="3" required
                                   class="ap-input resize-none"></textarea>
                     </div>

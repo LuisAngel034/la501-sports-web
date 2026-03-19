@@ -315,7 +315,7 @@
         <div class="an-modal" @click.stop>
 
             <div class="an-modal-head">
-                <h3 x-text="isEdit ? 'Editar Publicación' : 'Nueva Publicación'"></h3>
+                <h3 x-text="isEdit ? 'Editar Publicación' : 'Nueva Publicación'" :aria-label="isEdit ? 'Editar Publicación' : 'Nueva Publicación'">Publicación</h3>
                 <button @click="openModal = false" class="an-modal-close">
                     <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -332,8 +332,8 @@
 
                     {{-- Imagen --}}
                     <div>
-                        <label class="an-label">Imagen</label>
-                        <label class="an-upload">
+                        <label for="news-image" class="an-label">Imagen</label>
+                            <label class="an-upload">
                             <template x-if="imagePreview">
                                 <img :src="imagePreview">
                             </template>
@@ -346,15 +346,15 @@
                                 </svg>
                                 <span>Subir imagen</span>
                             </div>
-                            <input type="file" name="image" class="hidden" accept="image/*"
+                            <input type="file" id="news-image" name="image" class="hidden" accept="image/*"
                                    @change="const f=$event.target.files[0];if(f){const r=new FileReader();r.onload=e=>imagePreview=e.target.result;r.readAsDataURL(f)}">
                         </label>
                     </div>
 
                     {{-- Título --}}
                     <div>
-                        <label class="an-label">Título *</label>
-                        <input type="text" name="title" x-model="newsData.title"
+                        <label for="news-title" class="an-label">Título *</label>
+                        <input id="news-title" type="text" name="title" x-model="newsData.title"
                                required placeholder="Ej: Partido del Siglo esta noche"
                                class="an-input">
                     </div>
@@ -362,23 +362,23 @@
                     {{-- Categoría + Fecha --}}
                     <div class="an-row-2">
                         <div>
-                            <label class="an-label">Categoría *</label>
-                            <select name="category" x-model="newsData.category" class="an-input">
+                            <label for="news-category" class="an-label">Categoría *</label>
+                            <select id="news-category" name="category" x-model="newsData.category" class="an-input">
                                 <option value="Deportes">Deportes</option>
                                 <option value="Avisos">Avisos</option>
                                 <option value="Eventos">Eventos</option>
                             </select>
                         </div>
                         <div>
-                            <label class="an-label">Fecha límite</label>
-                            <input type="date" name="end_date" x-model="newsData.end_date" class="an-input">
+                            <label for="news-end-date" class="an-label">Fecha límite</label>
+                            <input id="news-end-date" type="date" name="end_date" x-model="newsData.end_date" class="an-input">
                         </div>
                     </div>
 
                     {{-- Contenido --}}
                     <div>
-                        <label class="an-label">Contenido *</label>
-                        <textarea name="content" x-model="newsData.content"
+                        <label for="news-content" class="an-label">Contenido *</label>
+                        <textarea id="news-content" name="content" x-model="newsData.content"
                                   rows="4" required
                                   placeholder="Describe la novedad..."
                                   class="an-input resize-none"></textarea>

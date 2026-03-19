@@ -276,7 +276,7 @@
             <p>Gestiona los accesos de tu equipo de trabajo.</p>
         </div>
         <button @click="showModal = true" class="au-btn-primary">
-            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
             </svg>
             Nuevo Empleado
@@ -289,10 +289,10 @@
             <table class="au-table">
                 <thead>
                     <tr>
-                        <th>Empleado</th>
-                        <th>Rol</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
+                        <th scope="col">Empleado</th>
+                        <th scope="col">Rol</th>
+                        <th scope="col">Estado</th>
+                        <th scope="col">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -313,7 +313,7 @@
                         {{-- Empleado --}}
                         <td>
                             <div class="au-user-cell">
-                                <div class="au-avatar" style="background: {{ $avatarColor }}">{{ $initials }}</div>
+                                <div class="au-avatar" style="background: {{ $avatarColor }}" aria-hidden="true">{{ $initials }}</div>
                                 <div>
                                     <p class="au-user-name">{{ $user->name }}</p>
                                     <p class="au-user-meta">{{ $user->telefono ?? '—' }} · {{ $user->email }}</p>
@@ -329,7 +329,7 @@
                         {{-- Estado --}}
                         <td>
                             <span class="au-status {{ $user->is_active ? 'active' : 'suspended' }}">
-                                <span class="au-status-dot"></span>
+                                <span class="au-status-dot" aria-hidden="true"></span>
                                 {{ $user->is_active ? 'Activo' : 'Suspendido' }}
                             </span>
                         </td>
@@ -342,7 +342,7 @@
                                 <button type="button"
                                         @click="openPasswordModal({{ $user->id }}, '{{ addslashes($user->name) }}')"
                                         class="au-act-btn key">
-                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
                                     </svg>
                                     Clave
@@ -353,12 +353,12 @@
                                     @csrf @method('PUT')
                                     <button type="submit" class="au-act-btn {{ $user->is_active ? 'pause' : 'resume' }}">
                                         @if($user->is_active)
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
                                         Pausar
                                         @else
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                         </svg>
@@ -372,7 +372,7 @@
                                       onsubmit="return confirm('¿Eliminar a {{ addslashes($user->name) }} permanentemente?')">
                                     @csrf @method('DELETE')
                                     <button type="submit" class="au-act-btn fire">
-                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                         </svg>
                                         Eliminar
@@ -399,8 +399,8 @@
                 <div>
                     <h3>Agregar Empleado</h3>
                 </div>
-                <button @click="showModal = false" class="au-modal-close">
-                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button @click="showModal = false" class="au-modal-close" aria-label="Cerrar modal">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
@@ -411,37 +411,46 @@
                 <div class="au-modal-body">
 
                     <div>
-                        <label class="au-label">Nombre completo *</label>
-                        <input type="text" name="name" required
-                               placeholder="Ej: Juan Pérez" class="au-input">
+                        {{-- FIX Web:S6853 L414: label for="emp-name" --}}
+                        <label class="au-label" for="emp-name">Nombre completo *</label>
+                        <input type="text" id="emp-name" name="name" required
+                               placeholder="Ej: Juan Pérez" class="au-input"
+                               autocomplete="name">
                     </div>
 
                     <div class="au-row-2">
                         <div>
-                            <label class="au-label">Correo *</label>
-                            <input type="email" name="email" required
-                                   placeholder="correo@ejemplo.com" class="au-input">
+                            {{-- FIX Web:S6853 L421: label for="emp-email" --}}
+                            <label class="au-label" for="emp-email">Correo *</label>
+                            <input type="email" id="emp-email" name="email" required
+                                   placeholder="correo@ejemplo.com" class="au-input"
+                                   autocomplete="email">
                         </div>
                         <div>
-                            <label class="au-label">Teléfono</label>
-                            <input type="text" name="telefono"
-                                   placeholder="Opcional" class="au-input">
+                            {{-- FIX Web:S6853 L426: label for="emp-telefono" --}}
+                            <label class="au-label" for="emp-telefono">Teléfono</label>
+                            <input type="text" id="emp-telefono" name="telefono"
+                                   placeholder="Opcional" class="au-input"
+                                   autocomplete="tel">
                         </div>
                     </div>
 
                     <div class="au-row-2">
                         <div>
-                            <label class="au-label">Contraseña *</label>
+                            {{-- FIX Web:S6853 L434: label for="emp-password" --}}
+                            <label class="au-label" for="emp-password">Contraseña *</label>
                             <div class="au-pass-wrap">
-                                <input type="text" name="password" x-model="password"
-                                       required placeholder="••••••••" class="au-input">
+                                <input type="text" id="emp-password" name="password" x-model="password"
+                                       required placeholder="••••••••" class="au-input"
+                                       autocomplete="new-password">
                                 <button type="button" @click="generatePassword('new')"
-                                        class="au-dice-btn" title="Generar contraseña">🎲</button>
+                                        class="au-dice-btn" aria-label="Generar contraseña aleatoria">🎲</button>
                             </div>
                         </div>
                         <div>
-                            <label class="au-label">Rol / Puesto *</label>
-                            <select name="role" required class="au-input">
+                            {{-- FIX Web:S6853 L443: label for="emp-role" --}}
+                            <label class="au-label" for="emp-role">Rol / Puesto *</label>
+                            <select id="emp-role" name="role" required class="au-input">
                                 <option value="admin">Administrador</option>
                                 <option value="cajero">Cajero</option>
                                 <option value="cocinero">Cocinero</option>
@@ -468,8 +477,8 @@
                     <h3>Actualizar Contraseña</h3>
                     <p>Para: <strong x-text="passUserName"></strong></p>
                 </div>
-                <button @click="showPassModal = false" class="au-modal-close">
-                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <button @click="showPassModal = false" class="au-modal-close" aria-label="Cerrar modal">
+                    <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
@@ -479,12 +488,14 @@
                 @csrf @method('PUT')
                 <div class="au-modal-body">
                     <div>
-                        <label class="au-label">Nueva Contraseña *</label>
+                        {{-- FIX Web:S6853 L482: label for="pass-new" --}}
+                        <label class="au-label" for="pass-new">Nueva Contraseña *</label>
                         <div class="au-pass-wrap">
-                            <input type="text" name="password" x-model="newPassword"
-                                   required placeholder="••••••••" class="au-input">
+                            <input type="text" id="pass-new" name="password" x-model="newPassword"
+                                   required placeholder="••••••••" class="au-input"
+                                   autocomplete="new-password">
                             <button type="button" @click="generatePassword('edit')"
-                                    class="au-dice-btn" title="Generar contraseña">🎲</button>
+                                    class="au-dice-btn" aria-label="Generar contraseña aleatoria">🎲</button>
                         </div>
                     </div>
                 </div>

@@ -179,7 +179,7 @@
         <div class="as-card" x-data="{ imagePreview: null, isSubmitting: false }">
             <div class="as-card-head">
                 <div class="as-card-head-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
                 </div>
@@ -193,7 +193,7 @@
                     {{-- Preview --}}
                     <div class="as-logo-preview">
                         <template x-if="imagePreview">
-                            <img :src="imagePreview">
+                            <img :src="imagePreview" alt="Vista previa del nuevo logo">
                         </template>
                         <template x-if="!imagePreview">
                             @php
@@ -206,18 +206,18 @@
                     </div>
 
                     {{-- File picker --}}
-                    <label class="as-file-label">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <label class="as-file-label" for="logo-upload">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
                         </svg>
                         <span>Seleccionar imagen…</span>
-                        <input type="file" name="logo" class="hidden" accept="image/*" required
+                        <input type="file" id="logo-upload" name="logo" class="hidden" accept="image/*" required
                                @change="const f=$event.target.files[0];if(f){const r=new FileReader();r.onload=e=>imagePreview=e.target.result;r.readAsDataURL(f)}">
                     </label>
 
                     <button type="submit" :disabled="isSubmitting" class="as-btn">
                         <template x-if="isSubmitting">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>
@@ -250,7 +250,7 @@
              }">
             <div class="as-card-head">
                 <div class="as-card-head-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                     </svg>
@@ -269,8 +269,9 @@
                     </div>
 
                     <div>
-                        <label class="as-label">Dirección o enlace</label>
-                        <input type="text" x-model="rawMapInput" required
+                        {{-- FIX L272: label for="map-input" + id en el input --}}
+                        <label class="as-label" for="map-input">Dirección o enlace</label>
+                        <input type="text" id="map-input" x-model="rawMapInput" required
                                placeholder="Ej: La 501 Centro, Huejutla"
                                class="as-input">
                     </div>
@@ -278,11 +279,12 @@
                     {{-- Preview mapa --}}
                     <div class="as-map-preview">
                         <template x-if="mapPreview">
-                            <iframe :src="mapPreview" allowfullscreen="" loading="lazy"></iframe>
+                            <iframe :src="mapPreview" allowfullscreen="" loading="lazy"
+                                    title="Vista previa del mapa"></iframe>
                         </template>
                         <template x-if="!mapPreview">
                             <div class="as-map-empty">
-                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 13l4.553 2.276A1 1 0 0021 21.382V10.618a1 1 0 00-.553-.894L15 7m0 13V7m0 0L9 4"/>
                                 </svg>
                                 <span>Escribe algo para ver el mapa</span>
@@ -292,7 +294,7 @@
 
                     <button type="submit" :disabled="isSubmitting" class="as-btn">
                         <template x-if="isSubmitting">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>
@@ -307,7 +309,7 @@
         <div class="as-card" x-data="{ isSubmitting: false }">
             <div class="as-card-head">
                 <div class="as-card-head-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                     </svg>
                 </div>
@@ -319,22 +321,25 @@
                     @csrf
 
                     <div>
-                        <label class="as-label">Calle y número</label>
-                        <input type="text" name="address_line1"
+                        {{-- FIX L322: label for="addr-line1" + id en el input --}}
+                        <label class="as-label" for="addr-line1">Calle y número</label>
+                        <input type="text" id="addr-line1" name="address_line1"
                                value="{{ $address_line1->value ?? '' }}"
                                required placeholder="Av. Deportiva #501"
                                class="as-input">
                     </div>
                     <div>
-                        <label class="as-label">Colonia o sector</label>
-                        <input type="text" name="address_line2"
+                        {{-- FIX L329: label for="addr-line2" + id en el input --}}
+                        <label class="as-label" for="addr-line2">Colonia o sector</label>
+                        <input type="text" id="addr-line2" name="address_line2"
                                value="{{ $address_line2->value ?? '' }}"
                                placeholder="Col. Centro"
                                class="as-input">
                     </div>
                     <div>
-                        <label class="as-label">Ciudad, estado y CP</label>
-                        <input type="text" name="address_line3"
+                        {{-- FIX L336: label for="addr-line3" + id en el input --}}
+                        <label class="as-label" for="addr-line3">Ciudad, estado y CP</label>
+                        <input type="text" id="addr-line3" name="address_line3"
                                value="{{ $address_line3->value ?? '' }}"
                                placeholder="CP 43000, Huejutla de Reyes, Hgo."
                                class="as-input">
@@ -342,7 +347,7 @@
 
                     <button type="submit" :disabled="isSubmitting" class="as-btn">
                         <template x-if="isSubmitting">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>
@@ -357,7 +362,7 @@
         <div class="as-card" x-data="{ isSubmitting: false }">
             <div class="as-card-head">
                 <div class="as-card-head-icon">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
@@ -378,8 +383,9 @@
                         @foreach($days as $day)
                         @php $dayKey = strtolower($day); @endphp
                         <div class="as-sched-row">
-                            <span class="as-sched-day">{{ $day }}</span>
-                            <input type="text" name="schedule_{{ $dayKey }}"
+                            {{-- FIX: label for apuntando al id único del input de cada día --}}
+                            <label class="as-sched-day" for="sched-{{ $dayKey }}">{{ $day }}</label>
+                            <input type="text" id="sched-{{ $dayKey }}" name="schedule_{{ $dayKey }}"
                                    value="{{ $schedule[$dayKey] ?? '12:30 PM – 10:30 PM' }}"
                                    class="as-input">
                         </div>
@@ -388,7 +394,7 @@
 
                     <button type="submit" :disabled="isSubmitting" class="as-btn">
                         <template x-if="isSubmitting">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
                             </svg>

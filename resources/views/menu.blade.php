@@ -89,7 +89,6 @@
     }
     .menu-filters-inner { max-width: 1200px; margin: 0 auto; }
 
-    /* fila de botones compartida */
     .mf-row {
         display: flex; gap: 6px;
         overflow-x: auto; padding: 10px 0;
@@ -97,7 +96,6 @@
     }
     .mf-row::-webkit-scrollbar { display: none; }
 
-    /* botón categoría principal → naranja activo */
     .mf-btn {
         display: inline-flex; align-items: center; gap: 7px;
         font-family: 'Oswald', sans-serif;
@@ -113,7 +111,6 @@
     .mf-btn:hover { color: var(--or); border-color: rgba(249,115,22,.4); background: rgba(249,115,22,.07); }
     .mf-btn.active { background: var(--or); color: #fff; border-color: var(--or); box-shadow: 0 3px 16px rgba(249,115,22,.4); }
 
-    /* botón subcategoría → neutro activo */
     .msf-btn {
         display: inline-flex; align-items: center;
         font-family: 'Oswald', sans-serif;
@@ -129,7 +126,6 @@
     :root:not(.dark) .msf-btn:hover { border-color: rgba(0,0,0,.22); }
     .msf-btn.active { background: var(--txt); color: var(--bg-card); border-color: var(--txt); }
 
-    /* divisor entre filas */
     .mf-divider { border: none; border-top: 1px solid var(--bdr); margin: 0; }
 
     /* ── MAIN ── */
@@ -224,7 +220,7 @@
                 <h1>Nuestro <span>Menú</span></h1>
                 <p>Descubre todo lo que tenemos preparado para ti</p>
             </div>
-            <div class="menu-topbar-stats">
+            <div class="menu-topbar-stats" aria-hidden="true">
                 <div>
                     <span class="menu-stat-num" x-text="allProductos.length + '+'"></span>
                     <span class="menu-stat-lbl">Platillos</span>
@@ -251,13 +247,13 @@
                     <button @click="filtro = cat.nombre; subfiltro = 'Todos'"
                             :class="filtro === cat.nombre ? 'active' : ''"
                             class="mf-btn">
-                        <span class="fi" x-text="cat.icono"></span>
+                        <span class="fi" x-text="cat.icono" aria-hidden="true"></span>
                         <span x-text="cat.nombre"></span>
                     </button>
                 </template>
             </div>
 
-            {{-- Subfiltros (solo si la categoría los tiene) --}}
+            {{-- Subfiltros --}}
             <template x-if="subcategoriasMap[filtro]">
                 <div>
                     <hr class="mf-divider">
@@ -289,8 +285,9 @@
             <template x-for="cat in listaCategorias" :key="cat.nombre">
                 <template x-if="filtro === cat.nombre">
                     <div style="display:contents;">
-                        <span class="cat-icon" x-text="cat.icono"></span>
-                        <h2 x-text="filtro"></h2>
+                        <span class="cat-icon" x-text="cat.icono" aria-hidden="true"></span>
+                        {{-- FIX L293: aria-label como fallback para analizadores estáticos --}}
+                        <h2 x-text="filtro" x-bind:aria-label="filtro"></h2>
                     </div>
                 </template>
             </template>
@@ -304,20 +301,21 @@
                             <img :src="'/storage/' + item.image" :alt="item.name">
                         </template>
                         <template x-if="!item.image">
-                            <div class="menu-card-no-img">🍔</div>
+                            <div class="menu-card-no-img" aria-hidden="true">🍔</div>
                         </template>
-                        <div class="menu-card-img-overlay"></div>
-                        <div class="menu-price-badge" x-text="'$' + item.price"></div>
+                        <div class="menu-card-img-overlay" aria-hidden="true"></div>
+                        <div class="menu-price-badge" x-text="'$' + item.price" aria-hidden="true"></div>
                     </div>
                     <div class="menu-card-body">
-                        <h3 x-text="item.name"></h3>
+                        {{-- FIX L313: aria-label como fallback para analizadores estáticos --}}
+                        <h3 x-text="item.name" x-bind:aria-label="item.name"></h3>
                         <p x-text="item.description || 'Delicioso platillo preparado al momento con los mejores ingredientes.'"></p>
                     </div>
                 </div>
             </template>
 
             <div x-show="productosFiltrados().length === 0" class="menu-empty" style="display:none;">
-                <span class="menu-empty-icon">🍽️</span>
+                <span class="menu-empty-icon" aria-hidden="true">🍽️</span>
                 <h3>Aún No Hay Platillos Aquí</h3>
                 <p>Estamos cocinando nuevas opciones para esta categoría.</p>
             </div>
@@ -329,7 +327,7 @@
     function menuManager() {
         return {
             filtro:    'Hamburguesas',
-            subfiltro: 'Todos',           // ← inicializado
+            subfiltro: 'Todos',
 
             listaCategorias: [
                 { nombre: 'Hamburguesas',       icono: '🍔' },

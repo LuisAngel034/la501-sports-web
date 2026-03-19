@@ -174,14 +174,14 @@
             </button>
         </div>
         <form action="{{ route('admin.sales.export.excel') }}" method="GET" onsubmit="setTimeout(() => cerrarVentanita('modal-export'), 500)">
-            <div class="ad-modal-body">
+                        <div class="ad-modal-body">
                 <div>
-                    <label class="ad-label">Fecha de inicio</label>
-                    <input type="date" name="start_date" required value="{{ $primeraFecha ?? date('Y-m-d') }}" class="ad-input">
+                    <label for="start_date" class="ad-label">Fecha de inicio</label>
+                    <input type="date" id="start_date" name="start_date" required value="{{ $primeraFecha ?? date('Y-m-d') }}" class="ad-input">
                 </div>
                 <div>
-                    <label class="ad-label">Fecha final</label>
-                    <input type="date" name="end_date" required value="{{ $ultimaFecha ?? date('Y-m-d') }}" class="ad-input">
+                    <label for="end_date" class="ad-label">Fecha final</label>
+                    <input type="date" id="end_date" name="end_date" required value="{{ $ultimaFecha ?? date('Y-m-d') }}" class="ad-input">
                 </div>
             </div>
             <div class="ad-modal-foot">

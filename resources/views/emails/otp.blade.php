@@ -7,12 +7,13 @@
 </head>
 <body style="margin:0;padding:0;background-color:#F5F3EF;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
-<table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F5F3EF;padding:40px 16px;">
-<tr><td align="center">
+{{-- FIX: width, cellpadding, cellspacing removidos — valores equivalentes en style --}}
+<table style="width:100%;background-color:#F5F3EF;padding:40px 16px;border-collapse:collapse;">
+<tr><td style="text-align:center;">
 
-    <table width="100%" cellpadding="0" cellspacing="0"
-           style="max-width:520px;border-radius:12px;overflow:hidden;
-                  box-shadow:0 8px 30px rgba(0,0,0,.08);border:1px solid #E4E4E7;">
+    <table style="width:100%;max-width:520px;border-radius:12px;overflow:hidden;
+                  box-shadow:0 8px 30px rgba(0,0,0,.08);border:1px solid #E4E4E7;
+                  border-collapse:collapse;">
 
         {{-- HEADER con patrón --}}
         <tr>
@@ -42,9 +43,11 @@
                 </p>
 
                 {{-- Caja del código --}}
-                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                {{-- FIX: width, cellpadding, cellspacing removidos --}}
+                <table style="width:100%;border-collapse:collapse;margin-bottom:24px;">
                     <tr>
-                        <td align="center">
+                        {{-- FIX: align removido, reemplazado por text-align en style --}}
+                        <td style="text-align:center;">
                             <div style="display:inline-block;background:#F5F3EF;border:2px dashed #E4E4E7;border-radius:12px;padding:24px 36px;text-align:center;">
                                 {{-- Código con cada dígito separado visualmente --}}
                                 <span style="font-family:'Courier New',monospace;font-size:44px;font-weight:900;letter-spacing:14px;color:#F97316;display:block;line-height:1;">
@@ -59,9 +62,10 @@
                 </table>
 
                 {{-- Aviso de expiración --}}
-                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:0;">
+                {{-- FIX: width, cellpadding, cellspacing, align removidos --}}
+                <table style="width:100%;border-collapse:collapse;margin-bottom:0;">
                     <tr>
-                        <td align="center">
+                        <td style="text-align:center;">
                             <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.2);border-radius:8px;padding:10px 20px;">
                                 <span style="font-size:15px;">⏱</span>
                                 <span style="color:#DC2626;font-size:13px;font-weight:700;">

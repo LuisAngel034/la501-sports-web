@@ -29,13 +29,13 @@
     <div class="bg-white dark:bg-[#111] border border-zinc-200 dark:border-white/10 rounded-2xl p-4 shadow-sm mb-6">
         <form action="{{ route('admin.database.history') }}" method="GET" class="flex flex-col sm:flex-row items-end gap-4">
             <div class="w-full sm:w-1/3">
-                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Filtrar por Día</label>
-                <input type="date" name="fecha" value="{{ $fechaFiltro }}" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-orange-500">
+                <label for="fecha" class="block text-xs font-bold text-zinc-500 uppercase mb-1">Filtrar por Día</label>
+                <input type="date" id="fecha" name="fecha" value="{{ $fechaFiltro }}" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-orange-500">
             </div>
 
             <div class="w-full sm:w-1/3">
-                <label class="block text-xs font-bold text-zinc-500 uppercase mb-1">Filtrar por Hora aprox.</label>
-                <input type="time" name="hora" value="{{ $horaFiltro }}" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-orange-500">
+                <label for="hora" class="block text-xs font-bold text-zinc-500 uppercase mb-1">Filtrar por Hora aprox.</label>
+                <input type="time" id="hora" name="hora" value="{{ $horaFiltro }}" class="w-full bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-zinc-800 dark:text-white outline-none focus:border-orange-500">
             </div>
 
             <div class="w-full sm:w-auto flex gap-2">
@@ -56,7 +56,6 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 @foreach($backups as $backup)
                     <div class="flex flex-col p-4 bg-zinc-50 dark:bg-[#1a1612] border border-zinc-200 dark:border-white/5 rounded-xl hover:border-orange-500/50 transition duration-300">
-                        
                         <div class="flex justify-between items-start mb-3">
                             <div class="w-10 h-10 bg-orange-500/10 text-orange-500 rounded-lg flex items-center justify-center">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
@@ -91,7 +90,6 @@
                                 </button>
                             </form>
                         </div>
-
                     </div>
                 @endforeach
             </div>

@@ -286,26 +286,27 @@
             <p>Ingresa tus datos para la entrega a domicilio</p>
 
             {{-- Steps --}}
-            <div class="co-steps">
-                <div class="co-step done">
-                    <div class="co-step-num">
-                        <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            {{-- FIX Web:S6819: div[role=list] → <ol>, div[role=listitem] → <li> --}}
+            <ol class="co-steps" aria-label="Pasos del proceso" style="list-style:none;padding:0;margin:0;">
+                <li class="co-step done">
+                    <div class="co-step-num" aria-label="Paso completado">
+                        <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                         </svg>
                     </div>
                     <span class="co-step-lbl">Carrito</span>
-                </div>
-                <div class="co-step-sep"></div>
-                <div class="co-step active">
+                </li>
+                <li class="co-step-sep" aria-hidden="true"></li>
+                <li class="co-step active" aria-current="step">
                     <div class="co-step-num">2</div>
                     <span class="co-step-lbl">Datos</span>
-                </div>
-                <div class="co-step-sep"></div>
-                <div class="co-step next">
+                </li>
+                <li class="co-step-sep" aria-hidden="true"></li>
+                <li class="co-step next">
                     <div class="co-step-num">3</div>
                     <span class="co-step-lbl">Confirmación</span>
-                </div>
-            </div>
+                </li>
+            </ol>
         </div>
     </div>
 
@@ -313,7 +314,7 @@
 
         {{-- Back --}}
         <a href="{{ route('cart.index') }}" class="co-back">
-            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
             </svg>
             Volver al carrito
@@ -326,7 +327,7 @@
             <div class="co-section">
                 <div class="co-section-head">
                     <div class="co-section-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                         </svg>
                     </div>
@@ -334,15 +335,17 @@
                 </div>
                 <div class="co-row-2">
                     <div>
-                        <label class="co-label">Nombre Completo *</label>
-                        <input type="text" name="customer_name"
+                        {{-- FIX L337: label for="customer-name" + id en el input --}}
+                        <label class="co-label" for="customer-name">Nombre Completo *</label>
+                        <input type="text" id="customer-name" name="customer_name"
                                value="{{ Auth::check() ? Auth::user()->name : '' }}"
                                required placeholder="Juan Pérez"
                                class="co-input">
                     </div>
                     <div>
-                        <label class="co-label">Teléfono *</label>
-                        <input type="tel" name="customer_phone"
+                        {{-- FIX L344: label for="customer-phone" + id en el input --}}
+                        <label class="co-label" for="customer-phone">Teléfono *</label>
+                        <input type="tel" id="customer-phone" name="customer_phone"
                                required placeholder="10 dígitos"
                                class="co-input">
                     </div>
@@ -353,15 +356,16 @@
             <div class="co-section">
                 <div class="co-section-head">
                     <div class="co-section-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                     </div>
                     <h3>Dirección de Entrega</h3>
                 </div>
                 <div>
-                    <label class="co-label">Calle, Número, Colonia y Referencia *</label>
-                    <textarea name="customer_address" required rows="3"
+                    {{-- FIX L363: label for="customer-address" + id en el textarea --}}
+                    <label class="co-label" for="customer-address">Calle, Número, Colonia y Referencia *</label>
+                    <textarea id="customer-address" name="customer_address" required rows="3"
                               placeholder="Ej: Av. Principal 123, Col. Centro. Casa blanca con portón negro."
                               class="co-input" style="resize: none;"></textarea>
                 </div>
@@ -371,34 +375,34 @@
             <div class="co-section">
                 <div class="co-section-head">
                     <div class="co-section-icon">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
                         </svg>
                     </div>
                     <h3>Método de Pago</h3>
                 </div>
-                <div class="co-pay-grid">
+                <div class="co-pay-grid" role="radiogroup" aria-label="Selecciona método de pago">
                     <label class="co-pay-option">
                         <input type="radio" name="payment_method" value="efectivo" required>
                         <div class="co-pay-label">
-                            <div class="co-pay-icon">💵</div>
+                            <div class="co-pay-icon" aria-hidden="true">💵</div>
                             <div class="co-pay-txt">
                                 <strong>Efectivo</strong>
                                 <small>Al recibir</small>
                             </div>
-                            <div class="co-pay-check"></div>
+                            <div class="co-pay-check" aria-hidden="true"></div>
                         </div>
                     </label>
 
                     <label class="co-pay-option">
                         <input type="radio" name="payment_method" value="tarjeta" required>
                         <div class="co-pay-label">
-                            <div class="co-pay-icon">💳</div>
+                            <div class="co-pay-icon" aria-hidden="true">💳</div>
                             <div class="co-pay-txt">
                                 <strong>Tarjeta</strong>
                                 <small>Débito o Crédito</small>
                             </div>
-                            <div class="co-pay-check"></div>
+                            <div class="co-pay-check" aria-hidden="true"></div>
                         </div>
                     </label>
                 </div>
@@ -408,10 +412,10 @@
             <div class="co-footer">
                 <div>
                     <span class="co-total-label">Total a Pagar</span>
-                    <span class="co-total-amount"><span>$</span>{{ number_format($total, 2) }}</span>
+                    <span class="co-total-amount" aria-live="polite"><span aria-hidden="true">$</span>{{ number_format($total, 2) }}</span>
                 </div>
                 <button type="submit" class="co-submit-btn">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
                     Confirmar Pedido

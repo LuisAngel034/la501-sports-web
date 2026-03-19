@@ -81,7 +81,7 @@
 
             <div class="auth-logo">
                 <div class="auth-logo-ico">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                               d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
                     </svg>
@@ -91,7 +91,7 @@
             </div>
 
             @if($errors->any())
-            <ul class="auth-errors">
+            <ul class="auth-errors" role="alert">
                 @foreach($errors->all() as $e)
                     <li>{{ $e }}</li>
                 @endforeach
@@ -107,21 +107,24 @@
                     <p class="auth-sec">Datos personales</p>
                     <div style="display:flex;flex-direction:column;gap:12px;">
                         <div>
-                            <label class="auth-lbl">Nombre completo <span class="req">*</span></label>
-                            <input type="text" name="name" class="auth-inp"
+                            {{-- FIX Web:S6853 L110: label for="reg-name" --}}
+                            <label class="auth-lbl" for="reg-name">Nombre completo <span class="req" aria-hidden="true">*</span></label>
+                            <input type="text" id="reg-name" name="name" class="auth-inp"
                                    placeholder="Tu nombre y apellidos"
                                    value="{{ old('name') }}" required autocomplete="name">
                         </div>
                         <div class="auth-g2">
                             <div>
-                                <label class="auth-lbl">Correo electrónico <span class="req">*</span></label>
-                                <input type="email" name="email" class="auth-inp"
+                                {{-- FIX Web:S6853 L117: label for="reg-email" --}}
+                                <label class="auth-lbl" for="reg-email">Correo electrónico <span class="req" aria-hidden="true">*</span></label>
+                                <input type="email" id="reg-email" name="email" class="auth-inp"
                                        placeholder="tu@correo.com"
                                        value="{{ old('email') }}" required autocomplete="email">
                             </div>
                             <div>
-                                <label class="auth-lbl">Teléfono <span class="req">*</span></label>
-                                <input type="tel" name="telefono" class="auth-inp"
+                                {{-- FIX Web:S6853 L123: label for="reg-telefono" --}}
+                                <label class="auth-lbl" for="reg-telefono">Teléfono <span class="req" aria-hidden="true">*</span></label>
+                                <input type="tel" id="reg-telefono" name="telefono" class="auth-inp"
                                        placeholder="614 000 0000"
                                        value="{{ old('telefono') }}" required autocomplete="tel">
                             </div>
@@ -134,8 +137,9 @@
                     <p class="auth-sec">Pregunta de seguridad</p>
                     <div style="display:flex;flex-direction:column;gap:10px;">
                         <div>
-                            <label class="auth-lbl">Pregunta <span class="req">*</span></label>
-                            <select name="pregunta_secreta" class="auth-sel" required>
+                            {{-- FIX Web:S6853 L137: label for="reg-pregunta" --}}
+                            <label class="auth-lbl" for="reg-pregunta">Pregunta <span class="req" aria-hidden="true">*</span></label>
+                            <select id="reg-pregunta" name="pregunta_secreta" class="auth-sel" required autocomplete="off">
                                 <option value="" disabled {{ old('pregunta_secreta') ? '' : 'selected' }}>Selecciona una pregunta</option>
                                 @foreach([
                                     '¿Cuál es el nombre de tu primera mascota?',
@@ -147,10 +151,11 @@
                             </select>
                         </div>
                         <div>
-                            <label class="auth-lbl">Tu respuesta <span class="req">*</span></label>
-                            <input type="text" name="respuesta_secreta" class="auth-inp"
+                            {{-- FIX Web:S6853 L150: label for="reg-respuesta" --}}
+                            <label class="auth-lbl" for="reg-respuesta">Tu respuesta <span class="req" aria-hidden="true">*</span></label>
+                            <input type="text" id="reg-respuesta" name="respuesta_secreta" class="auth-inp"
                                    placeholder="Respuesta secreta"
-                                   value="{{ old('respuesta_secreta') }}" required>
+                                   value="{{ old('respuesta_secreta') }}" required autocomplete="off">
                         </div>
                     </div>
                 </div>
@@ -161,54 +166,63 @@
                     <div style="display:flex;flex-direction:column;gap:12px;">
 
                         <div>
-                            <label class="auth-lbl">Nueva contraseña <span class="req">*</span></label>
+                            {{-- FIX Web:S6853 L164: label for="reg-password" --}}
+                            <label class="auth-lbl" for="reg-password">Nueva contraseña <span class="req" aria-hidden="true">*</span></label>
                             <div class="auth-inp-wrap">
-                                <input :type="showPwd ? 'text' : 'password'" name="password"
+                                {{-- FIX Web:S6840 L166: autocomplete="new-password" es correcto para campos de nueva contraseña --}}
+                                <input :type="showPwd ? 'text' : 'password'" id="reg-password" name="password"
                                        class="auth-inp pr" placeholder="Mínimo 8 caracteres"
-                                       x-model="pwd" required autocomplete="new-password">
-                                <button type="button" class="auth-eye" @click="showPwd=!showPwd">
-                                    <svg x-show="!showPwd" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <svg x-show="showPwd" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                       x-model="pwd" required
+                                       :autocomplete="showPwd ? 'off' : 'new-password'"
+                                       aria-describedby="pwd-requirements">
+                                <button type="button" class="auth-eye" @click="showPwd=!showPwd"
+                                        :aria-label="showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                                    <svg x-show="!showPwd" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="showPwd" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                                 </button>
                             </div>
 
-                            <div class="pwd-bar-wrap" x-show="pwd.length > 0">
+                            <div class="pwd-bar-wrap" x-show="pwd.length > 0" aria-hidden="true">
                                 <div class="pwd-bar-fill" :style="'width:'+(score/4*100)+'%;background:'+barColor()"></div>
                             </div>
-                            <div class="pwd-req">
+                            <div class="pwd-req" id="pwd-requirements" aria-live="polite">
                                 <div class="pwd-req-item" :class="r.length?'ok':''">
-                                    <span class="pwd-req-ico"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+                                    <span class="pwd-req-ico" aria-hidden="true"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
                                     8 caracteres
                                 </div>
                                 <div class="pwd-req-item" :class="r.upper?'ok':''">
-                                    <span class="pwd-req-ico"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+                                    <span class="pwd-req-ico" aria-hidden="true"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
                                     Mayúscula
                                 </div>
                                 <div class="pwd-req-item" :class="r.number?'ok':''">
-                                    <span class="pwd-req-ico"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+                                    <span class="pwd-req-ico" aria-hidden="true"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
                                     Número
                                 </div>
                                 <div class="pwd-req-item" :class="r.special?'ok':''">
-                                    <span class="pwd-req-ico"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
+                                    <span class="pwd-req-ico" aria-hidden="true"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg></span>
                                     Especial (!@#$)
                                 </div>
                             </div>
                         </div>
 
                         <div>
-                            <label class="auth-lbl">Confirmar contraseña <span class="req">*</span></label>
+                            {{-- FIX Web:S6853 L199: label for="reg-password-confirm" --}}
+                            <label class="auth-lbl" for="reg-password-confirm">Confirmar contraseña <span class="req" aria-hidden="true">*</span></label>
                             <div class="auth-inp-wrap">
-                                <input :type="showPwd ? 'text' : 'password'" name="password_confirmation"
+                                {{-- FIX Web:S6840 L201: autocomplete="new-password" correcto para confirmación --}}
+                                <input :type="showPwd ? 'text' : 'password'" id="reg-password-confirm" name="password_confirmation"
                                        class="auth-inp pr" placeholder="Repite tu contraseña"
-                                       x-model="conf" required autocomplete="new-password">
-                                <button type="button" class="auth-eye" @click="showPwd=!showPwd">
-                                    <svg x-show="!showPwd" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                    <svg x-show="showPwd" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
+                                       x-model="conf" required
+                                       :autocomplete="showPwd ? 'off' : 'new-password'">
+                                <button type="button" class="auth-eye" @click="showPwd=!showPwd"
+                                        :aria-label="showPwd ? 'Ocultar contraseña' : 'Mostrar contraseña'">
+                                    <svg x-show="!showPwd" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                                    <svg x-show="showPwd" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
                                 </button>
                             </div>
-                            <div x-show="conf.length > 0" class="pwd-match" :class="conf===pwd?'ok':'no'">
-                                <template x-if="conf===pwd"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></template>
-                                <template x-if="conf!==pwd"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></template>
+                            <div x-show="conf.length > 0" class="pwd-match" :class="conf===pwd?'ok':'no'" aria-live="polite">
+                                <template x-if="conf===pwd"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg></template>
+                                <template x-if="conf!==pwd"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg></template>
                                 <span x-text="conf===pwd?'Las contraseñas coinciden':'No coinciden'"></span>
                             </div>
                         </div>
@@ -216,9 +230,9 @@
                 </div>
 
                 {{-- Términos --}}
-                <label class="terms-row">
-                    <input type="checkbox" name="terms" required>
-                    <span class="terms-chk">
+                <label class="terms-row" for="reg-terms">
+                    <input type="checkbox" id="reg-terms" name="terms" required>
+                    <span class="terms-chk" aria-hidden="true">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
                     </span>
                     <span class="terms-txt">
@@ -227,7 +241,7 @@
                 </label>
 
                 <button type="submit" class="auth-btn">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
                     Crear mi cuenta
                 </button>
 

@@ -13,23 +13,17 @@
         </button>
     </div>
 
-    {{-- DASHBOARD FINANCIERO (Resumen del Mes) --}}
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        {{-- Ingresos --}}
         <div class="bg-white dark:bg-[#1a1612] p-6 rounded-[24px] border border-zinc-200 dark:border-white/5 flex flex-col gap-2 shadow-sm relative overflow-hidden">
             <div class="absolute -right-4 -top-4 text-green-500/10 dark:text-green-500/5 text-8xl">📈</div>
             <p class="text-zinc-500 text-sm font-bold uppercase z-10">Ingresos del Mes</p>
             <p class="text-4xl font-extrabold text-green-600 dark:text-green-400 z-10">${{ number_format($income, 2) }}</p>
         </div>
-        
-        {{-- Egresos --}}
         <div class="bg-white dark:bg-[#1a1612] p-6 rounded-[24px] border border-zinc-200 dark:border-white/5 flex flex-col gap-2 shadow-sm relative overflow-hidden">
             <div class="absolute -right-4 -top-4 text-red-500/10 dark:text-red-500/5 text-8xl">📉</div>
             <p class="text-zinc-500 text-sm font-bold uppercase z-10">Gastos del Mes</p>
             <p class="text-4xl font-extrabold text-red-600 dark:text-red-400 z-10">${{ number_format($expense, 2) }}</p>
         </div>
-
-        {{-- Balance Neto --}}
         <div class="bg-white dark:bg-[#1a1612] p-6 rounded-[24px] border border-zinc-200 dark:border-white/5 flex flex-col gap-2 shadow-sm relative overflow-hidden">
             <div class="absolute -right-4 -top-4 text-zinc-500/5 text-8xl">💰</div>
             <p class="text-zinc-500 text-sm font-bold uppercase z-10">Balance Neto</p>
@@ -39,12 +33,10 @@
         </div>
     </div>
 
-    {{-- HISTORIAL DE MOVIMIENTOS --}}
     <div class="bg-white dark:bg-[#1a1612] rounded-[32px] shadow-xl border border-zinc-200 dark:border-white/5 overflow-hidden">
         <div class="p-6 border-b border-zinc-100 dark:border-white/5 flex justify-between items-center bg-zinc-50/50 dark:bg-white/[0.02]">
             <h2 class="font-bold text-lg text-zinc-900 dark:text-white">Historial de Transacciones</h2>
         </div>
-        
         <div class="overflow-x-auto custom-scrollbar">
             <table class="w-full text-left border-collapse min-w-[800px]">
                 <thead>
@@ -74,32 +66,22 @@
                                     </div>
                                 </div>
                             </td>
-                            <td class="p-6">
-                                <p class="text-zinc-600 dark:text-zinc-300 text-sm">{{ $tx->description }}</p>
-                            </td>
-                            <td class="p-6">
-                                <p class="text-zinc-500 text-sm font-medium">{{ \Carbon\Carbon::parse($tx->transaction_date)->translatedFormat('d M, Y') }}</p>
-                            </td>
+                            <td class="p-6"><p class="text-zinc-600 dark:text-zinc-300 text-sm">{{ $tx->description }}</p></td>
+                            <td class="p-6"><p class="text-zinc-500 text-sm font-medium">{{ \Carbon\Carbon::parse($tx->transaction_date)->translatedFormat('d M, Y') }}</p></td>
                             <td class="p-6 text-right">
                                 <p class="font-extrabold text-lg {{ $tx->type === 'income' ? 'text-green-600 dark:text-green-400' : 'text-zinc-900 dark:text-white' }}">
                                     {{ $tx->type === 'income' ? '+' : '-' }}${{ number_format($tx->amount, 2) }}
                                 </p>
                             </td>
                             <td class="p-6 text-right">
-                                <form action="{{ route('admin.finances.destroy', $tx->id) }}" method="POST" onsubmit="return confirm('¿Eliminar este registro financiero? Esta acción afectará el balance.');">
+                                <form action="{{ route('admin.finances.destroy', $tx->id) }}" method="POST" onsubmit="return confirm('¿Eliminar este registro financiero?');">
                                     @csrf @method('DELETE')
-                                    <button type="submit" class="text-zinc-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100 p-2">
-                                        🗑️
-                                    </button>
+                                    <button type="submit" class="text-zinc-400 hover:text-red-500 transition opacity-0 group-hover:opacity-100 p-2">🗑️</button>
                                 </form>
                             </td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="5" class="p-12 text-center text-zinc-500">
-                                No hay movimientos registrados aún.
-                            </td>
-                        </tr>
+                        <tr><td colspan="5" class="p-12 text-center text-zinc-500">No hay movimientos registrados aún.</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -110,17 +92,14 @@
     <div x-show="openModal" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
         <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
             <div class="fixed inset-0 transition-opacity bg-black/60 backdrop-blur-sm" @click="openModal = false"></div>
-
             <div class="inline-block overflow-hidden text-left align-bottom transition-all transform bg-white dark:bg-[#1a1612] rounded-[32px] shadow-2xl sm:my-8 sm:align-middle sm:max-w-md sm:w-full border border-zinc-200 dark:border-white/10">
                 <form action="{{ route('admin.finances.store') }}" method="POST" class="p-8">
                     @csrf
-                    
                     <div class="flex justify-between items-center mb-6">
                         <h3 class="text-2xl font-bold text-zinc-900 dark:text-white">Registrar Movimiento</h3>
                         <button type="button" @click="openModal = false" class="text-zinc-400 hover:text-zinc-800 dark:hover:text-white text-2xl">&times;</button>
                     </div>
 
-                    {{-- Selector de Tipo (Ingreso / Gasto) --}}
                     <div class="flex bg-zinc-100 dark:bg-white/5 p-1 rounded-2xl mb-6">
                         <label class="flex-1 text-center cursor-pointer">
                             <input type="radio" name="type" value="income" x-model="formData.type" class="peer sr-only">
@@ -139,26 +118,20 @@
                     </div>
 
                     <div class="space-y-5">
-                        {{-- Monto --}}
                         <div>
-                            <label class="block text-center text-xs font-bold uppercase text-zinc-500 mb-2">Monto Total ($)</label>
-                            <input type="number" step="0.01" min="0.01" name="amount" required placeholder="0.00" class="w-full text-center text-4xl font-extrabold bg-transparent border-b-2 border-zinc-200 dark:border-zinc-800 focus:border-blue-500 outline-none pb-2 text-zinc-900 dark:text-white transition">
+                            <label for="amount" class="block text-center text-xs font-bold uppercase text-zinc-500 mb-2">Monto Total ($)</label>
+                            <input type="number" id="amount" step="0.01" min="0.01" name="amount" required placeholder="0.00" class="w-full text-center text-4xl font-extrabold bg-transparent border-b-2 border-zinc-200 dark:border-zinc-800 focus:border-blue-500 outline-none pb-2 text-zinc-900 dark:text-white transition">
                         </div>
 
-                        {{-- Categoría dinámica según el tipo seleccionado --}}
                         <div>
-                            <label class="block text-xs font-bold uppercase text-zinc-500 mb-2">Categoría</label>
-                            <select name="category" required class="w-full bg-zinc-100 dark:bg-white/5 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white appearance-none">
+                            <label for="category" class="block text-xs font-bold uppercase text-zinc-500 mb-2">Categoría</label>
+                            <select id="category" name="category" required class="w-full bg-zinc-100 dark:bg-white/5 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white appearance-none">
                                 <option value="" disabled selected>Selecciona una categoría</option>
-                                
-                                {{-- Opciones si es Ingreso --}}
                                 <optgroup label="Ingresos" x-show="formData.type === 'income'">
                                     <option value="Ventas en Local">Ventas en Local</option>
                                     <option value="Eventos Especiales">Eventos Especiales</option>
                                     <option value="Otros Ingresos">Otros Ingresos</option>
                                 </optgroup>
-
-                                {{-- Opciones si es Gasto --}}
                                 <optgroup label="Egresos" x-show="formData.type === 'expense'">
                                     <option value="Proveedores (Insumos)">Proveedores (Insumos)</option>
                                     <option value="Nómina / Sueldos">Nómina / Sueldos</option>
@@ -169,16 +142,14 @@
                             </select>
                         </div>
 
-                        {{-- Fecha --}}
                         <div>
-                            <label class="block text-xs font-bold uppercase text-zinc-500 mb-2">Fecha del Movimiento</label>
-                            <input type="date" name="transaction_date" x-model="formData.date" required class="w-full bg-zinc-100 dark:bg-white/5 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white text-center">
+                            <label for="transaction_date" class="block text-xs font-bold uppercase text-zinc-500 mb-2">Fecha del Movimiento</label>
+                            <input type="date" id="transaction_date" name="transaction_date" x-model="formData.date" required class="w-full bg-zinc-100 dark:bg-white/5 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white text-center">
                         </div>
 
-                        {{-- Descripción --}}
                         <div>
-                            <label class="block text-xs font-bold uppercase text-zinc-500 mb-2">Detalles / Concepto</label>
-                            <textarea name="description" rows="2" required placeholder="Ej: Pago de recibo de CFE..." class="w-full bg-zinc-100 dark:bg-white/5 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white resize-none"></textarea>
+                            <label for="description" class="block text-xs font-bold uppercase text-zinc-500 mb-2">Detalles / Concepto</label>
+                            <textarea id="description" name="description" rows="2" required placeholder="Ej: Pago de recibo de CFE..." class="w-full bg-zinc-100 dark:bg-white/5 border-none rounded-xl p-3 text-sm focus:ring-2 focus:ring-blue-500 text-zinc-900 dark:text-white resize-none"></textarea>
                         </div>
                     </div>
 
@@ -190,23 +161,15 @@
             </div>
         </div>
     </div>
-
 </div>
 
 <script>
     function financeManager() {
         return {
             openModal: false,
-            formData: { 
-                type: 'expense',
-                date: new Date().toISOString().split('T')[0]
-            },
-
+            formData: { type: 'expense', date: new Date().toISOString().split('T')[0] },
             openCreate() {
-                this.formData = { 
-                    type: 'expense', 
-                    date: new Date().toISOString().split('T')[0] 
-                };
+                this.formData = { type: 'expense', date: new Date().toISOString().split('T')[0] };
                 this.openModal = true;
             }
         }

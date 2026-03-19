@@ -14,9 +14,13 @@ use Carbon\Carbon;
 
 class AuthController extends Controller
 {
-    public function showLogin()    { return view('auth.login'); }
-    public function showRegistro() { return view('auth.registro'); }
-    public function showRecuperar(){ return view('auth.recuperar'); }
+    public function showLogin()     { return view('auth.login'); }
+    public function showRegistro()  { return view('auth.registro'); }
+    public function showRecuperar() { return view('auth.recuperar'); }
+
+    // =========================================================================
+    // login() dividido para bajar returns de 7 → 2 (S1142)
+    // =========================================================================
 
     public function login(Request $request)
     {
@@ -30,66 +34,77 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Cuenta bloqueada temporalmente por seguridad.']);
         }
 
-        if (Auth::attempt($credentials)) {
-            if (Auth::user()->is_active == 0) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-                return back()->withErrors(['email' => 'Tu cuenta está suspendida. Contacta a gerencia.']);
-            }
-
-            $rolesSinAcceso = ['limpieza'];
-            if (in_array(Auth::user()->role, $rolesSinAcceso)) {
-                Auth::logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-                return back()->withErrors(['email' => 'Tu puesto no requiere acceso al sistema.']);
-            }
-
-            $request->session()->regenerate();
-            RateLimiter::clear($key);
-
-            $role = Auth::user()->role;
-
-            if ($role === 'cliente') {
-                return redirect()->intended('/a-domicilio');
-            } elseif ($role === 'empleado') {
-                return redirect()->route('mesero.mesas');
-            } else {
-                return redirect()->intended('/admin/dashboard');
-            }
+        if (!Auth::attempt($credentials)) {
+            RateLimiter::hit($key, 300);
+            return back()->withErrors(['email' => 'Credenciales incorrectas.']);
         }
 
-        RateLimiter::hit($key, 300);
-        return back()->withErrors(['email' => 'Credenciales incorrectas.']);
+        return $this->handleAuthenticatedUser($request, $key);
+    }
+
+    private function handleAuthenticatedUser(Request $request, string $key)
+    {
+        $user = Auth::user();
+
+        if ($user->is_active == 0) {
+            return $this->logoutAndRedirect($request, 'Tu cuenta está suspendida. Contacta a gerencia.');
+        }
+
+        if (in_array($user->role, ['limpieza'])) {
+            return $this->logoutAndRedirect($request, 'Tu puesto no requiere acceso al sistema.');
+        }
+
+        $request->session()->regenerate();
+        RateLimiter::clear($key);
+
+        return $this->redirectByRole($user->role);
+    }
+
+    private function logoutAndRedirect(Request $request, string $message)
+    {
+        Auth::logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return back()->withErrors(['email' => $message]);
+    }
+
+    private function redirectByRole(string $role)
+    {
+        if ($role === 'cliente') {
+            return redirect()->intended('/a-domicilio');
+        }
+        if ($role === 'empleado') {
+            return redirect()->route('mesero.mesas');
+        }
+        return redirect()->intended('/admin/dashboard');
     }
 
     public function registrar(Request $request)
     {
         $request->validate([
-            'name'               => 'required|string|max:255',
-            'email'              => 'required|email|unique:users',
-            'telefono'           => 'required',
-            'password'           => [
+            'name'              => 'required|string|max:255',
+            'email'             => 'required|email|unique:users',
+            'telefono'          => 'required',
+            'password'          => [
                 'required', 'confirmed', 'min:8',
                 'regex:/[A-Z]/', 'regex:/[0-9]/', 'regex:/[!@#$%^&*]/',
             ],
-            'pregunta_secreta'   => 'required',
-            'respuesta_secreta'  => 'required',
+            'pregunta_secreta'  => 'required',
+            'respuesta_secreta' => 'required',
         ], [
-            'password.regex'  => 'La contraseña debe tener una mayúscula, un número y un carácter especial.',
-            'email.unique'    => 'Este correo ya está registrado en La 501.',
+            'password.regex' => 'La contraseña debe tener una mayúscula, un número y un carácter especial.',
+            'email.unique'   => 'Este correo ya está registrado en La 501.',
         ]);
 
         User::create([
-            'name'               => $request->name,
-            'email'              => $request->email,
-            'telefono'           => $request->telefono,
-            'password'           => Hash::make($request->password),
-            'pregunta_secreta'   => $request->pregunta_secreta,
-            'respuesta_secreta'  => Hash::make($request->respuesta_secreta),
-            'role'               => 'cliente',
-            'is_active'          => 1,
+            'name'              => $request->name,
+            'email'             => $request->email,
+            'telefono'          => $request->telefono,
+            'password'          => Hash::make($request->password),
+            'pregunta_secreta'  => $request->pregunta_secreta,
+            'respuesta_secreta' => Hash::make($request->respuesta_secreta),
+            'role'              => 'cliente',
+            'is_active'         => 1,
         ]);
 
         return redirect()->route('login')->with('status', '¡Registro exitoso en La 501!');
@@ -105,35 +120,30 @@ class AuthController extends Controller
 
     public function showPerfil()
     {
-        $user = Auth::user();
-        return view('auth.perfil', compact('user'));
+        return view('auth.perfil', ['user' => Auth::user()]);
     }
 
     // =========================================================================
-    // SISTEMA DE RECUPERACIÓN DE CONTRASEÑA (OTP - 8 Dígitos)
+    // Recuperación de contraseña OTP
     // =========================================================================
 
-    // 1. GENERA Y ENVÍA EL CÓDIGO DE 8 DÍGITOS
     public function enviarCodigo(Request $request)
     {
         $request->validate(['email' => 'required|email']);
 
         $key = 'password-reset-' . $request->ip();
         if (RateLimiter::tooManyAttempts($key, 3)) {
-            return back()->withErrors(['email' => 'Has excedido el límite de intentos. Por favor espera unos segundos antes de intentar de nuevo.']);
+            return back()->withErrors(['email' => 'Has excedido el límite de intentos. Por favor espera unos segundos.']);
         }
         RateLimiter::hit($key, 60);
 
         $user = User::where('email', $request->email)->first();
-
         if ($user) {
             $codigo = str_pad(random_int(0, 99999999), 8, '0', STR_PAD_LEFT);
-
             DB::table('password_reset_tokens')->updateOrInsert(
                 ['email' => $user->email],
                 ['token' => Hash::make($codigo), 'created_at' => Carbon::now()]
             );
-
             Mail::send('emails.otp', ['codigo' => $codigo], function ($message) use ($user) {
                 $message->to($user->email)->subject('Tu código de seguridad - La 501 Sports');
             });
@@ -143,7 +153,6 @@ class AuthController extends Controller
         return redirect()->route('password.verify.code');
     }
 
-    // 2. MUESTRA LA PANTALLA PARA ESCRIBIR EL CÓDIGO
     public function showVerifyCode()
     {
         if (!session('email_para_codigo')) {
@@ -152,7 +161,6 @@ class AuthController extends Controller
         return view('auth.verify-code', ['email' => session('email_para_codigo')]);
     }
 
-    // 3. VALIDA EL CÓDIGO Y SU CADUCIDAD
     public function verifyCode(Request $request)
     {
         $request->validate([
@@ -173,7 +181,6 @@ class AuthController extends Controller
         return redirect()->route('password.reset.form');
     }
 
-    // 4. MUESTRA EL FORMULARIO DE NUEVA CONTRASEÑA
     public function showCustomResetForm()
     {
         if (!session('allow_password_reset')) {
@@ -182,7 +189,6 @@ class AuthController extends Controller
         return view('auth.reset', ['email' => session('allow_password_reset')]);
     }
 
-    // 5. GUARDA LA NUEVA CONTRASEÑA
     public function updateCustomPassword(Request $request)
     {
         $email = session('allow_password_reset');
@@ -192,15 +198,14 @@ class AuthController extends Controller
 
         $request->validate([
             'password' => [
-                'required',
-                'confirmed',
+                'required', 'confirmed',
                 PasswordRule::min(8)->mixedCase()->numbers()->symbols(),
             ],
         ], [
             'password.min'     => 'La contraseña debe tener al menos 8 caracteres.',
-            'password.mixed'   => 'La contraseña debe incluir al menos una letra mayúscula y una minúscula.',
-            'password.numbers' => 'La contraseña debe incluir al menos un número.',
-            'password.symbols' => 'La contraseña debe incluir al menos un símbolo (!@#$).',
+            'password.mixed'   => 'Debe incluir mayúscula y minúscula.',
+            'password.numbers' => 'Debe incluir al menos un número.',
+            'password.symbols' => 'Debe incluir al menos un símbolo (!@#$).',
         ]);
 
         $user = User::where('email', $email)->first();
@@ -211,6 +216,6 @@ class AuthController extends Controller
         DB::table('password_reset_tokens')->where('email', $email)->delete();
         session()->forget('allow_password_reset');
 
-        return redirect()->route('login')->with('status', '¡Tu contraseña ha sido restablecida con éxito! Ya puedes iniciar sesión.');
+        return redirect()->route('login')->with('status', '¡Tu contraseña ha sido restablecida con éxito!');
     }
 }

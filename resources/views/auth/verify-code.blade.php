@@ -31,16 +31,14 @@
 .auth-foot{padding:12px 32px;border-top:1px solid var(--bdr);background:var(--inp);text-align:center;}
 .auth-foot p{font-size:11px;color:var(--sub);margin:0;}
 
-/* ── Input OTP: un solo input real, 8 celdas visuales ── */
+/* ── Input OTP ── */
 .code-wrap{position:relative;margin-bottom:6px;}
-/* Input real invisible que captura el teclado */
 .code-real{
     position:absolute;left:0;top:0;width:100%;height:100%;
     opacity:0;font-size:16px;cursor:text;z-index:2;
     border:none;outline:none;background:transparent;
     caret-color:transparent;letter-spacing:0;
 }
-/* Grid de 8 celdas puramente visuales */
 .code-grid{
     display:grid;grid-template-columns:repeat(8,1fr);
     gap:7px;pointer-events:none;position:relative;
@@ -53,27 +51,21 @@
     font-family:'Bebas Neue',monospace;user-select:none;position:relative;
     line-height:1;
 }
-/* celda activa */
 .code-cell.active{border-color:var(--or);box-shadow:0 0 0 3px rgba(249,115,22,.12);background:rgba(249,115,22,.03);}
-/* cursor parpadeante */
 .code-cell.active.empty::after{
     content:'';position:absolute;width:2px;height:50%;
     background:var(--or);border-radius:1px;
     animation:blink .85s step-end infinite;
 }
 @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
-/* celda con valor */
 .code-cell.filled{border-color:var(--gn);background:rgba(22,163,74,.05);color:var(--gn);}
-/* error */
 .code-grid.shaking .code-cell{border-color:var(--rd);background:rgba(220,38,38,.04);animation:shake .35s ease;}
 @keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}60%{transform:translateX(5px)}}
 
-/* Email badge */
 .email-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;background:var(--inp);border:1px solid var(--bdr);font-size:12px;font-weight:600;color:var(--sub);margin-bottom:18px;}
 .email-badge svg{width:12px;height:12px;color:var(--or);flex-shrink:0;}
 .email-badge span{color:var(--txt);}
 
-/* Timer */
 .code-timer{font-size:11px;color:var(--sub);text-align:center;margin-top:8px;font-weight:500;}
 .code-timer .t{font-weight:800;color:var(--or);}
 .code-timer .expired{color:var(--rd);font-weight:700;}
@@ -88,7 +80,7 @@
 
             <div class="auth-logo">
                 <div class="auth-logo-ico">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
                               d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
                     </svg>
@@ -97,10 +89,9 @@
                 <p>Verificación de seguridad</p>
             </div>
 
-            {{-- Email destino --}}
             <div style="text-align:center;">
                 <div class="email-badge" style="display:inline-flex;">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
                     <span>{{ $email }}</span>
                 </div>
             </div>
@@ -110,8 +101,8 @@
             </p>
 
             @if($errors->any())
-            <div class="auth-alert err">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+            <div class="auth-alert err" role="alert">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 <p>{{ $errors->first() }}</p>
             </div>
             @endif
@@ -122,15 +113,16 @@
                 <input type="hidden" name="email" value="{{ $email }}">
                 <input type="hidden" name="code" :value="raw">
 
-                <label style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:10px;text-align:center;">
+                {{-- FIX L125: label for="otp-input" + id en el input real --}}
+                <label for="otp-input"
+                       style="display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:10px;text-align:center;">
                     Código de verificación
                 </label>
 
-                {{-- OTP: un input real invisible + 8 celdas visuales --}}
                 <div class="code-wrap" @click="focusInput()">
-                    {{-- Input real que captura todo el texto de forma continua --}}
                     <input
                         type="text"
+                        id="otp-input"
                         inputmode="numeric"
                         maxlength="8"
                         class="code-real"
@@ -143,10 +135,10 @@
                         @blur="focused=false"
                         autocomplete="one-time-code"
                         autocorrect="off"
-                        spellcheck="false">
+                        spellcheck="false"
+                        aria-label="Código de verificación de 8 dígitos">
 
-                    {{-- Grid visual (solo decorativo) --}}
-                    <div class="code-grid" :class="{ shaking: shaking }">
+                    <div class="code-grid" :class="{ shaking: shaking }" aria-hidden="true">
                         <template x-for="i in 8" :key="i">
                             <div class="code-cell"
                                  :class="{
@@ -160,8 +152,7 @@
                     </div>
                 </div>
 
-                {{-- Timer --}}
-                <div class="code-timer">
+                <div class="code-timer" role="status" aria-live="polite">
                     <template x-if="secs > 0">
                         <span>Expira en <span class="t" x-text="fmt()"></span></span>
                     </template>
@@ -173,7 +164,7 @@
                 <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
                     <button type="submit" class="auth-btn"
                             :disabled="codeStr.length < 8 || secs <= 0">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
                         Verificar código
                     </button>
                     <a href="{{ route('password.request') }}" class="auth-link">
@@ -190,7 +181,7 @@
 <script>
 function verifyCode() {
     return {
-        raw:     '',      // valor real del input (hasta 8 dígitos)
+        raw:     '',
         focused: false,
         secs:    300,
         shaking: false,
@@ -213,13 +204,10 @@ function verifyCode() {
             this.$refs.realInput.focus();
         },
 
-        /* Filtra solo dígitos y limita a 8 */
         onRawInput() {
             this.raw = this.raw.replace(/\D/g, '').slice(0, 8);
         },
 
-        /* Backspace ya funciona nativamente en el input,
-           solo necesitamos capturar Enter para submit */
         onRawKey(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
