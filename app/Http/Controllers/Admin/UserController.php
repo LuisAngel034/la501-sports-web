@@ -23,24 +23,26 @@ class UserController extends Controller
     // Guardar un nuevo empleado
     public function store(Request $request)
     {
-        if (Auth::id() !== 2) return abort(403);
+        if (Auth::id() !== 2) {
+            return abort(403);
+        }
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'phone' => 'nullable|string|max:20',
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|string|email|max:255|unique:users',
+            'phone'    => 'nullable|string|max:20',
             'password' => 'required|string|min:6',
-            'role' => 'required|string',
+            'role'     => 'required|string',
         ]);
 
         User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'telefono' => $request->telefono,
-            'password' => Hash::make($request->password),
-            'role' => $request->role,
+            'name'      => $request->name,
+            'email'     => $request->email,
+            'telefono'  => $request->telefono,
+            'password'  => Hash::make($request->password),
+            'role'      => $request->role,
             'is_active' => true,
-            'points' => 0,
+            'points'    => 0,
         ]);
 
         return back()->with('success', 'Empleado registrado correctamente.');
@@ -49,10 +51,12 @@ class UserController extends Controller
     // Actualizar contraseña de un empleado
     public function update(Request $request, $id)
     {
-        if (Auth::id() !== 2) return abort(403);
+        if (Auth::id() !== 2) {
+            return abort(403);
+        }
 
         $user = User::findOrFail($id);
-        
+
         $request->validate([
             'password' => 'required|string|min:6',
         ]);
@@ -66,8 +70,13 @@ class UserController extends Controller
     // Despedir un empleado
     public function destroy($id)
     {
-        if (Auth::id() !== 2) return abort(403);
-        if ($id == 1) return back()->with('error', 'No puedes borrar al dueño del sistema.');
+        if (Auth::id() !== 2) {
+            return abort(403);
+        }
+
+        if ($id == 1) {
+            return back()->with('error', 'No puedes borrar al dueño del sistema.');
+        }
 
         $user = User::findOrFail($id);
         $user->delete();
@@ -78,8 +87,13 @@ class UserController extends Controller
     // Pausar o Reactivar Empleado
     public function toggleStatus($id)
     {
-        if (Auth::id() !== 2) return abort(403);
-        if ($id == 2) return back()->with('error', 'No puedes pausar al dueño del sistema.');
+        if (Auth::id() !== 2) {
+            return abort(403);
+        }
+
+        if ($id == 2) {
+            return back()->with('error', 'No puedes pausar al dueño del sistema.');
+        }
 
         $user = User::findOrFail($id);
         $user->is_active = !$user->is_active;

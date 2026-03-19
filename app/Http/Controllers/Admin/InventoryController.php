@@ -22,11 +22,11 @@ class InventoryController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'category' => 'required|string|max:100',
-            'unit' => 'required|string|max:50',
+            'name'          => 'required|string|max:255',
+            'category'      => 'required|string|max:100',
+            'unit'          => 'required|string|max:50',
             'current_stock' => 'required|numeric|min:0',
-            'min_stock' => 'required|numeric|min:0',
+            'min_stock'     => 'required|numeric|min:0',
         ]);
 
         Inventory::create($request->all());
@@ -39,11 +39,11 @@ class InventoryController extends Controller
         $item = Inventory::findOrFail($id);
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'category' => 'required|string|max:100',
-            'unit' => 'required|string|max:50',
+            'name'          => 'required|string|max:255',
+            'category'      => 'required|string|max:100',
+            'unit'          => 'required|string|max:50',
             'current_stock' => 'required|numeric|min:0',
-            'min_stock' => 'required|numeric|min:0',
+            'min_stock'     => 'required|numeric|min:0',
         ]);
 
         $item->update($request->all());
@@ -57,7 +57,7 @@ class InventoryController extends Controller
 
         $request->validate([
             'amount' => 'required|numeric|min:0.01',
-            'type' => 'required|in:add,subtract'
+            'type'   => 'required|in:add,subtract',
         ]);
 
         if ($request->type === 'add') {
@@ -89,16 +89,15 @@ class InventoryController extends Controller
             "Content-Disposition" => "attachment; filename=$fileName",
             "Pragma"              => "no-cache",
             "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            "Expires"             => "0",
         ];
 
-        $callback = function() {
+        $callback = function () {
             $file = fopen('php://output', 'w');
-            
-            // BOM para que Excel lea los acentos perfecto
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
 
-            // Encabezados (Usamos ; para que Excel lo separe en columnas)
+            // BOM para que Excel lea los acentos perfecto
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
             fputcsv($file, ['Nombre', 'Categoria', 'Stock Actual', 'Stock Minimo', 'Unidad'], ';');
 
             $items = Inventory::orderBy('name', 'asc')->get();
@@ -109,7 +108,7 @@ class InventoryController extends Controller
                     $item->category,
                     $item->current_stock,
                     $item->min_stock,
-                    $item->unit
+                    $item->unit,
                 ], ';');
             }
             fclose($file);
@@ -124,27 +123,34 @@ class InventoryController extends Controller
     public function importCSV(Request $request)
     {
         $request->validate(['csv_file' => 'required|mimes:csv,txt']);
-        $file = fopen($request->file('csv_file')->getRealPath(), 'r');
+        $file       = fopen($request->file('csv_file')->getRealPath(), 'r');
         $isFirstRow = true;
 
         while (($data = fgetcsv($file, 2000, ";")) !== false) {
             // Saltamos la primera fila de cabeceras
-            if ($isFirstRow) { $isFirstRow = false; continue; }
-            
+            if ($isFirstRow) {
+                $isFirstRow = false;
+                continue;
+            }
+
             // Si la fila está vacía, la ignoramos
-            if (empty($data[0])) continue;
+            if (empty($data[0])) {
+                continue;
+            }
 
             Inventory::updateOrCreate(
-                ['name' => trim($data[0])], // Busca por nombre exacto
+                ['name' => trim($data[0])],
                 [
                     'category'      => $data[1] ?? 'Otros',
-                    'current_stock' => (float)($data[2] ?? 0),
-                    'min_stock'     => (float)($data[3] ?? 0),
+                    'current_stock' => (float) ($data[2] ?? 0),
+                    'min_stock'     => (float) ($data[3] ?? 0),
                     'unit'          => $data[4] ?? 'pz',
                 ]
             );
         }
+
         fclose($file);
         return back()->with('success', '¡Inventario actualizado desde CSV correctamente!');
     }
 }
+

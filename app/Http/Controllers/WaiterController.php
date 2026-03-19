@@ -11,27 +11,26 @@ class WaiterController extends Controller
 {
     public function index()
     {
-        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) return abort(403);
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) {
+            return abort(403);
+        }
 
-        // Traemos todas las órdenes pendientes
         $ordenesActivas = Order::whereIn('status', ['pending', 'preparing', 'ready'])
                                ->whereNotNull('table_number')
                                ->get();
 
-        $mesas = [];
-        $totalMesas = 6; 
+        $mesas      = [];
+        $totalMesas = 6;
 
         for ($i = 1; $i <= $totalMesas; $i++) {
-            
-            // FILTRO BLINDADO: Compara forzando a que ambos sean números enteros
-            $ordenesMesa = $ordenesActivas->filter(function($orden) use ($i) {
+            $ordenesMesa = $ordenesActivas->filter(function ($orden) use ($i) {
                 return (int) $orden->table_number === $i;
             });
-            
+
             $mesas[] = [
-                'id' => $i,
-                'ocupada' => $ordenesMesa->count() > 0,
-                'total' => $ordenesMesa->sum('total')
+                'id'     => $i,
+                'ocupada'=> $ordenesMesa->count() > 0,
+                'total'  => $ordenesMesa->sum('total'),
             ];
         }
 
@@ -40,7 +39,9 @@ class WaiterController extends Controller
 
     public function tomarPedido($mesaId)
     {
-        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) return abort(403);
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) {
+            return abort(403);
+        }
 
         $menu = Product::all()->groupBy('category');
         return view('mesero.tomar_pedido', compact('mesaId', 'menu'));
@@ -48,11 +49,12 @@ class WaiterController extends Controller
 
     public function cobrar(Request $request, $mesaId)
     {
-        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) return abort(403);
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) {
+            return abort(403);
+        }
 
-        // Validamos que venga el método de pago del modal
         $request->validate([
-            'payment_method' => 'required|string'
+            'payment_method' => 'required|string',
         ]);
 
         $orders = Order::where('table_number', $mesaId)
@@ -60,8 +62,8 @@ class WaiterController extends Controller
                        ->get();
 
         foreach ($orders as $order) {
-            $order->status = 'delivered'; // Al ponerlo en delivered, se va al dashboard de ventas
-            $order->payment_method = $request->payment_method; // Guarda Efectivo, Tarjeta, etc.
+            $order->status         = 'delivered';
+            $order->payment_method = $request->payment_method;
             $order->save();
         }
 
@@ -70,11 +72,13 @@ class WaiterController extends Controller
 
     public function guardarPedido(Request $request, $mesaId)
     {
-        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) return abort(403);
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) {
+            return abort(403);
+        }
 
         $request->validate([
             'carrito' => 'required',
-            'total' => 'required|numeric'
+            'total'   => 'required|numeric',
         ]);
 
         $carrito = json_decode($request->carrito, true);
@@ -84,23 +88,23 @@ class WaiterController extends Controller
         }
 
         $order = Order::create([
-            'user_id' => Auth::id(),
-            'customer_name' => 'Mesa ' . $mesaId,
-            'customer_phone' => 'Local',
+            'user_id'          => Auth::id(),
+            'customer_name'    => 'Mesa ' . $mesaId,
+            'customer_phone'   => 'Local',
             'customer_address' => 'Consumo en sucursal',
-            'table_number' => $mesaId,
-            'total' => $request->total,
-            'status' => 'pending',
-            'payment_method' => 'pendiente',
+            'table_number'     => $mesaId,
+            'total'            => $request->total,
+            'status'           => 'pending',
+            'payment_method'   => 'pendiente',
         ]);
 
         foreach ($carrito as $item) {
             \App\Models\OrderItem::create([
-                'order_id' => $order->id,
+                'order_id'     => $order->id,
                 'product_name' => $item['name'],
-                'quantity' => $item['cantidad'],
-                'price' => $item['price'],
-                'subtotal' => $item['price'] * $item['cantidad'],
+                'quantity'     => $item['cantidad'],
+                'price'        => $item['price'],
+                'subtotal'     => $item['price'] * $item['cantidad'],
             ]);
         }
 

@@ -13,7 +13,7 @@ class MenuController extends Controller
 {
     public function index()
     {
-        $products = Product::all();
+        $products   = Product::all();
         $inventario = \App\Models\Inventory::select('id', 'name')->get();
 
         return view('admin.menu', compact('products', 'inventario'));
@@ -31,13 +31,13 @@ class MenuController extends Controller
         }
 
         $product = Product::create([
-            'name' => $request->name,
+            'name'        => $request->name,
             'description' => $request->description,
-            'price' => $request->price,
-            'category' => $request->category,
+            'price'       => $request->price,
+            'category'    => $request->category,
             'subcategory' => $request->subcategory,
-            'image' => $imagePath,
-            'available' => $request->has('available') ? 1 : 0,
+            'image'       => $imagePath,
+            'available'   => $request->has('available') ? 1 : 0,
         ]);
 
         if ($request->ingredients && is_array($request->ingredients)) {
@@ -45,7 +45,7 @@ class MenuController extends Controller
                 if (!empty($item)) {
                     Ingrediente::create([
                         'product_id' => $product->id,
-                        'nombre'     => $item
+                        'nombre'     => $item,
                     ]);
                 }
             }
@@ -59,13 +59,13 @@ class MenuController extends Controller
     public function destroy($id)
     {
         $product = Product::findOrFail($id);
-        
+
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }
 
         $product->delete();
-        
+
         event(new MenuUpdated());
 
         return back()->with('success', 'Platillo eliminado correctamente');
@@ -87,12 +87,12 @@ class MenuController extends Controller
         }
 
         $product->update([
-            'name' => $request->name,
+            'name'        => $request->name,
             'description' => $request->description,
-            'price' => $request->price,
-            'category' => $request->category,
+            'price'       => $request->price,
+            'category'    => $request->category,
             'subcategory' => $request->subcategory,
-            'available' => $request->has('available') ? 1 : 0,
+            'available'   => $request->has('available') ? 1 : 0,
         ]);
 
         if ($request->ingredients) {
@@ -101,20 +101,20 @@ class MenuController extends Controller
                 if (!empty($item)) {
                     Ingrediente::create([
                         'product_id' => $product->id,
-                        'nombre' => $item
+                        'nombre'     => $item,
                     ]);
                 }
             }
         }
 
         event(new MenuUpdated());
-        
+
         return back()->with('success', 'Platillo actualizado correctamente');
     }
 
     public function apiProducts()
     {
-        $products = Product::where('available', 1)->get(); 
+        $products = Product::where('available', 1)->get();
         return response()->json($products);
     }
 
@@ -130,16 +130,15 @@ class MenuController extends Controller
             "Content-Disposition" => "attachment; filename=$fileName",
             "Pragma"              => "no-cache",
             "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
-            "Expires"             => "0"
+            "Expires"             => "0",
         ];
 
-        $callback = function() {
+        $callback = function () {
             $file = fopen('php://output', 'w');
-            
-            // BOM para Excel
-            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF)); 
 
-            // Cabeceras (Separado por punto y coma)
+            // BOM para Excel
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
             fputcsv($file, ['Nombre', 'Precio', 'Categoria', 'Subcategoria', 'Descripcion', 'Disponible'], ';');
 
             $products = \App\Models\Product::all();
@@ -151,7 +150,7 @@ class MenuController extends Controller
                     $product->category,
                     $product->subcategory,
                     $product->description,
-                    $product->available ? 'Si' : 'No'
+                    $product->available ? 'Si' : 'No',
                 ], ';');
             }
             fclose($file);
@@ -166,33 +165,37 @@ class MenuController extends Controller
     public function importCSV(Request $request)
     {
         $request->validate(['csv_file' => 'required|mimes:csv,txt|max:2048']);
-        $file = fopen($request->file('csv_file')->getRealPath(), 'r');
-        
+        $file       = fopen($request->file('csv_file')->getRealPath(), 'r');
         $isFirstRow = true;
 
         while (($data = fgetcsv($file, 2000, ";")) !== false) {
-            if ($isFirstRow) { $isFirstRow = false; continue; }
+            if ($isFirstRow) {
+                $isFirstRow = false;
+                continue;
+            }
 
             // Si la fila está vacía, saltar
-            if (!isset($data[0]) || trim($data[0]) === '') continue;
+            if (!isset($data[0]) || trim($data[0]) === '') {
+                continue;
+            }
 
             $disponible = (isset($data[5]) && strtolower(trim($data[5])) === 'no') ? 0 : 1;
 
             \App\Models\Product::updateOrCreate(
-                ['name' => trim($data[0])], // Busca por nombre
+                ['name' => trim($data[0])],
                 [
-                    'price'       => isset($data[1]) ? (float)$data[1] : 0,
+                    'price'       => isset($data[1]) ? (float) $data[1] : 0,
                     'category'    => trim($data[2] ?? 'General'),
                     'subcategory' => trim($data[3] ?? ''),
                     'description' => trim($data[4] ?? ''),
-                    'available'   => $disponible
+                    'available'   => $disponible,
                 ]
             );
         }
 
         fclose($file);
-        
-        event(new MenuUpdated()); // Para que se refresque en vivo a los meseros
+
+        event(new MenuUpdated());
 
         return redirect()->back()->with('success', '¡El menú fue importado y actualizado con éxito!');
     }
