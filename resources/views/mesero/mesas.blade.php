@@ -1,9 +1,9 @@
 @extends('layouts.admin')
 
 @section('content')
-<div x-data="{ 
-        showModal: false, 
-        mesaActual: 0, 
+<div x-data="{
+        showModal: false,
+        mesaActual: 0,
         totalActual: 0,
         abrirCobro(mesa, total) {
             this.mesaActual = mesa;
@@ -30,8 +30,7 @@
     {{-- Cuadrícula de Mesas --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($mesas as $mesa)
-            <div class="rounded-xl border shadow-sm transition-all duration-300 flex flex-col justify-between 
-                {{ $mesa['ocupada'] ? 'bg-orange-50/50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900' : 'bg-white border-zinc-200 dark:bg-[#111111] dark:border-white/10' }} p-6">
+            <div class="rounded-xl border shadow-sm transition-all duration-300 flex flex-col justify-between {{ $mesa['ocupada'] ? 'bg-orange-50/50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900' : 'bg-white border-zinc-200 dark:bg-[#111111] dark:border-white/10' }} p-6">
                 
                 <div class="flex justify-between items-start mb-6">
                     <div>
@@ -53,12 +52,12 @@
 
                 <div>
                     @if($mesa['ocupada'])
-                        <button type="button" @click="abrirCobro({{ $mesa['id'] }}, {{ $mesa['total'] }})" 
+                        <button type="button" @click="abrirCobro({{ $mesa['id'] }}, {{ $mesa['total'] }})"
                                 class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase tracking-wider py-3 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
                             💰 Cobrar Mesa
                         </button>
                     @else
-                        <a href="{{ route('mesero.pedido', $mesa['id']) }}" 
+                        <a href="{{ route('mesero.pedido', $mesa['id']) }}"
                            class="block text-center w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider py-3 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
                             📝 Tomar Pedido
                         </a>
@@ -69,10 +68,10 @@
     </div>
 
     {{-- MODAL DE COBRO (ALpineJS) --}}
-    <div x-show="showModal" style="display: none;" 
+    <div x-show="showModal" style="display: none;"
          class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
         
-        <div @click.away="showModal = false" 
+        <div @click.away="showModal = false"
              class="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95"
@@ -101,10 +100,10 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase tracking-wide">
+                        <label for="payment_method" class="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase tracking-wide">
                             Método de Pago
                         </label>
-                        <select name="payment_method" required 
+                        <select id="payment_method" name="payment_method" required
                                 class="w-full bg-white dark:bg-[#1A1A1A] border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg p-3 outline-none focus:ring-2 focus:ring-orange-500 transition font-bold">
                             <option value="efectivo">💵 Efectivo</option>
                             <option value="tarjeta">💳 Tarjeta (Terminal)</option>

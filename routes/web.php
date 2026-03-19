@@ -14,6 +14,7 @@ use App\Http\Controllers\WaiterController;
 
 // 3. Administrador
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\BackupController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\MenuController as AdminMenuController;
 use App\Http\Controllers\Admin\NewsController;
@@ -22,7 +23,6 @@ use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\UserController;
-
 
 /*
 |--------------------
@@ -37,6 +37,7 @@ Route::get('/ubicacion', function () { return view('ubicacion'); })->name('ubica
 Route::get('/a-domicilio', [PageController::class, 'index'])->name('pedido');
 Route::get('/novedades', [PageController::class, 'novedades'])->name('novedades');
 Route::get('/promociones', [PageController::class, 'promociones'])->name('promociones');
+Route::post('/contacto/enviar', [PageController::class, 'enviarContacto'])->name('contacto.enviar');
 
 // Menú de Visualización y su API de actualización en vivo
 Route::get('/menu', [MenuController::class, 'index'])->name('menu');
@@ -59,7 +60,6 @@ Route::post('/checkout/procesar', [CheckoutController::class, 'process'])->name(
 Route::get('/pago/exitoso', [CheckoutController::class, 'success'])->name('payment.success');
 Route::get('/pago/fallido', [CheckoutController::class, 'failure'])->name('payment.failure');
 
-
 /*
 |-----------------------------
 | 2. RUTAS DE AUTENTICACIÓN
@@ -73,15 +73,11 @@ Route::controller(AuthController::class)->group(function () {
     Route::post('/registro', 'registrar');
     Route::post('/logout', 'logout')->name('logout');
 
-    // Recuperación - 1. Pedir el código
+    // Recuperación
     Route::get('/recuperar', 'showRecuperar')->name('password.request');
     Route::post('/recuperar', 'enviarCodigo')->name('password.email');
-
-    // Recuperación - 2. Escribir el código
     Route::get('/recuperar/verificar-codigo', 'showVerifyCode')->name('password.verify.code');
     Route::post('/recuperar/verificar-codigo', 'verifyCode')->name('password.verify.code.post');
-
-    // Recuperación - 3. Cambiar la contraseña
     Route::get('/recuperar/nueva-password', 'showCustomResetForm')->name('password.reset.form');
     Route::post('/recuperar/nueva-password', 'updateCustomPassword')->name('password.update');
 });
@@ -104,7 +100,6 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-
 /*
 |------------------------------------------------------
 | 4. RUTAS DEL ADMINISTRADOR (Protegidas y Seguras)
@@ -118,13 +113,17 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('/api/stats', [DashboardController::class, 'apiStats'])->name('admin.api.stats');
     Route::get('/api/sales', [DashboardController::class, 'apiSales'])->name('admin.api.sales');
     
-    // Rutas heredadas de tu controlador AdminController original
+    // Rutas de AdminController
     Route::get('/ventas', [AdminController::class, 'ventas'])->name('admin.ventas');
     Route::get('/reservaciones', [AdminController::class, 'reservaciones'])->name('admin.reservations.index');
     Route::get('/api/sales-data', [AdminController::class, 'getSalesData']);
     Route::get('/api/orders/latest', function() {
         return \App\Models\Order::with('items')->latest()->take(10)->get();
     })->name('admin.api.orders');
+
+    // Gestión de Mensajes (CRM)
+    Route::get('/mensajes', [AdminController::class, 'mensajes'])->name('admin.mensajes');
+    Route::put('/mensajes/{id}/marcar-leido', [AdminController::class, 'marcarRespondido'])->name('admin.mensajes.leido');
 
     // Gestión del Menú
     Route::get('/menu', [AdminMenuController::class, 'index'])->name('admin.menu');
@@ -165,32 +164,29 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     // Gestión de Finanzas
     Route::resource('finanzas', FinanceController::class)->only(['index', 'store', 'destroy'])->names('admin.finances');
 
-    // 👇 SECCIÓN DE INVENTARIO CORREGIDA 👇
+    // Gestión de Inventario
     Route::get('/inventario/exportar', [InventoryController::class, 'exportCSV'])->name('admin.inventory.export');
     Route::post('/inventario/importar', [InventoryController::class, 'importCSV'])->name('admin.inventory.import');
     Route::resource('inventario', InventoryController::class)->except(['create', 'show', 'edit'])->names('admin.inventory');
     Route::put('/inventario/{id}/ajustar', [InventoryController::class, 'adjust'])->name('admin.inventory.adjust');
 
-    // Gestión de Mensajes (CRM)
-    Route::get('/mensajes', [AdminController::class, 'mensajes'])->name('admin.mensajes');
-    Route::put('/mensajes/{id}/marcar-leido', [AdminController::class, 'marcarRespondido'])->name('admin.mensajes.leido');
-    
-    // Sistema y Base de Datos (Solo ID 2 - Lo protegeremos en el controlador)
-    Route::get('/sistema/base-de-datos', [AdminController::class, 'database'])->name('admin.database');
-    Route::post('/sistema/base-de-datos/backup', [AdminController::class, 'createBackup'])->name('admin.database.backup');
-    Route::post('/sistema/base-de-datos/auto', [AdminController::class, 'saveAuto'])->name('admin.database.saveAuto');
-
-    // Restauración de Base de Datos
-    Route::post('/sistema/base-de-datos/restaurar', [AdminController::class, 'restore'])->name('admin.database.restore');
-    Route::post('/sistema/base-de-datos/restaurar-subida', [AdminController::class, 'restoreUpload'])->name('admin.database.restore.upload');
-    // Historial completo de respaldos
-    Route::get('/sistema/base-de-datos/historial', [AdminController::class, 'databaseHistory'])->name('admin.database.history');
-
-    // En tu grupo de rutas de admin:
-    Route::post('/database/backup', [AdminController::class, 'createBackup'])->name('admin.database.backup');
-    Route::get('/database/download', [AdminController::class, 'downloadBackup'])->name('admin.database.download');
+    // --- SISTEMA Y BASE DE DATOS (BackupController) ---
+    Route::prefix('sistema/base-de-datos')->group(function () {
+        Route::get('/', [BackupController::class, 'database'])->name('admin.database');
+        Route::get('/historial', [BackupController::class, 'databaseHistory'])->name('admin.database-history');
+        Route::post('/backup', [BackupController::class, 'createBackup'])->name('admin.database.backup');
+        Route::post('/restaurar', [BackupController::class, 'restore'])->name('admin.database.restore');
+        Route::post('/restaurar-subida', [BackupController::class, 'restoreUpload'])->name('admin.database.restore-upload');
+        Route::get('/download', [BackupController::class, 'downloadBackup'])->name('admin.database.download');
+        Route::post('/auto', [BackupController::class, 'saveAuto'])->name('admin.database.auto');
+    });
 });
 
+/*
+|------------------------------------------------------
+| 5. RUTAS DE MANTENIMIENTO Y TAREAS PROGRAMADAS
+|------------------------------------------------------
+*/
 Route::get('/limpiar-magico', function () {
     \Illuminate\Support\Facades\Artisan::call('view:clear');
     \Illuminate\Support\Facades\Artisan::call('cache:clear');
@@ -199,7 +195,5 @@ Route::get('/limpiar-magico', function () {
     return '¡Caché, configuración y rutas de Hostinger borradas con éxito!';
 });
 
-Route::post('/contacto/enviar', [PageController::class, 'enviarContacto'])->name('contacto.enviar');
-
-// Motor automático de respaldos (Cron Job)
-Route::get('/admin/sistema/base-de-datos/auto-backup', [AdminController::class, 'runAutoBackup']);
+// Motor automático de respaldos (Cron Job) - Esta ruta debe ser pública para que el cron job la alcance
+Route::get('/run-auto-backup', [BackupController::class, 'runAutoBackup']);

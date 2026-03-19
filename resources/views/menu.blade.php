@@ -287,7 +287,7 @@
                     <div style="display:contents;">
                         <span class="cat-icon" x-text="cat.icono" aria-hidden="true"></span>
                         {{-- FIX L293: aria-label como fallback para analizadores estáticos --}}
-                        <h2 x-text="filtro" x-bind:aria-label="filtro"></h2>
+                        <h2 x-text="filtro" aria-label="Filtro de menú">Filtro</h2>
                     </div>
                 </template>
             </template>
@@ -308,7 +308,7 @@
                     </div>
                     <div class="menu-card-body">
                         {{-- FIX L313: aria-label como fallback para analizadores estáticos --}}
-                        <h3 x-text="item.name" x-bind:aria-label="item.name"></h3>
+                        <h3 x-text="item.name" aria-label="Nombre del producto">Nombre del producto</h3>
                         <p x-text="item.description || 'Delicioso platillo preparado al momento con los mejores ingredientes.'"></p>
                     </div>
                 </div>

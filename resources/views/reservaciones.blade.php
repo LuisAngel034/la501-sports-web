@@ -43,38 +43,38 @@
             
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div class="space-y-2">
-                    <label class="text-sm font-medium dark:text-zinc-300">Nombre Completo</label>
-                    <input type="text" placeholder="Juan Perez" disabled
+                    <label for="nombre_completo" class="text-sm font-medium dark:text-zinc-300">Nombre Completo</label>
+                    <input id="nombre_completo" type="text" placeholder="Juan Perez" disabled
                         class="w-full bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-zinc-400 dark:text-zinc-500 outline-none">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-sm font-medium dark:text-zinc-300">Teléfono</label>
+                    <label for="telefono" class="text-sm font-medium dark:text-zinc-300">Teléfono</label>
                     <div class="relative">
                         <span class="absolute left-4 top-4 text-zinc-400">📞</span>
-                        <input type="tel" placeholder="555-123-4567" disabled
+                        <input id="telefono" type="tel" placeholder="555-123-4567" disabled
                             class="w-full bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 pl-12 text-zinc-400 dark:text-zinc-500 outline-none">
                     </div>
                 </div>
             </div>
 
             <div class="space-y-2">
-                <label class="text-sm font-medium dark:text-zinc-300">Correo Electrónico</label>
+                <label for="correo_electronico" class="text-sm font-medium dark:text-zinc-300">Correo Electrónico</label>
                 <div class="relative">
                     <span class="absolute left-4 top-4 text-zinc-400">✉️</span>
-                    <input type="email" placeholder="correo@ejemplo.com" disabled
+                    <input id="correo_electronico" type="email" placeholder="correo@ejemplo.com" disabled
                         class="w-full bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 pl-12 text-zinc-400 dark:text-zinc-500 outline-none">
                 </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div class="space-y-2">
-                    <label class="text-sm font-medium dark:text-zinc-300">Fecha</label>
-                    <input type="date" disabled
+                    <label for="fecha_reservacion" class="text-sm font-medium dark:text-zinc-300">Fecha</label>
+                    <input id="fecha_reservacion" type="date" disabled
                         class="w-full bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-zinc-400 dark:text-zinc-500 outline-none">
                 </div>
                 <div class="space-y-2">
-                    <label class="text-sm font-medium dark:text-zinc-300">Hora</label>
-                    <select disabled
+                    <label for="hora_reservacion" class="text-sm font-medium dark:text-zinc-300">Hora</label>
+                    <select id="hora_reservacion" disabled
                         class="w-full bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-zinc-400 dark:text-zinc-500 outline-none appearance-none">
                         <option value="" disabled selected>Seleccionar</option>
                         <option value="14:00">2:00 PM</option>
@@ -82,8 +82,8 @@
                     </select>
                 </div>
                 <div class="space-y-2">
-                    <label class="text-sm font-medium dark:text-zinc-300">Personas</label>
-                    <select disabled
+                    <label for="cantidad_personas" class="text-sm font-medium dark:text-zinc-300">Personas</label>
+                    <select id="cantidad_personas" disabled
                         class="w-full bg-zinc-100 dark:bg-zinc-900/80 border border-zinc-200 dark:border-zinc-800 rounded-2xl p-4 text-zinc-400 dark:text-zinc-500 outline-none appearance-none">
                         <option value="" disabled selected>Cantidad</option>
                         <option value="2">2 Personas</option>

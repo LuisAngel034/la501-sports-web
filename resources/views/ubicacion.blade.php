@@ -224,7 +224,7 @@
                         $mapUrlSetting = \App\Models\Setting::where('key', 'map_url')->value('value');
                         $finalMapUrl = $mapUrlSetting ?: 'https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d10000!2d-98.42!3d21.14!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1ses!2smx';
                     @endphp
-                    <iframe
+                    <iframe title="Mapa de ubicación de La 501 Sports"
                         src="{{ $finalMapUrl }}"
                         class="grayscale-[0.15] dark:invert-[0.9] dark:hue-rotate-[180deg]"
                         allowfullscreen=""

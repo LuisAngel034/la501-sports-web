@@ -59,7 +59,7 @@
 
     /* ── MODAL SEGURO (MÁS SÓLIDO Y ELEGANTE) ── */
     .mi-modal-seguro {
-        display: none; 
+        display: none;
         position: fixed !important;
         inset: 0 !important;
         z-index: 9999999 !important;
@@ -158,7 +158,7 @@
             <div class="ad-chart-canvas"><canvas id="salesChartCanvas"></canvas></div>
         </div>
     </div>
-</div> 
+</div>
 
 
 {{-- Modal de Exportar (AHORA MUCHO MÁS SÓLIDO Y PROFESIONAL) --}}

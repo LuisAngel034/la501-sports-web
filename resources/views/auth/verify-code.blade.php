@@ -152,14 +152,14 @@
                     </div>
                 </div>
 
-                <div class="code-timer" role="status" aria-live="polite">
+                <output class="code-timer" aria-live="polite">
                     <template x-if="secs > 0">
                         <span>Expira en <span class="t" x-text="fmt()"></span></span>
                     </template>
                     <template x-if="secs <= 0">
                         <span class="expired">⏱ Código expirado</span>
                     </template>
-                </div>
+                </output>
 
                 <div style="display:flex;flex-direction:column;gap:10px;margin-top:20px;">
                     <button type="submit" class="auth-btn"

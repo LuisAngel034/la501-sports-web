@@ -365,10 +365,7 @@
 
             <div class="ap-modal-head">
                 {{-- FIX L367: aria-label como fallback para lectores de pantalla --}}
-                <h3
-                    x-text="isEdit ? 'Editar Promoción' : 'Nueva Promoción'"
-                    x-bind:aria-label="isEdit ? 'Editar Promoción' : 'Nueva Promoción'">
-                </h3>
+                <h3 x-text="isEdit ? 'Editar Promoción' : 'Nueva Promoción'">Formulario de Promoción</h3>
                 <button @click="openModal = false" class="ap-modal-close" aria-label="Cerrar modal">
                     <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -389,7 +386,7 @@
                         <label class="ap-label" for="promo-image">Imagen (opcional — reemplaza ícono y color)</label>
                         <label class="ap-upload-zone" for="promo-image">
                             <template x-if="imagePreview">
-                                <img :src="imagePreview" class="ap-upload-img" alt="Vista previa de la imagen seleccionada">
+                                <img :src="imagePreview" class="ap-upload-img" alt="Vista previa de la promoción seleccionada">
                             </template>
                             <template x-if="imagePreview">
                                 <div class="ap-upload-overlay"><span>Cambiar imagen</span></div>

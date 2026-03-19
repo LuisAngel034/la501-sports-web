@@ -335,7 +335,7 @@
                         <label for="news-image" class="an-label">Imagen</label>
                             <label class="an-upload">
                             <template x-if="imagePreview">
-                                <img :src="imagePreview">
+                                <img :src="imagePreview" alt="Vista previa de la noticia">
                             </template>
                             <template x-if="imagePreview">
                                 <div class="an-upload-ov"><span>Cambiar imagen</span></div>

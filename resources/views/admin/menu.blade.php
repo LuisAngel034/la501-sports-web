@@ -197,16 +197,16 @@
 .am-btn-save svg { width:14px; height:14px; }
 
 /* ── MODAL SEGURO (Nativo para Importación) ── */
-.mi-modal-seguro { 
-    display: none; 
-    position: fixed !important; 
-    inset: 0 !important; 
-    z-index: 9999999 !important; 
-    background: #18181B !important; 
-    backdrop-filter: blur(8px) !important; 
-    align-items: center; 
-    justify-content: center; 
-    padding: 16px; 
+.mi-modal-seguro {
+    display: none;
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 9999999 !important;
+    background: #18181B !important;
+    backdrop-filter: blur(8px) !important;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
 }
 
 @media(max-width:640px){
@@ -390,7 +390,7 @@
                                 </div>
                             </template>
                             <template x-if="imagePreview">
-                                <img :src="imagePreview" class="am-imgprev">
+                                <img :src="imagePreview" class="am-imgprev" alt="Vista previa del platillo">
                             </template>
                             <div class="am-imgovl">
                                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>

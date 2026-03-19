@@ -12,7 +12,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DashboardController extends Controller
 {
-    // Constantes para evitar literales duplicados (SonarQube S1192)
+
     private const DATE_FORMAT_DMY  = 'd/m/Y';
     private const NUMBER_FORMAT_MX = '"$"#,##0.00_-';
 
