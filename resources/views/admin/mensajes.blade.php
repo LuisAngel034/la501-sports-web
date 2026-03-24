@@ -386,7 +386,7 @@
                                     </form>
                                     @endif
 
-                                    {{-- Eliminar 
+                                    {{-- Eliminar
                                     <form action="{{ route('admin.mensajes.destroy', $msg->id) }}" method="POST"
                                           style="display:inline"
                                           @submit.prevent="if(confirm('¿Eliminar este mensaje?')) $el.submit()">

@@ -331,14 +331,19 @@ class BackupController extends Controller
 
     private function eliminarBackupsAntiguos(Carbon $ahora): void
     {
-        $shouldDelete = \App\Models\Setting::where('key', 'backup_delete_old')->orderBy('id', 'desc')->value('value');
+        $shouldDelete = \App\Models\Setting::where('key', 'backup_delete_old')
+            ->orderBy('id', 'desc')->value('value');
+            
         if ($shouldDelete !== '1') {
             return;
         }
-        
+
         foreach (Storage::disk(self::BACKUP_DISK)->files(self::BACKUP_DIR) as $file) {
-            $fechaArchivo = Carbon::createFromTimestamp(Storage::disk(self::BACKUP_DISK)->lastModified($file))->timezone(self::TZ_MEXICO);
-            if ($ahora->diffInDays($fechaArchivo) >= 3) {
+            $fechaArchivo = Carbon::createFromTimestamp(
+                Storage::disk(self::BACKUP_DISK)->lastModified($file)
+            )->timezone(self::TZ_MEXICO);
+
+            if ($ahora->diffInDays($fechaArchivo, false) >= 3) {
                 Storage::disk(self::BACKUP_DISK)->delete($file);
             }
         }

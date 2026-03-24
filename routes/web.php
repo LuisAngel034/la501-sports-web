@@ -24,6 +24,8 @@ use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\UserController;
 
+$promoPrefix = 'promociones';
+
 /*
 |--------------------
 | 1. RUTAS PÚBLICAS
@@ -36,7 +38,7 @@ Route::get('/ubicacion', function () { return view('ubicacion'); })->name('ubica
 
 Route::get('/a-domicilio', [PageController::class, 'index'])->name('pedido');
 Route::get('/novedades', [PageController::class, 'novedades'])->name('novedades');
-Route::get('/promociones', [PageController::class, 'promociones'])->name('promociones');
+Route::get("/{$promoPrefix}", [PageController::class, 'promociones'])->name('promociones');
 Route::post('/contacto/enviar', [PageController::class, 'enviarContacto'])->name('contacto.enviar');
 
 // Menú de Visualización y su API de actualización en vivo
@@ -105,7 +107,7 @@ Route::middleware(['auth'])->group(function () {
 | 4. RUTAS DEL ADMINISTRADOR (Protegidas y Seguras)
 |------------------------------------------------------
 */
-Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
+Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($promoPrefix) {
 
     // Dashboard y API de Gráficas/Estadísticas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
@@ -147,10 +149,12 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::delete('/novedades/{id}', [NewsController::class, 'destroy'])->name('admin.news.destroy');
 
     // Gestión de Promociones
-    Route::get('/promociones', [PromotionController::class, 'index'])->name('admin.promotions.index');
-    Route::post('/promociones', [PromotionController::class, 'store'])->name('admin.promotions.store');
-    Route::put('/promociones/{id}', [PromotionController::class, 'update'])->name('admin.promotions.update');
-    Route::delete('/promociones/{id}', [PromotionController::class, 'destroy'])->name('admin.promotions.destroy');
+    Route::prefix($promoPrefix)->group(function () {
+        Route::get('/', [PromotionController::class, 'index'])->name('admin.promotions.index');
+        Route::post('/', [PromotionController::class, 'store'])->name('admin.promotions.store');
+        Route::put('/{id}', [PromotionController::class, 'update'])->name('admin.promotions.update');
+        Route::delete('/{id}', [PromotionController::class, 'destroy'])->name('admin.promotions.destroy');
+    });
 
     // Configuración General
     Route::controller(SettingController::class)->prefix('configuracion')->group(function () {
@@ -176,7 +180,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::prefix('sistema/base-de-datos')->group(function () {
         // Vistas principales
         Route::get('/', [AdminController::class, 'database'])->name('admin.database');
-        Route::get('/historial', [AdminController::class, 'databaseHistory'])->name('admin.database.history');
+        Route::get('/historial', [BackupController::class, 'databaseHistory'])->name('admin.database.history');
         
         // 👇 El nuevo monitor que agregamos
         Route::get('/monitoreo', [AdminController::class, 'monitor'])->name('admin.database.monitor');
@@ -208,5 +212,4 @@ Route::get('/limpiar-magico', function () {
     return '¡Caché, configuración y rutas de Hostinger borradas con éxito!';
 });
 
-// Motor automático de respaldos (Cron Job) - Esta ruta debe ser pública para que el cron job la alcance
 Route::get('/run-auto-backup', [BackupController::class, 'runAutoBackup']);

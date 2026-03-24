@@ -10,13 +10,13 @@ use App\Models\Promotion;
 class PageController extends Controller
 {
     public function index() {
-        $products = \App\Models\Product::where('available', 1)->get(); 
-        return view('pedido', compact('products')); 
+        $products = \App\Models\Product::where('available', 1)->get();
+        return view('pedido', compact('products'));
     }
 
     public function novedades()
     {
-        $today = now()->toDateString(); 
+        $today = now()->toDateString();
 
         $baseQuery = News::where('active', 1)
             ->where(function ($query) use ($today) {

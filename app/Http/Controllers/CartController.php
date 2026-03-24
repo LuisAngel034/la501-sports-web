@@ -17,9 +17,9 @@ class CartController extends Controller
             $product = Product::find($id);
 
             if (!$product || $product->available == 0) {
-                unset($cart[$id]); 
+                unset($cart[$id]);
                 $cartChanged = true;
-            } 
+            }
             else {
                 if ($cart[$id]['price'] != $product->price) {
                     $cart[$id]['price'] = $product->price;
@@ -95,9 +95,9 @@ class CartController extends Controller
 
         if(isset($cart[$request->id])) {
             if($request->quantity <= 0) {
-                unset($cart[$request->id]); 
+                unset($cart[$request->id]);
             } else {
-                $cart[$request->id]['quantity'] = $request->quantity; 
+                $cart[$request->id]['quantity'] = $request->quantity;
             }
             session()->put('cart', $cart);
         }

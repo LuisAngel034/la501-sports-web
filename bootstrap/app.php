@@ -12,11 +12,14 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // AQUÍ ES DONDE DEBES AGREGAR EL ALIAS
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);
+
+        $middleware->append(\App\Http\Middleware\RaspSecurityMiddleware::class);
+
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
-    ->withExceptions(function (Exceptions $exceptions) {
+    ->withExceptions(function () {
         //
     })->create();

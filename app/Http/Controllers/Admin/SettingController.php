@@ -53,7 +53,7 @@ class SettingController extends Controller
     public function updateMap(Request $request)
     {
         $request->validate([
-            'map_url' => 'required|string|url' 
+            'map_url' => 'required|string|url'
         ]);
 
         Setting::updateOrCreate(
