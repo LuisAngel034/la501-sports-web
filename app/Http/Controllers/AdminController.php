@@ -346,7 +346,7 @@ class AdminController extends Controller
             $this->limpiarOldBackups($ahora);
         }
 
-        return response("✅ BACKUP AUTOMÁTICO GENERADO.", 200);
+        return response("BACKUP AUTOMÁTICO GENERADO.", 200);
     }
 
     private function limpiarOldBackups($ahora)
@@ -366,31 +366,112 @@ class AdminController extends Controller
     // =====================================================================
     public function monitor()
     {
+        // Validación de acceso (considera usar un Middleware de Roles más adelante)
         if (Auth::id() !== 2) {
-            return redirect()->route('admin.dashboard')->with('error', 'Denegado.');
+            return redirect()->route('admin.dashboard')->with('error', 'Acceso denegado.');
         }
 
-        $dbName = env('DB_DATABASE');
-        $sizeQuery = DB::select("SELECT SUM(data_length + index_length) / 1024 / 1024 AS size FROM information_schema.TABLES WHERE table_schema = ?", [$dbName]);
-        $dbSize = round($sizeQuery[0]->size ?? 0, 2);
+    $dbName = config('database.connections.mysql.database');
 
-        $metrics = collect(DB::select("SHOW GLOBAL STATUS"))->pluck('Value', 'Variable_name');
-        $variables = collect(DB::select("SHOW GLOBAL VARIABLES"))->pluck('Value', 'Variable_name');
+    $tablesData = DB::select("
+        SELECT
+            table_name AS name,
+            table_rows AS `rows`,
+            ROUND((data_length + index_length) / 1024 / 1024, 2) AS size,
+            ROUND(index_size_calc / 1024 / 1024, 2) AS index_size
+        FROM (
+            SELECT table_name, table_rows, data_length, index_length,
+                index_length AS index_size_calc, table_schema
+            FROM information_schema.TABLES
+        ) AS temp_tables
+        WHERE table_schema = ?
+        ORDER BY (data_length + index_length) DESC", [$dbName]);
 
-        $uptime = $metrics['Uptime'] ?? 0;
-        $qps = $uptime > 0 ? round(($metrics['Queries'] ?? 0) / $uptime, 2) : 0;
+        $dbSize = collect($tablesData)->sum('size');
+
+        $status = collect(DB::select("SHOW STATUS WHERE Variable_name IN ('Threads_connected', 'Questions', 'Uptime', 'Slow_queries')"))
+                    ->pluck('Value', 'Variable_name');
         
-        $uptimeStr = floor($uptime / 86400) . " días, " . floor(($uptime % 86400) / 3600) . " hrs";
+        $variables = collect(DB::select("SHOW VARIABLES WHERE Variable_name = 'max_connections'"))
+                        ->pluck('Value', 'Variable_name');
+
+        $uptime = $status['Uptime'] ?? 1;
+        $questions = $status['Questions'] ?? 0;
+        
+        $qps = round($questions / $uptime, 2);
+        $days = floor($uptime / 86400);
+        $hours = floor(($uptime % 86400) / 3600);
+        $uptimeStr = "{$days} días, {$hours} hrs";
+
         $version = DB::select("SELECT VERSION() as v")[0]->v;
 
         return view('admin.database-monitor', [
-            'dbSize' => $dbSize,
+            'dbSize' => number_format($dbSize, 2),
             'uptimeStr' => $uptimeStr,
             'qps' => $qps,
-            'connections' => $metrics['Threads_connected'] ?? 0,
-            'maxConnections' => $variables['max_connections'] ?? 0,
-            'slowQueries' => $metrics['Slow_queries'] ?? 0,
-            'version' => $version
+            'connections' => $status['Threads_connected'] ?? 0,
+            'maxConnections' => $variables['max_connections'] ?? 150,
+            'slowQueries' => $status['Slow_queries'] ?? 0,
+            'version' => $version,
+            'tableStats' => $tablesData
         ]);
     }
+
+    public function getMetricsApi()
+    {
+        // 1. Configuración y Obtención de Datos de Sesión/Estado
+        $dbName = config('database.connections.mysql.database');
+        
+        // Obtenemos métricas de rendimiento del motor
+        $status = collect(DB::select("SHOW STATUS WHERE Variable_name IN ('Questions', 'Uptime', 'Threads_connected', 'Slow_queries')"))
+                    ->pluck('Value', 'Variable_name');
+        
+        // Obtenemos límites de configuración
+        $variables = collect(DB::select("SHOW VARIABLES WHERE Variable_name = 'max_connections'"))
+                        ->pluck('Value', 'Variable_name');
+
+        // 2. Cálculos de Rendimiento
+        $uptimeSeconds = (int)($status['Uptime'] ?? 1);
+        $uptime = max($uptimeSeconds, 1);
+        $qps = round(($status['Questions'] ?? 0) / $uptime, 2);
+        
+        $connections = (int)($status['Threads_connected'] ?? 0);
+        $maxConnections = (int)($variables['max_connections'] ?? 150);
+        $slowQueries = (int)($status['Slow_queries'] ?? 0);
+
+        // 3. Cálculos de Almacenamiento Global
+        $storage = DB::select("
+            SELECT
+                SUM(data_length) / 1024 / 1024 AS data_size,
+                SUM(index_length) / 1024 / 1024 AS index_size
+            FROM information_schema.TABLES
+            WHERE table_schema = ?", [$dbName])[0];
+
+        $totalSize = round(($storage->data_size ?? 0) + ($storage->index_size ?? 0), 2);
+        $totalIndexSize = round($storage->index_size ?? 0, 2);
+
+        // 4. Estadísticas Detalladas por Tabla
+        $tableStats = DB::select("
+            SELECT
+                table_name AS name,
+                table_rows AS `rows`,
+                ROUND(data_length / 1024 / 1024, 2) AS size,
+                ROUND(index_length / 1024 / 1024, 2) AS index_size
+            FROM information_schema.TABLES
+            WHERE table_schema = ?
+            ORDER BY (data_length + index_length) DESC", [$dbName]);
+
+        // 5. Retorno Único de JSON
+        return response()->json([
+            'qps'            => $qps,
+            'connections'    => $connections,
+            'maxConnections' => $maxConnections,
+            'slowQueries'    => $slowQueries,
+            'dbSize'         => $totalSize,
+            'totalIndexSize' => $totalIndexSize,
+            'uptime'         => $uptimeSeconds,
+            'tableStats'     => $tableStats
+        ]);
+    }
+
 }

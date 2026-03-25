@@ -213,3 +213,20 @@ Route::get('/limpiar-magico', function () {
 });
 
 Route::get('/run-auto-backup', [BackupController::class, 'runAutoBackup']);
+
+/*
+|------------------------------------------------------
+| RUTAS TEMPORALES PARA PROBAR VISTAS DE ERROR
+|------------------------------------------------------
+*/
+Route::prefix('test-errors')->group(function () {
+    Route::get('/403', function () { abort(403); }); // RASP / Prohibido
+    Route::get('/404', function () { abort(404); }); // No encontrado
+    Route::get('/500', function () { abort(500); }); // Error de servidor
+    Route::get('/419', function () { abort(419); }); // Sesión expirada
+    Route::get('/401', function () { abort(401); }); // No autorizado
+});
+
+// routes/web.php
+
+Route::get('/admin/database/api/metrics', [AdminController::class, 'getMetricsApi'])->name('admin.database.api.metrics');

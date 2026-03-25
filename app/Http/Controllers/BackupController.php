@@ -343,7 +343,7 @@ class BackupController extends Controller
                 Storage::disk(self::BACKUP_DISK)->lastModified($file)
             )->timezone(self::TZ_MEXICO);
 
-            if ($ahora->diffInDays($fechaArchivo, false) >= 3) {
+            if ($fechaArchivo->diffInDays($ahora) >= 3) {
                 Storage::disk(self::BACKUP_DISK)->delete($file);
             }
         }
