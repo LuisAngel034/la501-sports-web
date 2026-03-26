@@ -182,14 +182,12 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
         Route::get('/', [AdminController::class, 'database'])->name('admin.database');
         Route::get('/historial', [BackupController::class, 'databaseHistory'])->name('admin.database.history');
         
-        // 👇 El nuevo monitor que agregamos
         Route::get('/monitoreo', [AdminController::class, 'monitor'])->name('admin.database.monitor');
 
         // Acciones de Respaldo
         Route::post('/backup', [AdminController::class, 'createBackup'])->name('admin.database.backup');
         Route::post('/descargar', [AdminController::class, 'downloadBackup'])->name('admin.database.download');
-        
-        // 👇 ESTA ES LA RUTA QUE LARAVEL DICE QUE NO ENCUENTRA
+
         Route::post('/auto', [AdminController::class, 'saveAuto'])->name('admin.database.saveAuto');
 
         // Acciones de Restauración
