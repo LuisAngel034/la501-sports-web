@@ -130,6 +130,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
     // Gestión del Menú
     Route::get('/menu', [AdminMenuController::class, 'index'])->name('admin.menu');
     Route::get('/menu/exportar', [AdminMenuController::class, 'exportCSV'])->name('admin.menu.export');
+    Route::get('/menu/plantilla', [AdminMenuController::class, 'downloadTemplate'])->name('admin.menu.template');
     Route::post('/menu/importar', [AdminMenuController::class, 'importCSV'])->name('admin.menu.import');
     Route::post('/menu/store', [AdminMenuController::class, 'store'])->name('admin.menu.store');
     Route::put('/menu/{id}', [AdminMenuController::class, 'update'])->name('admin.menu.update');
@@ -170,6 +171,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
 
     // Gestión de Inventario
     Route::get('/inventario/exportar', [InventoryController::class, 'exportCSV'])->name('admin.inventory.export');
+    Route::get('/inventario/plantilla', [InventoryController::class, 'downloadTemplate'])->name('admin.inventory.template');
     Route::post('/inventario/importar', [InventoryController::class, 'importCSV'])->name('admin.inventory.import');
     Route::resource('inventario', InventoryController::class)->except(['create', 'show', 'edit'])->names('admin.inventory');
     Route::put('/inventario/{id}/ajustar', [InventoryController::class, 'adjust'])->name('admin.inventory.adjust');

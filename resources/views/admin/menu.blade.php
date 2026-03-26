@@ -578,6 +578,14 @@
                 <p style="margin:0; font-size:12px; color:#dc2626; line-height:1.5;">Solo archivos <strong>.csv</strong> — formato: <code style="background:#fee2e2; padding:1px 5px; border-radius:4px; font-size:11px;">Nombre;Categoría;Precio;Disponible</code></p>
             </div>
         </div>
+        {{-- NUEVO BOTÓN DE PLANTILLA --}}
+            <div style="text-align: right; margin-bottom: 20px;">
+                <a href="{{ route('admin.menu.template') }}" style="font-size:12px; color:#2563EB; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px; transition: color 0.2s;">
+                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Descargar plantilla de ejemplo
+                </a>
+            </div>
+        </div>
 
         <form action="{{ route('admin.menu.import') }}" method="POST" enctype="multipart/form-data">
             @csrf

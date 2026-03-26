@@ -113,6 +113,41 @@ class InventoryController extends Controller
             }
             fclose($file);
         };
+        
+
+        return response()->stream($callback, 200, $headers);
+    }
+    
+    // ==========================================
+    // DESCARGAR PLANTILLA DE INVENTARIO
+    // ==========================================
+    public function downloadTemplate()
+    {
+        $fileName = 'Plantilla_Inventario_La501.csv';
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0",
+        ];
+
+        $callback = function () {
+            $file = fopen('php://output', 'w');
+
+            // BOM para que Excel lea bien los acentos
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Fila 1: Los encabezados exactos (5 columnas)
+            fputcsv($file, ['Nombre', 'Categoria', 'StockActual', 'StockMinimo', 'Unidad'], ';');
+
+            // Fila 2 y 3: Ejemplos de relleno
+            fputcsv($file, ['Carne de Res Premium', 'Carnes', '25.5', '5.0', 'kg'], ';');
+            fputcsv($file, ['Pan de Hamburguesa', 'Panaderia', '120', '30', 'pz'], ';');
+
+            fclose($file);
+        };
 
         return response()->stream($callback, 200, $headers);
     }
@@ -153,4 +188,3 @@ class InventoryController extends Controller
         return back()->with('success', '¡Inventario actualizado desde CSV correctamente!');
     }
 }
-

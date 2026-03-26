@@ -139,11 +139,13 @@ class MenuController extends Controller
             // BOM para Excel
             fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
 
-            fputcsv($file, ['Nombre', 'Precio', 'Categoria', 'Subcategoria', 'Descripcion', 'Disponible'], ';');
+            // AQUÍ SE CAMBIÓ A COMA
+            fputcsv($file, ['Nombre', 'Precio', 'Categoria', 'Subcategoria', 'Descripcion', 'Disponible'], ',');
 
             $products = \App\Models\Product::all();
 
             foreach ($products as $product) {
+                // AQUÍ SE CAMBIÓ A COMA
                 fputcsv($file, [
                     $product->name,
                     $product->price,
@@ -151,8 +153,42 @@ class MenuController extends Controller
                     $product->subcategory,
                     $product->description,
                     $product->available ? 'Si' : 'No',
-                ], ';');
+                ], ',');
             }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    // ==========================================
+    // DESCARGAR PLANTILLA DE MENÚ (Ejemplo vacío)
+    // ==========================================
+    public function downloadTemplate()
+    {
+        $fileName = 'Plantilla_Menu_La501.csv';
+
+        $headers = [
+            "Content-type"        => "text/csv; charset=UTF-8",
+            "Content-Disposition" => "attachment; filename=$fileName",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0",
+        ];
+
+        $callback = function () {
+            $file = fopen('php://output', 'w');
+
+            // BOM para que Excel lea bien los acentos
+            fputs($file, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // AQUÍ SE CAMBIÓ A COMA
+            fputcsv($file, ['Nombre', 'Precio', 'Categoria', 'Subcategoria', 'Descripcion', 'Disponible'], ',');
+
+            // AQUÍ SE CAMBIÓ A COMA
+            fputcsv($file, ['Hamburguesa Clasica', '120.50', 'Hamburguesas', '', 'Carne de res, queso, lechuga y tomate', 'Si'], ',');
+            fputcsv($file, ['Margarita', '95.00', 'Coctelería', 'Tequila', 'Cóctel clásico con limón y sal', 'Si'], ',');
+
             fclose($file);
         };
 
@@ -168,7 +204,8 @@ class MenuController extends Controller
         $file       = fopen($request->file('csv_file')->getRealPath(), 'r');
         $isFirstRow = true;
 
-        while (($data = fgetcsv($file, 2000, ";")) !== false) {
+        // AQUÍ SE CAMBIÓ A COMA
+        while (($data = fgetcsv($file, 2000, ",")) !== false) {
             if ($isFirstRow) {
                 $isFirstRow = false;
                 continue;
