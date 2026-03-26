@@ -454,7 +454,6 @@
                                 <option value="admin">Administrador</option>
                                 <option value="cajero">Cajero</option>
                                 <option value="cocinero">Cocinero</option>
-                                <option value="limpieza">Limpieza</option>
                                 <option value="empleado">Mesero</option>
                             </select>
                         </div>
