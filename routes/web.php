@@ -8,6 +8,7 @@ use App\Http\Controllers\PageController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\ReservationController;
 
 // 2. Empleados
 use App\Http\Controllers\WaiterController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\Admin\PromotionController;
 use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\ReservationAdminController;
 
 $promoPrefix = 'promociones';
 
@@ -34,6 +36,7 @@ $promoPrefix = 'promociones';
 Route::get('/', function () { return view('quienes-somos'); })->name('nosotros');
 Route::get('/contacto', function () { return view('contacto'); })->name('contacto');
 Route::get('/reservaciones', function () { return view('reservaciones'); })->name('reservaciones');
+Route::post('/reservaciones/store', [ReservationController::class, 'store'])->name('reservations.store');
 Route::get('/ubicacion', function () { return view('ubicacion'); })->name('ubicacion');
 
 Route::get('/a-domicilio', [PageController::class, 'index'])->name('pedido');
@@ -109,6 +112,11 @@ Route::middleware(['auth'])->group(function () {
 */
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($promoPrefix) {
 
+    Route::get('/reservaciones', [ReservationAdminController::class, 'index'])->name('admin.reservations.index');
+    
+    Route::patch('/reservations/{reservation}/status/{status}', [ReservationAdminController::class, 'updateStatus'])
+        ->name('admin.reservations.update-status');
+
     // Dashboard y API de Gráficas/Estadísticas
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/exportar-ventas', [DashboardController::class, 'exportSalesCSV'])->name('admin.sales.export.excel');
@@ -117,11 +125,11 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
     
     // Rutas de AdminController
     Route::get('/ventas', [AdminController::class, 'ventas'])->name('admin.ventas');
-    Route::get('/reservaciones', [AdminController::class, 'reservaciones'])->name('admin.reservations.index');
     Route::get('/api/sales-data', [AdminController::class, 'getSalesData']);
     Route::get('/api/orders/latest', function() {
         return \App\Models\Order::with('items')->latest()->take(10)->get();
     })->name('admin.api.orders');
+    
 
     // Gestión de Mensajes (CRM)
     Route::get('/mensajes', [AdminController::class, 'mensajes'])->name('admin.mensajes');
@@ -134,6 +142,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
     Route::post('/menu/store', [AdminMenuController::class, 'store'])->name('admin.menu.store');
     Route::put('/menu/{id}', [AdminMenuController::class, 'update'])->name('admin.menu.update');
     Route::delete('/menu/{id}', [AdminMenuController::class, 'destroy'])->name('admin.menu.destroy');
+    Route::get('/admin/menu/template', [MenuController::class, 'downloadTemplate'])->name('admin.menu.template');
     
     // Gestión de Usuarios / Empleados
     Route::get('/usuarios', [UserController::class, 'index'])->name('admin.users.index');
@@ -173,6 +182,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
     Route::post('/inventario/importar', [InventoryController::class, 'importCSV'])->name('admin.inventory.import');
     Route::resource('inventario', InventoryController::class)->except(['create', 'show', 'edit'])->names('admin.inventory');
     Route::put('/inventario/{id}/ajustar', [InventoryController::class, 'adjust'])->name('admin.inventory.adjust');
+    Route::get('/inventario/plantilla', [InventoryController::class, 'downloadTemplate'])->name('admin.inventory.template');
 
     // ==========================================================
     // SISTEMA Y BASE DE DATOS (Módulo Avanzado)

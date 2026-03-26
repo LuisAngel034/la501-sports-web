@@ -14,7 +14,7 @@ class Order extends Model
         'customer_name',
         'customer_phone',
         'customer_address',
-        'table_number',    // <--- ¡ESTO ES LO QUE SEGURAMENTE FALTA!
+        'table_number',
         'total',
         'status',
         'payment_method',
