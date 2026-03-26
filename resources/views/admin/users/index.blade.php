@@ -450,8 +450,9 @@
                         <div>
                             {{-- FIX Web:S6853 L443: label for="emp-role" --}}
                             <label class="au-label" for="emp-role">Rol / Puesto *</label>
-                            <select id="emp-role" name="role" required class="au-input">
-                                <option value="cajero">Cajero</option>  
+                           <select id="emp-role" name="role" required class="au-input">
+                                <option value="admin">Administrador</option>
+                                <option value="cajero">Cajero</option>
                                 <option value="cocinero">Cocinero</option>
                                 <option value="empleado">Mesero</option>
                             </select>
