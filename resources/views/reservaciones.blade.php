@@ -186,11 +186,11 @@ html:not(.dark) .rv-page {
 .rv-info-v { font-size:12px; font-weight:600; color:var(--txt); margin:0; line-height:1.4; transition:color .3s; }
 
 /* horarios */
-.rv-hor { width:100%; border-collapse:collapse; }
-.rv-hor td { padding:5px 0; font-size:11px; border-bottom:1px solid var(--bdr); }
-.rv-hor tr:last-child td { border-bottom:none; }
-.rv-hor .day { color:var(--sub); font-weight:500; width:60%; }
-.rv-hor .hrs { color:var(--txt); font-weight:700; text-align:right; transition:color .3s; }
+.rv-hor { width:100%; display:flex; flex-direction:column; gap:0; }
+.rv-hor-row { display:grid; grid-template-columns:1fr 1fr; padding:5px 0; font-size:11px; border-bottom:1px solid var(--bdr); align-items:center; }
+.rv-hor-row:last-child { border-bottom:none; }
+.rv-hor .day { color:var(--sub); font-weight:500; white-space:nowrap; }
+.rv-hor .hrs { color:var(--txt); font-weight:700; text-align:right; transition:color .3s; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .rv-hor .hrs.gn { color:var(--gn); }
 
 /* nota card */
@@ -253,14 +253,14 @@ html:not(.dark) .rv-page {
                             {{-- Nombre + Teléfono --}}
                             <div class="rv-g2">
                                 <div>
-                                    <label class="rv-lbl">Nombre completo <span class="req">*</span></label>
-                                    <input type="text" name="nombre_completo" class="rv-inp"
+                                    <label class="rv-lbl" for="nombre_completo">Nombre completo <span class="req">*</span></label>
+                                    <input type="text" id="nombre_completo" name="nombre_completo" class="rv-inp"
                                            placeholder="Juan Pérez"
                                            value="{{ old('nombre_completo') }}" required>
                                 </div>
                                 <div>
-                                    <label class="rv-lbl">Teléfono <span class="req">*</span></label>
-                                    <input type="tel" name="telefono" class="rv-inp"
+                                    <label class="rv-lbl" for="telefono">Teléfono <span class="req">*</span></label>
+                                    <input type="tel" id="telefono" name="telefono" class="rv-inp"
                                            placeholder="771-XXX-XXXX"
                                            value="{{ old('telefono') }}" required>
                                 </div>
@@ -268,8 +268,8 @@ html:not(.dark) .rv-page {
 
                             {{-- Correo --}}
                             <div>
-                                <label class="rv-lbl">Correo electrónico <span class="req">*</span></label>
-                                <input type="email" name="correo_electronico" class="rv-inp"
+                                <label class="rv-lbl" for="correo_electronico">Correo electrónico <span class="req">*</span></label>
+                                <input type="email" id="correo_electronico" name="correo_electronico" class="rv-inp"
                                        placeholder="ejemplo@correo.com"
                                        value="{{ old('correo_electronico') }}" required>
                             </div>
@@ -277,22 +277,22 @@ html:not(.dark) .rv-page {
                             {{-- Fecha + Hora --}}
                             <div class="rv-g2">
                                 <div>
-                                    <label class="rv-lbl">Fecha <span class="req">*</span></label>
-                                    <input type="date" name="fecha_reservacion" class="rv-inp"
+                                    <label class="rv-lbl" for="fecha_reservacion">Fecha <span class="req">*</span></label>
+                                    <input type="date" id="fecha_reservacion" name="fecha_reservacion" class="rv-inp"
                                            min="{{ date('Y-m-d') }}"
                                            value="{{ old('fecha_reservacion') }}" required>
                                 </div>
                                 <div>
-                                    <label class="rv-lbl">Hora <span class="req">*</span></label>
-                                    <input type="time" name="hora_reservacion" class="rv-inp"
+                                    <label class="rv-lbl" for="hora_reservacion">Hora <span class="req">*</span></label>
+                                    <input type="time" id="hora_reservacion" name="hora_reservacion" class="rv-inp"
                                            value="{{ old('hora_reservacion') }}" required>
                                 </div>
                             </div>
 
                             {{-- Zona --}}
                             <div>
-                                <label class="rv-lbl">Zona <span class="req">*</span></label>
-                                <div class="rv-zona-grid">
+                                <label class="rv-lbl" for="zona">Zona <span class="req">*</span></label>
+                                <div class="rv-zona-grid" id="zona">
                                     <div class="rv-zona-opt" :class="zona==='General'?'on':''" @click="zona='General'">
                                         <span class="ico">🍽️</span>
                                         <span>Área General</span>
@@ -307,8 +307,8 @@ html:not(.dark) .rv-page {
 
                             {{-- Personas --}}
                             <div>
-                                <label class="rv-lbl">Cantidad de personas <span class="req">*</span></label>
-                                <select name="cantidad_personas" class="rv-sel" x-model="personas" @change="checkGrupo()">
+                                <label class="rv-lbl" for="cantidad_personas">Cantidad de personas <span class="req">*</span></label>
+                                <select id="cantidad_personas" name="cantidad_personas" class="rv-sel" x-model="personas" @change="checkGrupo()">
                                     @for($i = 1; $i <= 10; $i++)
                                         <option value="{{ $i }}">{{ $i }} {{ $i == 1 ? 'Persona' : 'Personas' }}</option>
                                     @endfor
@@ -349,8 +349,7 @@ html:not(.dark) .rv-page {
                 {{-- Horarios Dinámicos Uniformes --}}
                 <div class="rv-info-card">
                     <p class="rv-info-sec">Horarios</p>
-                    <table class="rv-hor" style="width: 100%; border-collapse: collapse;">
-                        <tbody>
+                    <div class="rv-hor">
                         @php
                             $dias = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado', 'Domingo'];
                         @endphp
@@ -360,23 +359,17 @@ html:not(.dark) .rv-page {
                                 $key = 'schedule_' . strtolower($dia);
                                 $horario = \App\Models\Setting::where('key', $key)->value('value') ?: '12:00 – 22:00';
                                 $cerrado = strtolower(trim($horario)) === 'cerrado';
-                                
-                                // Abreviamos para ganar espacio y que quepa la hora en una sola línea
-                                $diaAbrev = ($dia == 'Miercoles') ? 'Mié' : substr($dia, 0, 3);
                             @endphp
-                            <tr>
-                                <td class="day" style="width: 25%; padding-right: 5px; white-space: nowrap;">
+                            <div class="rv-hor-row">
+                                <div class="day">
                                     {{ $dia }}
-                                </td>
-                                {{-- Quitamos la clase 'gn' para que el color sea el normal --}}
-                                <td class="hrs {{ $cerrado ? 'cerrado' : '' }}"
-                                    style="width: 75%; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums;">
+                                </div>
+                                <div class="hrs {{ $cerrado ? 'cerrado' : '' }}">
                                     {{ $horario }}
-                                </td>
-                            </tr>
+                                </div>
+                            </div>
                         @endforeach
-                        </tbody>
-                    </table>
+                    </div>
                 </div>
 
                 {{-- Nota --}}

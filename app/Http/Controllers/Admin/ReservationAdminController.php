@@ -8,24 +8,28 @@ use Illuminate\Http\Request;
 
 class ReservationAdminController extends Controller
 {
-    // Carga la vista de administración con los datos
-    public function index()
+    public function index(Request $request)
     {
-        $reservations = Reservation::orderBy('fecha_reservacion', 'desc')
-                        ->orderBy('hora_reservacion', 'desc')
-                        ->paginate(10);
+        // 1. Usamos 'pendiente' como valor por defecto para que coincida con la DB
+        $status = $request->get('status', 'pendiente');
+
+        $reservations = Reservation::where('status', $status)
+                        ->orderBy('fecha_reservacion', 'asc')
+                        ->orderBy('hora_reservacion', 'asc')
+                        ->paginate(10)
+                        ->withQueryString();
 
         return view('admin.reservaciones', compact('reservations'));
     }
 
-    // Maneja el cambio de estado (Confirmar/Cancelar)
     public function updateStatus(Reservation $reservation, $status)
     {
-        $validStatuses = ['pending', 'confirmed', 'cancelled'];
+        // 2. Validamos contra los estados reales de tu ENUM en la DB
+        $validStatuses = ['pendiente', 'confirmada', 'cancelada'];
 
         if (in_array($status, $validStatuses)) {
             $reservation->update(['status' => $status]);
-            return back()->with('success', 'Reserva actualizada a ' . $status);
+            return back()->with('success', 'Reserva actualizada correctamente.');
         }
 
         return back()->with('error', 'Estado no válido.');

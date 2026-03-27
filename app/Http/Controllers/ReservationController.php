@@ -32,6 +32,8 @@ class ReservationController extends Controller
             'hora_reservacion'   => [
                 'required',
                 function ($attribute, $value, $fail) use ($opening, $closing) {
+                    unset($attribute);
+                    
                     $time = strtotime($value);
                     $open = strtotime($opening);
                     $close = strtotime($closing);
