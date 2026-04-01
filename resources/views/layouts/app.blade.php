@@ -9,10 +9,10 @@
 
     {{-- Tema antes de pintar --}}
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
+        if (localStorage.theme === 'light') {
             document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
         }
     </script>
 
@@ -239,9 +239,15 @@
                     <div class="relative inline-block text-left" x-data="{ open: false }">
                         <button @click="open = !open" @click.away="open = false"
                                 class="flex items-center gap-2 p-1 pr-3 rounded-full bg-zinc-100 dark:bg-zinc-800 hover:ring-2 hover:ring-orange-500 transition-all">
-                            <div class="user-avatar h-8 w-8 rounded-full flex items-center justify-center text-white font-bold uppercase text-xs shadow">
-                                {{ substr(Auth::user()->name, 0, 2) }}
-                            </div>
+                            @if(Auth::user()->avatar)
+                                <img src="{{ asset(Auth::user()->avatar) }}"
+                                    class="h-8 w-8 rounded-full object-cover border-2 border-orange-500 shadow"
+                                    alt="{{ Auth::user()->name }}">
+                            @else
+                                <div class="user-avatar h-8 w-8 rounded-full flex items-center justify-center text-white font-bold uppercase text-xs shadow">
+                                    {{ substr(Auth::user()->name, 0, 2) }}
+                                </div>
+                            @endif
                             <div class="hidden sm:block text-left">
                                 <p class="text-xs font-bold leading-none text-zinc-800 dark:text-white">{{ Auth::user()->name }}</p>
                                 <p class="text-[10px] text-zinc-500 uppercase">{{ Auth::user()->role }}</p>
@@ -402,11 +408,10 @@
         const lightIcon = document.getElementById('theme-toggle-light-icon');
         const html      = document.documentElement;
 
-        if (localStorage.getItem('theme') === 'dark') {
-            html.classList.add('dark');
-        } else {
+        if (localStorage.getItem('theme') === 'light') {
             html.classList.remove('dark');
-            localStorage.setItem('theme', 'light');
+        } else {
+            html.classList.add('dark');
         }
 
         function syncIcons() {

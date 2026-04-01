@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Events\NotificationProcessed;
 use App\Models\Reservation;
 use App\Models\Setting;
 
@@ -47,17 +48,23 @@ class ReservationController extends Controller
             'zona'               => 'required|string',
         ]);
 
-        \App\Models\Reservation::create($request->all());
+        $reserva = \App\Models\Reservation::create($request->all());
+
+        event(new NotificationProcessed(
+            "¡Nueva reservación de {$reserva->nombre_completo} para {$reserva->cantidad_personas} personas!",
+            'success'
+        ));
 
         return back()->with('success', 'Solicitud enviada. Espera nuestra confirmación.');
     }
 
     public function updateStatus(Reservation $reservation, $status)
     {
-        // Validamos que el status sea uno de los permitidos
-        if (in_array($status, ['pending', 'confirmed', 'cancelled'])) {
+        $allowed = ['pendiente', 'confirmada', 'cancelada', 'finalizada'];
+
+        if (in_array($status, $allowed)) {
             $reservation->update(['status' => $status]);
-            return back()->with('success', 'Estado de la reserva actualizado a: ' . ucfirst($status));
+            return back()->with('success', 'Estado actualizado.');
         }
 
         return back()->with('error', 'Estado no válido.');

@@ -16,5 +16,10 @@ class Reservation extends Model
         'hora_reservacion',
         'cantidad_personas',
         'zona',
+        'status',
+    ];
+
+    protected $casts = [
+        'fecha_reservacion' => 'date',
     ];
 }

@@ -95,6 +95,7 @@ Route::controller(AuthController::class)->group(function () {
 Route::middleware(['auth'])->group(function () {
     // Clientes
     Route::get('/perfil', [AuthController::class, 'showPerfil'])->name('perfil');
+    Route::post('/perfil', [AuthController::class, 'updatePerfil'])->name('perfil.update');
 
     // Meseros
     Route::prefix('mesero')->group(function () {
@@ -102,6 +103,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/mesas/{id}/pedido', [WaiterController::class, 'tomarPedido'])->name('mesero.pedido');
         Route::put('/mesas/{id}/cobrar', [WaiterController::class, 'cobrar'])->name('mesero.cobrar');
         Route::post('/mesas/{id}/pedido', [WaiterController::class, 'guardarPedido'])->name('mesero.guardar_pedido');
+        
+    });
+
+    // Solo para activar el enlace en el servidor
+    Route::get('/link-storage', function () {
+        Artisan::call('storage:link');
+        return "Enlace creado con éxito";
     });
 });
 

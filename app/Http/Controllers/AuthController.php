@@ -120,7 +120,49 @@ class AuthController extends Controller
 
     public function showPerfil()
     {
-        return view('auth.perfil', ['user' => Auth::user()]);
+        $user = \App\Models\User::find(Auth::id());
+
+        // Verificar logros de fidelidad al visitar el perfil
+        (new \App\Services\AchievementService())->check($user);
+
+        $allAchievements      = \App\Models\Achievement::orderBy('categoria')->get();
+        $unlockedIds          = $user->achievements()->pluck('achievement_id')->toArray();
+        $reservacionesTotales = \App\Models\Reservation::where('correo_electronico', $user->email)->count();
+
+        return view('auth.perfil', compact('user', 'allAchievements', 'unlockedIds', 'reservacionesTotales'));
+    }
+
+    public function updatePerfil(Request $request)
+    {
+        $request->validate([
+            'telefono' => 'nullable|string|max:15',
+            'avatar'   => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+        ]);
+
+        $user = \App\Models\User::find(Auth::id());
+        $user->telefono = $request->telefono;
+
+        if ($request->hasFile('avatar')) {
+            // Borrar avatar anterior
+            if ($user->avatar) {
+                $oldPath = public_path($user->avatar);
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
+                }
+            }
+
+            $file      = $request->file('avatar');
+            $extension = $file->getClientOriginalExtension();
+            $filename  = 'av_' . time() . '_' . Auth::id() . '.' . $extension;
+
+            // Usar putFileAs con disco local apuntando a public/avatars
+            \Storage::disk('public_avatars')->putFileAs('', $file, $filename);
+
+            $user->avatar = 'avatars/' . $filename;
+        }
+
+        $user->save();
+        return back()->with('status', '¡Perfil actualizado con éxito!');
     }
 
     // =========================================================================

@@ -137,9 +137,11 @@ class CheckoutController extends Controller
         if ($method === 'efectivo') {
             session()->forget('cart');
             if (Auth::check()) {
-                $user = Auth::user();
+                $user = \App\Models\User::find(Auth::id());
                 $user->points += floor($total / 10);
                 $user->save();
+
+                (new \App\Services\AchievementService())->check($user);
             }
             return redirect()->route('pedido')->with('success', '¡Pedido recibido! Lo prepararemos enseguida y pagarás al recibir.');
         }
@@ -189,6 +191,8 @@ class CheckoutController extends Controller
                     $user = \App\Models\User::find($order->user_id);
                     $user->points += floor($order->total / 10);
                     $user->save();
+
+                    (new \App\Services\AchievementService())->check($user);
                 }
             }
         }

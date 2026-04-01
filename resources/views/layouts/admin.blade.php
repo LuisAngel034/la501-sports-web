@@ -8,10 +8,10 @@
     <link rel="icon" type="image/png" href="{{ asset('images/logo_501_trasparente.png') }}?v=2">
 
     <script>
-        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        } else {
+        if (localStorage.theme === 'light') {
             document.documentElement.classList.remove('dark');
+        } else {
+            document.documentElement.classList.add('dark');
         }
     </script>
 
@@ -576,6 +576,36 @@
                 syncAllThemeIcons();
             });
         }
+
+        // Dentro de tu <script> en el layout
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.Echo) {
+                window.Echo.private('admin-notifications')
+                    .listen('.NotificationProcessed', (e) => {
+                        console.log("Evento recibido:", e);
+                        // Tu código de Swal.fire...
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: e.type === 'reservacion' ? 'success' : 'info', // Dinámico
+                            title: 'Notificación de La 501',
+                            text: e.message,
+                            showConfirmButton: false,
+                            timer: 5000,
+                            timerProgressBar: true
+                        });
+
+                        if(window.location.pathname.includes('reservaciones')) {
+                            // Asegúrate de que esta función exista o recarga la página
+                            if (typeof actualizarTablaReservaciones === "function") {
+                                actualizarTablaReservaciones();
+                            } else {
+                                location.reload();
+                            }
+                        }
+                    });
+            }
+        });
     </script>
 </body>
 </html>
