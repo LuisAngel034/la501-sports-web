@@ -4,12 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inventory;
-use App\Traits\CsvExporter; // <--- Importante
+use App\Traits\CsvExporter;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
 {
-    use CsvExporter; // <--- Implementar el Trait
+    use CsvExporter;
+
+    // =========================================================================
+    // VISUALIZACIÓN PRINCIPAL
+    // =========================================================================
 
     public function index()
     {
@@ -20,7 +24,91 @@ class InventoryController extends Controller
         return view('admin.inventory.index', compact('items', 'totalItems', 'lowStockCount'));
     }
 
-    // ... (métodos store, update, adjust y destroy se mantienen igual)
+    // =========================================================================
+    // CRUD ORIGINAL RESTAURADO
+    // =========================================================================
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name'          => 'required|string|max:255',
+            'category'      => 'required|string|max:255',
+            'current_stock' => 'required|numeric|min:0',
+            'min_stock'     => 'required|numeric|min:0',
+            'unit'          => 'required|string|max:50',
+        ]);
+
+        Inventory::create([
+            'name'          => trim($request->name),
+            'category'      => trim($request->category),
+            'current_stock' => $request->current_stock,
+            'min_stock'     => $request->min_stock,
+            'unit'          => trim($request->unit),
+        ]);
+
+        return back()->with('success', 'Artículo agregado al inventario exitosamente.');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $item = Inventory::findOrFail($id);
+
+        $request->validate([
+            'name'          => 'required|string|max:255',
+            'category'      => 'required|string|max:255',
+            'current_stock' => 'required|numeric|min:0',
+            'min_stock'     => 'required|numeric|min:0',
+            'unit'          => 'required|string|max:50',
+        ]);
+
+        $item->update([
+            'name'          => trim($request->name),
+            'category'      => trim($request->category),
+            'current_stock' => $request->current_stock,
+            'min_stock'     => $request->min_stock,
+            'unit'          => trim($request->unit),
+        ]);
+
+        return back()->with('success', 'Artículo actualizado correctamente.');
+    }
+
+    public function adjust(Request $request, $id)
+    {
+        $item = Inventory::findOrFail($id);
+
+        // Validamos que se envíe la cantidad y qué tipo de acción es (sumar o restar)
+        $request->validate([
+            'adjustment' => 'required|numeric|min:0.01',
+            'action'     => 'required|in:add,subtract'
+        ]);
+
+        if ($request->action === 'add') {
+            $item->current_stock += $request->adjustment;
+        } else {
+            $item->current_stock -= $request->adjustment;
+            
+            // Evitamos que el stock quede en números negativos
+            if ($item->current_stock < 0) {
+                $item->current_stock = 0;
+            }
+        }
+
+        $item->save();
+
+        return back()->with('success', 'Stock actualizado correctamente.');
+    }
+
+    public function destroy($id)
+    {
+        $item = Inventory::findOrFail($id);
+        $item->delete();
+
+        return back()->with('success', 'Artículo eliminado del inventario.');
+    }
+
+    // =========================================================================
+    // IMPORTACIÓN / EXPORTACIÓN CSV (Lógica de tu compañero)
+    // =========================================================================
 
     public function exportCSV()
     {
@@ -78,10 +166,10 @@ class InventoryController extends Controller
             Inventory::updateOrCreate(
                 ['name' => trim($data[0])],
                 [
-                    'category'      => $data[1] ?? 'Otros',
+                    'category'      => trim($data[1] ?? 'Otros'),
                     'current_stock' => (float) ($data[2] ?? 0),
                     'min_stock'     => (float) ($data[3] ?? 0),
-                    'unit'          => $data[4] ?? 'pz',
+                    'unit'          => trim($data[4] ?? 'pz'),
                 ]
             );
         }

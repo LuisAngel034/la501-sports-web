@@ -6,22 +6,133 @@ use App\Events\MenuUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Ingrediente;
-use App\Traits\CsvExporter; // <--- Importante
+use App\Traits\CsvExporter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class MenuController extends Controller
 {
-    use CsvExporter; // <--- Implementar el Trait
+    use CsvExporter;
+
+    // =========================================================================
+    // VISUALIZACIÓN
+    // =========================================================================
 
     public function index()
     {
-        $products = Product::all();
+        // Traemos los productos con sus ingredientes para tu lógica de visualización/edición
+        $products = Product::with('ingredientes')->get();
+        // Traemos el inventario para la nueva lógica de tu compañero
         $inventario = \App\Models\Inventory::select('id', 'name')->get();
+        
         return view('admin.menu', compact('products', 'inventario'));
     }
 
-    // ... (métodos store, update y destroy se mantienen igual)
+    // =========================================================================
+    // CRUD ORIGINAL (Tus métodos restaurados)
+    // =========================================================================
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('products', 'public');
+        }
+
+        $product = Product::create([
+            'name' => $request->name,
+            'description' => $request->description,
+            'price' => $request->price,
+            'category' => $request->category,
+            'image' => $imagePath,
+            'available' => $request->has('available') ? 1 : 0,
+        ]);
+
+        if ($request->ingredients && is_array($request->ingredients)) {
+            foreach ($request->ingredients as $item) {
+                if (!empty($item)) {
+                    Ingrediente::create([
+                        'product_id' => $product->id,
+                        'nombre'     => $item
+                    ]);
+                }
+            }
+        }
+
+        // Opcional: Notificar a los clientes que el menú cambió (Lógica de tu compañero)
+        event(new MenuUpdated());
+
+        return back()->with('success', 'Platillo guardado correctamente');
+    }
+
+    public function update(Request $request, $id)
+    {
+        $product = Product::findOrFail($id);
+
+        $request->validate([
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        if ($request->hasFile('image')) {
+            if ($product->image) {
+                Storage::disk('public')->delete($product->image);
+            }
+            $product->image = $request->file('image')->store('products', 'public');
+        }
+
+        $product->update([
+            'name' => $request->name,
+            'description' => $request->description,
+            'price' => $request->price,
+            'category' => $request->category,
+            'available' => $request->has('available') ? 1 : 0,
+        ]);
+
+        if ($request->ingredients) {
+            $product->ingredientes()->delete();
+            foreach ($request->ingredients as $item) {
+                if (!empty($item)) {
+                    Ingrediente::create([
+                        'product_id' => $product->id,
+                        'nombre' => $item
+                    ]);
+                }
+            }
+        }
+
+        event(new MenuUpdated());
+
+        return back()->with('success', 'Platillo actualizado correctamente');
+    }
+
+    public function destroy($id)
+    {
+        $product = Product::findOrFail($id);
+        
+        if ($product->image) {
+            Storage::disk('public')->delete($product->image);
+        }
+
+        $product->delete();
+        
+        event(new MenuUpdated());
+
+        return back()->with('success', 'Platillo eliminado correctamente');
+    }
+
+    public function apiProducts()
+    {
+        $products = Product::where('available', 1)->get();
+        return response()->json($products);
+    }
+
+    // =========================================================================
+    // IMPORTACIÓN / EXPORTACIÓN CSV (Métodos de tu compañero)
+    // =========================================================================
 
     public function exportCSV()
     {
@@ -39,7 +150,7 @@ class MenuController extends Controller
                     $product->name,
                     $product->price,
                     $product->category,
-                    $product->subcategory,
+                    $product->subcategory ?? '', // Añadido ?? '' por si subcategory no existe en la BD
                     $product->description,
                     $product->available ? 'Si' : 'No',
                 ], ',');
@@ -92,7 +203,9 @@ class MenuController extends Controller
             );
         }
         fclose($file);
+        
         event(new MenuUpdated());
+        
         return back()->with('success', '¡Menú actualizado con éxito!');
     }
 }

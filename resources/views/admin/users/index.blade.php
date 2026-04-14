@@ -103,12 +103,12 @@
     .au-role-cajero     { background: rgba(22,163,74,.1);   color: #15803D; }
     .au-role-cocinero   { background: rgba(249,115,22,.1);  color: #C2410C; }
     .au-role-limpieza   { background: rgba(20,184,166,.1);  color: #0F766E; }
-    .au-role-empleado   { background: rgba(113,113,122,.12);color: #52525B; }
+    .au-role-empleado   { background: rgba(113,113,122,.12);color: #cf7910; }
     .dark .au-role-admin      { color: #A78BFA; }
     .dark .au-role-cajero     { color: #4ADE80; }
     .dark .au-role-cocinero   { color: #FB923C; }
     .dark .au-role-limpieza   { color: #2DD4BF; }
-    .dark .au-role-empleado   { color: #A1A1AA; }
+    .dark .au-role-empleado   { color: #eda144; }
 
     /* status */
     .au-status {
@@ -304,9 +304,9 @@
                             'cajero'     => '#16A34A',
                             'cocinero'   => '#EA580C',
                             'limpieza'   => '#0D9488',
-                            'empleado'   => '#52525B',
+                            'mesero'   => '#cf7910',
                         ];
-                        $avatarColor = $avatarColors[$user->role] ?? '#52525B';
+                        $avatarColor = $avatarColors[$user->role] ?? '#cf7910';
                     @endphp
                     <tr class="{{ $user->is_active ? '' : 'suspended' }}">
 

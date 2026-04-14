@@ -358,7 +358,7 @@
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
                             <span>Haz clic para seleccionar</span>
                             <small id="sql-filename">Solo archivos .sql</small>
-                            <input type="file" name="sql_file" accept=".sql" required
+                            <input type="file" name="sql_file" accept=".sql" required style="display:none;"
                                    onchange="document.getElementById('sql-filename').textContent = this.files[0] ? this.files[0].name : 'Solo archivos .sql'">
                         </label>
                         <button type="submit" class="db-btn dk">
@@ -371,7 +371,124 @@
             </div>
         </div>
 
+        {{-- ── TARJETA 4: MANTENIMIENTO Y OPTIMIZACIÓN (NUEVA) ── --}}
+        <div class="db-card">
+            <div class="db-card-bar gn"></div>
+            <div class="db-card-body">
+                <div class="db-ch">
+                    <div class="db-ch-l">
+                        <div class="db-ico gn">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                        </div>
+                        <div>
+                            <p class="db-ttl">Mantenimiento y Optimización</p>
+                            <p class="db-sub">Mejora el rendimiento estructural</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="db-div"></div>
+                
+                <p style="font-size:13px; color:var(--sub); margin:0 0 14px; line-height:1.6;">
+                    Ejecuta rutinas para reorganizar datos físicos y actualizar estadísticas del motor de base de datos.
+                </p>
+
+                <form action="{{ route('admin.database.optimize') ?? '#' }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="action" value="indices">
+                    <button type="submit" class="db-btn gn">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        Mantenimiento de índices
+                    </button>
+                </form>
+
+                <form action="{{ route('admin.database.optimize') ?? '#' }}" method="POST">
+                    @csrf
+                    <input type="hidden" name="action" value="tablas">
+                    <button type="submit" class="db-btn dk">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Actualización de tablas e índices
+                    </button>
+                </form>
+
+                <form action="{{ route('admin.database.reindex') ?? '#' }}" method="POST">
+                    @csrf
+                    <button type="submit" class="db-btn dk">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                        Reorganización y reindexado
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {{-- ── TARJETA 5: LIMPIEZA DE DATOS (NUEVA) ── --}}
+        <div class="db-card">
+            <div class="db-card-bar rd"></div>
+            <div class="db-card-body">
+                <div class="db-ch">
+                    <div class="db-ch-l">
+                        <div class="db-ico rd">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </div>
+                        <div>
+                            <p class="db-ttl">Limpieza de Datos</p>
+                            <p class="db-sub">Depuración de registros</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="db-div"></div>
+                
+                <p style="font-size:13px; color:var(--sub); margin:0 0 14px; line-height:1.6;">
+                    Elimina registros huérfanos, caché expirada, sesiones de usuarios antiguos y optimiza el espacio de almacenamiento.
+                </p>
+
+                <div class="db-box rd" style="margin-bottom:14px;">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    <span>Ejecuta estas tareas fuera de las horas pico de operación.</span>
+                </div>
+
+                <form action="{{ route('admin.database.cleanup') ?? '#' }}" method="POST" onsubmit="return confirm('¿Iniciar proceso de limpieza de datos?');">
+                    @csrf
+                    <button type="submit" class="db-btn rd">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        Ejecutar Tareas de Limpieza
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {{-- ── TARJETA 6: REPORTES DE INFORMACIÓN (NUEVA) ── --}}
+        <div class="db-card">
+            <div class="db-card-bar pu"></div>
+            <div class="db-card-body">
+                <div class="db-ch">
+                    <div class="db-ch-l">
+                        <div class="db-ico pu">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        </div>
+                        <div>
+                            <p class="db-ttl">Reportes de Información</p>
+                            <p class="db-sub">Auditoría y estadísticas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="db-div"></div>
+                
+                <p style="font-size:13px; color:var(--sub); margin:0 0 14px; line-height:1.6;">
+                    Genera y exporta informes detallados sobre el tamaño de la base de datos, crecimiento de tablas y estado general del sistema.
+                </p>
+
+                <form action="{{ route('admin.database.reports') ?? '#' }}" method="GET">
+                    <button type="submit" class="db-btn pu">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                        Generar Reporte Completo
+                    </button>
+                </form>
+            </div>
+        </div>
+
     </div>
 </div>
 @endsection
-

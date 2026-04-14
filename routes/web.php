@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\InventoryController;
 use App\Http\Controllers\Admin\FinanceController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ReservationAdminController;
+use App\Http\Controllers\Admin\DatabaseController;
 
 $promoPrefix = 'promociones';
 
@@ -248,3 +249,11 @@ Route::prefix('test-errors')->group(function () {
 // routes/web.php
 
 Route::get('/admin/database/api/metrics', [AdminController::class, 'getMetricsApi'])->name('admin.database.api.metrics');
+
+
+Route::post('admin/sistema/base-de-datos/optimizar', [DatabaseController::class, 'optimize'])->name('admin.database.optimize');
+Route::post('admin/sistema/base-de-datos/reindexar', [DatabaseController::class, 'reindex'])->name('admin.database.reindex');
+Route::post('admin/sistema/base-de-datos/limpiar', [DatabaseController::class, 'cleanup'])->name('admin.database.cleanup');
+Route::get('admin/sistema/base-de-datos/reportes', [DatabaseController::class, 'reports'])->name('admin.database.reports');
+Route::post('admin/sistema/base-de-datos/descargar-reporte', [DatabaseController::class, 'downloadReport'])->name('admin.database.report.download');
+Route::post('admin/sistema/base-de-datos/restaurar-subida', [App\Http\Controllers\BackupController::class, 'restoreUpload'])->name('admin.database.restore.upload');

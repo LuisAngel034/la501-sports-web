@@ -363,7 +363,7 @@
                 </a>
             @endif
 
-            @if(in_array(auth()->user()->role, ['admin', 'mesero', 'empleado']))
+            @if(in_array(auth()->user()->role, ['mesero', 'empleado']))
                 @if(auth()->user()->role === 'admin')
                     <span class="aside-section-label">Servicio</span>
                 @endif

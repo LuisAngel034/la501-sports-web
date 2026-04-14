@@ -31,8 +31,9 @@ class BackupController extends Controller
         
         $fechaFiltro = $request->input('fecha');
         $horaFiltro  = $request->input('hora');
-        $backups     = [];
-
+        
+        // --- 1. LECTURA DE RESPALDOS (.sql) ---
+        $backups = [];
         foreach (Storage::disk(self::BACKUP_DISK)->files(self::BACKUP_DIR) as $file) {
             $carbonDate  = Carbon::createFromTimestamp(Storage::disk(self::BACKUP_DISK)->lastModified($file))->setTimezone(self::TZ_MEXICO);
             $dateString  = $carbonDate->format('Y-m-d');
@@ -53,9 +54,44 @@ class BackupController extends Controller
                 'carbon' => $carbonDate,
             ];
         }
-
         usort($backups, fn($a, $b) => $b['date'] <=> $a['date']);
-        return view('admin.database-history', compact('backups', 'fechaFiltro', 'horaFiltro'));
+
+        // --- 2. LECTURA DE REPORTES (.json) ---
+        $reports = [];
+        if (Storage::disk(self::BACKUP_DISK)->exists('reports')) {
+            $files = Storage::disk(self::BACKUP_DISK)->files('reports');
+            
+            foreach ($files as $file) {
+                if (pathinfo($file, PATHINFO_EXTENSION) === 'json') {
+                    $carbonDate = Carbon::createFromTimestamp(Storage::disk(self::BACKUP_DISK)->lastModified($file))->setTimezone(self::TZ_MEXICO);
+                    
+                    // Aplicar los mismos filtros de fecha/hora para los reportes
+                    $dateString  = $carbonDate->format('Y-m-d');
+                    $horaArchivo = $carbonDate->format('H');
+
+                    if ($fechaFiltro && $dateString !== $fechaFiltro) {
+                        continue;
+                    }
+                    if ($horaFiltro && substr($horaFiltro, 0, 2) !== $horaArchivo) {
+                        continue;
+                    }
+
+                    $reports[] = [
+                        'name'   => basename($file),
+                        'path'   => $file,
+                        'size'   => $this->formatSizeUnits(Storage::disk(self::BACKUP_DISK)->size($file)),
+                        'carbon' => $carbonDate,
+                    ];
+                }
+            }
+            
+            usort($reports, function ($a, $b) {
+                return $b['carbon']->timestamp - $a['carbon']->timestamp;
+            });
+        }
+
+        // Retornamos la vista (Asegúrate de que el blade se llame 'database-history.blade.php' o ajusta el nombre aquí)
+        return view('admin.database-history', compact('backups', 'reports', 'fechaFiltro', 'horaFiltro'));
     }
 
     public function createBackup()
@@ -363,5 +399,23 @@ class BackupController extends Controller
         }
         usort($backups, fn($a, $b) => $b['date'] <=> $a['date']);
         return $limit > 0 ? array_slice($backups, 0, $limit) : $backups;
+    }
+
+    private function formatSizeUnits($bytes)
+    {
+        if ($bytes >= 1073741824) {
+            $bytes = number_format($bytes / 1073741824, 2) . ' GB';
+        } elseif ($bytes >= 1048576) {
+            $bytes = number_format($bytes / 1048576, 2) . ' MB';
+        } elseif ($bytes >= 1024) {
+            $bytes = number_format($bytes / 1024, 2) . ' KB';
+        } elseif ($bytes > 1) {
+            $bytes = $bytes . ' bytes';
+        } elseif ($bytes == 1) {
+            $bytes = $bytes . ' byte';
+        } else {
+            $bytes = '0 bytes';
+        }
+        return $bytes;
     }
 }
