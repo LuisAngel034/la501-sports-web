@@ -433,7 +433,7 @@
     }
 </script>
 
-@endsection</output>tends('layouts.app')
+@endsection</output>
 
 @section('content')
 <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
