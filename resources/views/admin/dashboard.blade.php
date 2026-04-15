@@ -63,9 +63,7 @@
         position: fixed !important;
         inset: 0 !important;
         z-index: 9999999 !important;
-        /* Fondo azul muy oscuro casi sólido */
-        background: #212127) !important;
-        /* Blur fuerte para desenfocar lo de atrás */
+        background: rgba(33, 33, 39, 0.8) !important;
         backdrop-filter: blur(8px) !important;
         align-items: center;
         justify-content: center;
@@ -119,7 +117,7 @@
             </div>
             <p class="ad-stat-value" x-text="stats.pedidos_hoy"></p>
         </div>
-
+{{--
         <div class="ad-stat">
             <div class="ad-stat-top"><span class="ad-stat-label">Reservaciones</span><div class="ad-stat-icon blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg></div></div>
             <p class="ad-stat-value">0</p>
@@ -129,23 +127,52 @@
             <div class="ad-stat-flash"></div>
             <div class="ad-stat-top"><span class="ad-stat-label">En Proceso</span><div class="ad-stat-icon yellow"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div></div>
             <p class="ad-stat-value" x-text="stats.en_proceso"></p>
-        </div>
+        </div>--}}
     </div>
 
+
+    {{-- ── SECCIÓN DE GRÁFICAS: toggle Ganancias / Rotación Categorías ── --}}
     <div class="ad-chart-card">
         <div class="ad-chart-head">
             <div class="ad-chart-title">
-                <div class="ad-chart-title-icon"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg></div>
-                <h2>Reporte de Ventas</h2>
+                <div class="ad-chart-title-icon" id="main-section-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                </div>
+                <h2 id="main-section-title">Reporte de Ventas</h2>
             </div>
 
             <div class="ad-chart-controls">
-                <div class="ad-period-group">
-                    <button @click="changePeriod('day')" :class="period === 'day' ? 'active' : ''" class="ad-period-btn">30 Días</button>
-                    <button @click="changePeriod('month')" :class="period === 'month' ? 'active' : ''" class="ad-period-btn">Meses</button>
+
+                {{-- TOGGLE: Ganancias vs Categorías --}}
+                <div class="ad-period-group" style="gap:2px;">
+                    <button type="button" id="tab-ganancia"
+                        onclick="switchReportTab('ganancia')"
+                        class="ad-period-btn active"
+                        style="display:flex;align-items:center;gap:5px;">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Ganancias
+                    </button>
+                    <button type="button" id="tab-categoria"
+                        onclick="switchReportTab('categoria')"
+                        class="ad-period-btn"
+                        style="display:flex;align-items:center;gap:5px;">
+                        <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
+                        % Rotación Categorías
+                    </button>
                 </div>
 
-                <div style="display: flex; gap: 8px;">
+                {{-- Selector de período dinámico --}}
+                <div class="ad-period-group">
+                    <button @click="changePeriod('day')"
+                        :class="period === 'day' ? 'active' : ''"
+                        class="ad-period-btn" id="btn-period-day">30 Días</button>
+                    
+                    <button @click="changePeriod('month')"
+                        :class="period === 'month' ? 'active' : ''"
+                        class="ad-period-btn" id="btn-period-month">Meses</button>
+                </div>
+
+                <div style="display:flex;gap:8px;">
                     <button type="button" onclick="abrirVentanita('modal-export')" class="ad-export-btn">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                         Exportar Reporte
@@ -155,13 +182,23 @@
         </div>
 
         <div class="ad-chart-body">
-            <div class="ad-chart-canvas"><canvas id="salesChartCanvas"></canvas></div>
+
+            {{-- Panel: Ganancias (Gráfica original de línea) --}}
+            <div id="panel-ganancia" class="ad-chart-canvas">
+                <canvas id="salesChartCanvas"></canvas>
+            </div>
+
+            {{-- Panel: Rotación por Categoría (Nueva gráfica de barras) --}}
+            <div id="panel-categoria" class="ad-chart-canvas" style="display:none;">
+                <div style="position:relative;height:220px;width:100%;">
+                    <canvas id="categoryChartCanvas"></canvas>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
-
-{{-- Modal de Exportar (AHORA MUCHO MÁS SÓLIDO Y PROFESIONAL) --}}
+{{-- Modal de Exportar --}}
 <div id="modal-export" class="mi-modal-seguro">
     <div class="ad-modal">
         <div class="ad-modal-head">
@@ -173,8 +210,8 @@
                 <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form action="{{ route('admin.sales.export.excel') }}" method="GET" onsubmit="setTimeout(() => cerrarVentanita('modal-export'), 500)">
-                        <div class="ad-modal-body">
+        <form action="{{ route('admin.sales.export.excel') ?? '#' }}" method="GET" onsubmit="setTimeout(() => cerrarVentanita('modal-export'), 500)">
+            <div class="ad-modal-body">
                 <div>
                     <label for="start_date" class="ad-label">Fecha de inicio</label>
                     <input type="date" id="start_date" name="start_date" required value="{{ $primeraFecha ?? date('Y-m-d') }}" class="ad-input">
@@ -194,7 +231,6 @@
     </div>
 </div>
 
-
 <script>
     function abrirVentanita(idModal) {
         document.getElementById(idModal).style.setProperty('display', 'flex', 'important');
@@ -203,7 +239,11 @@
         document.getElementById(idModal).style.setProperty('display', 'none', 'important');
     }
 
+    // ── VARIABLES GLOBALES ──
     let salesChartInstance = null;
+    let categoryChartInstance = null;
+    let currentReportTab = 'ganancia';
+    let currentPeriodGlobal = 'day';
 
     function dashboardManager() {
         return {
@@ -223,9 +263,16 @@
                     this.updateChartData(true);
                 });
             },
+            // Esta función controla los clics en los botones de "Hoy" y "Este Mes"
             changePeriod(newPeriod) {
                 this.period = newPeriod;
-                this.updateChartData(false);
+                currentPeriodGlobal = newPeriod;
+            
+                if (currentReportTab === 'ganancia') {
+                    this.updateChartData(false);
+                } else {
+                    initCategoryChart(currentPeriodGlobal);
+                }
             },
             formatearDinero(cantidad) {
                 return Number(cantidad).toLocaleString('en-US', { minimumFractionDigits: 2 });
@@ -257,8 +304,116 @@
                         salesChartInstance.data.datasets[0].data = json.data;
                         salesChartInstance.update();
                     }
-                } catch(e) { console.error('Error gráfica:', e); }
+                } catch(e) { console.error('Error gráfica línea:', e); }
             }
+        }
+    }
+
+    // ── SWITCH ENTRE TABS (Ganancias vs Categorías) ──
+    function switchReportTab(tab) {
+        currentReportTab = tab;
+
+        const panelGanancia  = document.getElementById('panel-ganancia');
+        const panelCategoria = document.getElementById('panel-categoria');
+        const btnGanancia    = document.getElementById('tab-ganancia');
+        const btnCategoria   = document.getElementById('tab-categoria');
+        const titulo         = document.getElementById('main-section-title');
+        
+        const btnDay = document.getElementById('btn-period-day');
+        const btnMonth = document.getElementById('btn-period-month');
+
+        if (tab === 'ganancia') {
+            panelGanancia.style.display  = 'block';
+            panelCategoria.style.display = 'none';
+            btnGanancia.classList.add('active');
+            btnCategoria.classList.remove('active');
+            titulo.textContent = 'Reporte de Ventas';
+            
+            if(btnDay) btnDay.innerText = '30 Días';
+            if(btnMonth) btnMonth.innerText = 'Meses';
+            
+            // Refrescar gráfica de ganancias al regresar
+            const alpineData = document.querySelector('[x-data]').__x.$data;
+            alpineData.updateChartData(false);
+
+        } else {
+            panelGanancia.style.display  = 'none';
+            panelCategoria.style.display = 'block';
+            btnGanancia.classList.remove('active');
+            btnCategoria.classList.add('active');
+            titulo.textContent = 'Análisis de Rotación por Categoría';
+            
+            if(btnDay) btnDay.innerText = 'Hoy';
+            if(btnMonth) btnMonth.innerText = 'Este Mes';
+            
+            setTimeout(() => {
+                initCategoryChart(currentPeriodGlobal);
+            }, 50);
+        }
+    }
+
+    // ── INICIALIZAR GRÁFICA DE CATEGORÍAS ──
+    async function initCategoryChart(period = 'day') {
+        const ctx = document.getElementById('categoryChartCanvas').getContext('2d');
+        
+        try {
+            const res = await fetch(`{{ route('admin.api.category_sales') }}?period=${period}`);
+            const json = await res.json();
+            
+            // Validador: Te avisa si el sistema cree que no hay ventas
+            if (!json.labels || json.labels.length === 0) {
+                console.warn(`No se encontraron ventas para el periodo: ${period}. La gráfica se mostrará vacía.`);
+            }
+            
+            if (categoryChartInstance) {
+                categoryChartInstance.data.labels = json.labels;
+                categoryChartInstance.data.datasets[0].data = json.data;
+                categoryChartInstance.data.datasets[0].backgroundColor = json.backgroundColors;
+                categoryChartInstance.update();
+            } else {
+                categoryChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: json.labels,
+                        datasets: [{
+                            label: '% de Participación',
+                            data: json.data,
+                            backgroundColor: json.backgroundColors,
+                            borderRadius: 6,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { callbacks: { label: ctx => ` Participación: ${ctx.parsed.y}%` } }
+                        },
+                        scales: {
+                            x: {
+                                grid: { display: false },
+                                ticks: { font: { size: 12, weight: 'bold' } },
+                                title: {
+                                    display: true,
+                                    text: 'Categorías',
+                                    color: '#71717A',
+                                    font: { size: 13, weight: 'bold', family: 'system-ui' },
+                                    padding: { top: 10, bottom: 0 }
+                                }
+                            },
+                            y: {
+                                max: 100,
+                                beginAtZero: true,
+                                ticks: { callback: v => v + '%', font: { size: 11 } },
+                                grid: { color: 'rgba(0,0,0,0.05)' }
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Error cargando rotación de categorías:', e);
         }
     }
 </script>

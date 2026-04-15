@@ -18,8 +18,8 @@ class DashboardController extends Controller
 
     public function index()
     {
-        $totalVentas  = Order::whereIn('status', ['delivered', 'entregado'])->sum('total');
-        $totalPedidos = Order::whereIn('status', ['delivered', 'entregado'])->count();
+        $totalVentas  = Order::where('status', 'paid')->sum('total');
+        $totalPedidos = Order::where('status', 'paid')->count();
         $ticketPromedio = $totalPedidos > 0 ? ($totalVentas / $totalPedidos) : 0;
         $pedidosHoy   = Order::whereDate('created_at', Carbon::today())->count();
         $enProceso    = Order::where('status', 'pending')->count();
@@ -180,7 +180,7 @@ class DashboardController extends Controller
 
     public function apiStats()
     {
-        $totalVentas = Order::whereIn('status', ['delivered', 'entregado'])->sum('total');
+        $totalVentas = Order::where('status', 'paid')->sum('total');
         $pedidosHoy  = Order::whereDate('created_at', Carbon::today())->count();
         $enProceso   = Order::where('status', 'pending')->count();
 
@@ -194,7 +194,7 @@ class DashboardController extends Controller
     public function apiSales(Request $request)
     {
         $period = $request->get('period', 'day');
-        $query  = Order::whereIn('status', ['delivered', 'entregado']);
+        $query  = Order::where('status', 'paid');
 
         $result = match ($period) {
             'month' => $this->buildMonthlyData($query),
@@ -261,5 +261,61 @@ class DashboardController extends Controller
         }
 
         return compact('labels', 'data');
+    }
+
+    public function apiCategoryRotation(Request $request)
+    {
+        $period = $request->get('period', 'day');
+        $hoy = \Carbon\Carbon::today();
+
+        // 1. Unimos las tablas usando ÚNICAMENTE el ID (Evita el error de collation)
+        $query = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->where('orders.status', 'paid');
+
+        // 2. Filtros de tiempo exactos
+        if ($period === 'day') {
+            $query->whereDate('orders.created_at', $hoy);
+        } elseif ($period === 'month') {
+            $query->whereBetween('orders.created_at', [
+                $hoy->copy()->startOfMonth(),
+                $hoy->copy()->endOfDay()
+            ]);
+        }
+
+        // 3. Agrupamos por categoría
+        $ventasPorCategoria = $query->select('products.category', DB::raw('SUM(order_items.quantity) as total_vendido'))
+            ->groupBy('products.category')
+            ->orderByDesc('total_vendido')
+            ->get();
+
+        $ventasTotales = $ventasPorCategoria->sum('total_vendido');
+
+        $labels = [];
+        $data = [];
+        $backgrounds = [];
+
+        $colores = [
+            'Bebidas'      => 'rgba(37, 99, 235, 0.85)',
+            'Snacks'       => 'rgba(124, 58, 237, 0.85)',
+            'Hamburguesas' => 'rgba(234, 88, 12, 0.85)',
+            'Tacos'        => 'rgba(22, 163, 74, 0.85)',
+            'Jochos'       => 'rgba(220, 38, 38, 0.85)',
+            'Burritos'     => 'rgba(234, 179, 8, 0.85)'
+        ];
+
+        foreach ($ventasPorCategoria as $item) {
+            $labels[] = $item->category;
+            $porcentaje = $ventasTotales > 0 ? round(($item->total_vendido / $ventasTotales) * 100, 2) : 0;
+            $data[] = $porcentaje;
+            $backgrounds[] = $colores[$item->category] ?? 'rgba('.rand(100,200).','.rand(100,200).','.rand(100,200).', 0.85)';
+        }
+
+        return response()->json([
+            'labels' => $labels,
+            'data' => $data,
+            'backgroundColors' => $backgrounds
+        ]);
     }
 }

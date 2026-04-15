@@ -114,9 +114,10 @@ class CheckoutController extends Controller
         ]);
 
         // Guardar los Platillos
-        foreach ($cart as $details) {
+        foreach ($cart as $id => $details) {
             OrderItem::create([
                 'order_id' => $order->id,
+                'product_id' => $id,
                 'product_name' => $details['name'],
                 'quantity' => $details['quantity'],
                 'price' => $details['price'],
@@ -135,6 +136,9 @@ class CheckoutController extends Controller
     {
         // Lógica si es EFECTIVO
         if ($method === 'efectivo') {
+            $order->status = 'paid';
+            $order->save();
+
             session()->forget('cart');
             if (Auth::check()) {
                 $user = \App\Models\User::find(Auth::id());

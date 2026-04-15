@@ -257,3 +257,4 @@ Route::post('admin/sistema/base-de-datos/limpiar', [DatabaseController::class, '
 Route::get('admin/sistema/base-de-datos/reportes', [DatabaseController::class, 'reports'])->name('admin.database.reports');
 Route::post('admin/sistema/base-de-datos/descargar-reporte', [DatabaseController::class, 'downloadReport'])->name('admin.database.report.download');
 Route::post('admin/sistema/base-de-datos/restaurar-subida', [App\Http\Controllers\BackupController::class, 'restoreUpload'])->name('admin.database.restore.upload');
+Route::get('/admin/api/category-sales', [App\Http\Controllers\Admin\DashboardController::class, 'apiCategoryRotation'])->name('admin.api.category_sales');

@@ -62,7 +62,7 @@ class WaiterController extends Controller
                        ->get();
 
         foreach ($orders as $order) {
-            $order->status         = 'delivered';
+            $order->status         = 'paid';
             $order->payment_method = $request->payment_method;
             $order->save();
         }
@@ -101,6 +101,7 @@ class WaiterController extends Controller
         foreach ($carrito as $item) {
             \App\Models\OrderItem::create([
                 'order_id'     => $order->id,
+                'product_id'   => $item['id'],
                 'product_name' => $item['name'],
                 'quantity'     => $item['cantidad'],
                 'price'        => $item['price'],

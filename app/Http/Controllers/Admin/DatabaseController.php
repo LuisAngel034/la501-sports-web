@@ -20,18 +20,18 @@ class DatabaseController extends Controller
         $action = $request->input('action');
         
         try {
-            // Obtenemos todas las tablas de la base de datos
+            
             $tables = array_map('current', DB::select('SHOW TABLES'));
             
             if ($action === 'indices') {
-                // Analizar tablas (Actualiza la distribución de claves para los índices)
+                
                 foreach ($tables as $table) {
                     DB::statement("ANALYZE TABLE `{$table}`");
                 }
                 $message = 'Mantenimiento de índices ejecutado: Estadísticas actualizadas correctamente.';
                 
             } elseif ($action === 'tablas') {
-                // Optimizar tablas (Reorganiza el almacenamiento físico, útil tras muchos deletes/updates)
+                
                 foreach ($tables as $table) {
                     DB::statement("OPTIMIZE TABLE `{$table}`");
                 }
@@ -50,10 +50,7 @@ class DatabaseController extends Controller
         }
     }
 
-    /**
-     * Reorganización y Reindexado
-     * Nota: En MySQL, OPTIMIZE TABLE ya hace el reindexado
-     */
+
     public function reindex()
     {
         try {
@@ -80,29 +77,29 @@ class DatabaseController extends Controller
         try {
             $deletedCount = 0;
 
-            // 1. Limpiar notificaciones antiguas (más de 30 días)
+            
             if (Schema::hasTable('notifications')) {
                 $deletedCount += DB::table('notifications')
                     ->where('created_at', '<', Carbon::now()->subDays(30))
                     ->delete();
             }
 
-            // 2. Limpiar tokens de reseteo de contraseña expirados
+        
             if (Schema::hasTable('password_reset_tokens')) {
-                // Asumiendo que expiran rápido, borramos los de hace más de 1 día
+                
                 $deletedCount += DB::table('password_reset_tokens')
                     ->where('created_at', '<', Carbon::now()->subDays(1))
                     ->delete();
             }
             
-            // 3. Limpiar Jobs fallidos (si usas queues)
+            
             if (Schema::hasTable('failed_jobs')) {
                 $deletedCount += DB::table('failed_jobs')
                     ->where('failed_at', '<', Carbon::now()->subDays(15))
                     ->delete();
             }
 
-            // 4. Limpiar caché expirada de la base de datos (si usas driver de cache en BD)
+            
             if (Schema::hasTable('cache')) {
                 $deletedCount += DB::table('cache')
                     ->where('expiration', '<', Carbon::now()->getTimestamp())
@@ -127,7 +124,7 @@ class DatabaseController extends Controller
         try {
             $dbName = env('DB_DATABASE');
             
-            // Obtener el tamaño total de la base de datos en MB
+            
             $sizeQuery = DB::select("
                 SELECT SUM(data_length + index_length) / 1024 / 1024 AS size_mb
                 FROM information_schema.TABLES
@@ -136,7 +133,7 @@ class DatabaseController extends Controller
             
             $totalSizeMb = round($sizeQuery[0]->size_mb ?? 0, 2);
 
-            // Obtener estadísticas por tabla
+            
             $tablesStatus = DB::select("SHOW TABLE STATUS");
             
             $reportData = [
@@ -157,11 +154,11 @@ class DatabaseController extends Controller
                 ];
             }
 
-            // Crear un archivo JSON temporal con el reporte
+            
             $fileName = 'db_report_' . Carbon::now()->format('Y_m_d_His') . '.json';
             $content = json_encode($reportData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
             
-            // Guardar en storage local y retornar como descarga
+           
             Storage::disk('local')->put('reports/' . $fileName, $content);
             $filePath = storage_path('app/reports/' . $fileName);
 
