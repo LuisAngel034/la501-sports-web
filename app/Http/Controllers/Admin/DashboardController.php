@@ -16,7 +16,7 @@ class DashboardController extends Controller
     private const DATE_FORMAT_DMY  = 'd/m/Y';
     private const NUMBER_FORMAT_MX = '"$"#,##0.00_-';
 
-    public function index()
+    public function index(Request $request)
     {
         $totalVentas  = Order::where('status', 'paid')->sum('total');
         $totalPedidos = Order::where('status', 'paid')->count();
@@ -44,7 +44,164 @@ class DashboardController extends Controller
             $topProducts = [];
         }
 
-        return view('admin.dashboard', compact('stats', 'primeraFecha', 'ultimaFecha', 'topProducts'));
+        $rotacionDate = $request->input('rotacion_date', date('Y-m'));
+        try {
+            $fechaRotacion = Carbon::createFromFormat('Y-m', $rotacionDate);
+        } catch (\Exception $e) {
+            $fechaRotacion = Carbon::today();
+            $rotacionDate = $fechaRotacion->format('Y-m');
+        }
+
+        $inicioMes = $fechaRotacion->copy()->startOfMonth();
+        
+        if ($fechaRotacion->isCurrentMonth()) {
+            $finMes = Carbon::today()->endOfDay();
+            $diasEvaluados = max(1, Carbon::today()->day);
+        } else {
+            $finMes = $fechaRotacion->copy()->endOfMonth()->endOfDay();
+            $diasEvaluados = $fechaRotacion->daysInMonth;
+        }
+
+        $rawTotalVendido = 'SUM(order_items.quantity) as total_vendido';
+
+        // MEDIA ARITMETICA
+        $mediaAritmetica = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->where('orders.status', 'paid')
+            ->whereBetween('orders.created_at', [$inicioMes, $finMes])
+            ->select('products.name', DB::raw($rawTotalVendido))
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('total_vendido')
+            ->limit(5)
+            ->get()
+            ->map(function ($item) use ($diasEvaluados) {
+                $item->media_diaria = round($item->total_vendido / $diasEvaluados, 2);
+                return $item;
+            });
+        
+        // CALCULO DE MODA MATEMATICA
+        $modaMatematica = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->where('orders.status', 'paid')
+            ->whereBetween('orders.created_at', [$inicioMes, $finMes])
+            ->select('products.name', DB::raw('COUNT(*) as frecuencia'))
+            ->groupBy('products.id', 'products.name')
+            ->orderByDesc('frecuencia')
+            ->limit(5)
+            ->get();
+
+        // MODELO PREDICTIVO
+        $fechaInicioPred = $request->input('start_date', Carbon::now()->subMonths(2)->startOfMonth()->format('Y-m-d'));
+        $fechaFinPred = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
+
+        $startCarbon = Carbon::parse($fechaInicioPred)->startOfDay();
+        $endCarbon = Carbon::parse($fechaFinPred)->endOfDay();
+        $diffDays = $startCarbon->diffInDays($endCarbon) + 1;
+
+        $ordersQuery = Order::where('status', 'paid')
+            ->whereBetween('created_at', [$startCarbon, $endCarbon])
+            ->orderBy('created_at', 'asc')
+            ->get();
+
+        $groupedTemp = collect();
+
+        if ($diffDays <= 14) {
+            $granularidad = 'Día';
+            $labelFormato = 'd M Y';
+            $groupedTemp = $ordersQuery->groupBy(fn($q) => Carbon::parse($q->created_at)->format('Y-m-d'));
+            
+        } elseif ($diffDays <= 60) {
+            $granularidad = 'Semana';
+            $labelFormato = 'd M';
+            $semanasCompletas = floor($diffDays / 7);
+            $diasCompletos = $semanasCompletas * 7;
+            
+
+            $fechaFinValida = $startCarbon->copy()->addDays($diasCompletos)->subSecond();
+            
+            $groupedTemp = $ordersQuery->where('created_at', '<=', $fechaFinValida)
+                ->groupBy(function($q) use ($startCarbon) {
+                    $daysDiff = $startCarbon->diffInDays(Carbon::parse($q->created_at));
+                    $weekNum = floor($daysDiff / 7);
+                    return $startCarbon->copy()->addDays($weekNum * 7)->format('Y-m-d');
+                });
+                
+        } else {
+            $granularidad = 'Mes';
+            $labelFormato = 'M Y';
+            $groupedOriginal = $ordersQuery->groupBy(fn($q) => Carbon::parse($q->created_at)->startOfMonth()->format('Y-m-d'));
+            
+            $ultimoMesKey = $groupedOriginal->keys()->last();
+            if ($ultimoMesKey) {
+                $finDeEseMes = Carbon::parse($ultimoMesKey)->endOfMonth()->endOfDay();
+                if ($endCarbon->lt($finDeEseMes)) {
+                    $groupedOriginal->pop();
+                }
+            }
+            $groupedTemp = $groupedOriginal;
+        }
+
+        $historialSintetizado = collect();
+        foreach ($groupedTemp as $key => $group) {
+            $historialSintetizado->push((object)[
+                'etiqueta' => Carbon::parse($key)->format($labelFormato),
+                'total_ganado' => $group->sum('total')
+            ]);
+        }
+
+        $n = $historialSintetizado->count();
+        $gananciaProyectada = 0;
+        $k_constante = 0;
+        $p0 = 0;
+        $p_last = 0;
+
+        $fechasChart = [];
+        $realesChart = [];
+        $prediccionChart = [];
+
+        if ($n > 1) {
+            $p0 = $historialSintetizado->first()->total_ganado;
+            $p_last = $historialSintetizado->last()->total_ganado;
+            $t_last = $n - 1;
+
+            if ($p0 > 0 && $p_last > 0) {
+                $k_raw = log($p_last / $p0) / $t_last;
+                $k_constante = round($k_raw, 4);
+
+                $t_next = $n;
+                $gananciaProyectada = $p0 * exp($k_constante * $t_next);
+
+                foreach ($historialSintetizado as $index => $item) {
+                    $fechasChart[] = $item->etiqueta;
+                    $realesChart[] = round($item->total_ganado, 2);
+                    $prediccionChart[] = round($p0 * exp($k_constante * $index), 2);
+                }
+                
+                $articulo = ($granularidad == 'Semana') ? 'Próxima' : 'Próximo';
+                
+                $fechasChart[] = "Proyección (" . $articulo . " " . $granularidad . ")";
+                $realesChart[] = null;
+                $prediccionChart[] = round($gananciaProyectada, 2);
+
+            } else {
+                $gananciaProyectada = $p_last;
+            }
+        } else {
+            $gananciaProyectada = $n > 0 ? $historialSintetizado->first()->total_ganado * 1.10 : 0;
+        }
+
+        $fechasChartJson = json_encode($fechasChart);
+        $realesChartJson = json_encode($realesChart);
+        $prediccionChartJson = json_encode($prediccionChart);
+
+        return view('admin.dashboard', compact(
+            'stats', 'primeraFecha', 'ultimaFecha', 'topProducts',
+            'mediaAritmetica', 'modaMatematica', 'gananciaProyectada',
+            'historialSintetizado', 'fechaInicioPred', 'fechaFinPred', 'k_constante', 'p0', 'p_last',
+            'fechasChartJson', 'realesChartJson', 'prediccionChartJson', 'granularidad', 'rotacionDate'
+        ));
     }
 
     public function exportSalesCSV(Request $request)
@@ -54,12 +211,25 @@ class DashboardController extends Controller
 
         $summary = \App\Models\Order::selectRaw('payment_method, COUNT(*) as count, SUM(total) as sum')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->whereIn('status', ['delivered', 'entregado'])
+            ->where('status', 'paid')
             ->groupBy('payment_method')
             ->get();
 
         $totalSum   = $summary->sum('sum');
         $totalCount = $summary->sum('count');
+
+        $ventasPorCategoria = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('products', 'order_items.product_id', '=', 'products.id')
+            ->whereBetween('orders.created_at', [$startDate, $endDate])
+            ->where('orders.status', 'paid')
+            ->whereNotNull('products.category')
+            ->select('products.category', DB::raw('SUM(order_items.quantity) as total_vendido'), DB::raw('SUM(order_items.subtotal) as ingresos'))
+            ->groupBy('products.category')
+            ->orderByDesc('total_vendido')
+            ->get();
+        
+        $totalArticulosVendidos = $ventasPorCategoria->sum('total_vendido');
 
         $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
@@ -97,6 +267,7 @@ class DashboardController extends Controller
         );
         $sheet->getStyle('A4:A6')->getFont()->setBold(true);
 
+        // SECCIÓN 1: RESUMEN DE COBROS
         $sheet->setCellValue('A8', 'RESUMEN DE COBROS');
         $sheet->mergeCells('A8:E8');
         $sheet->getStyle('A8:E8')->applyFromArray($styleHeader);
@@ -128,9 +299,38 @@ class DashboardController extends Controller
         $sheet->getStyle("A{$row}:E{$row}")->applyFromArray($styleTotal);
         $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
 
+        // SECCIÓN 2: ROTACIÓN POR CATEGORÍAS
         $row += 3;
+        $sheet->setCellValue('A' . $row, 'ANÁLISIS DE ROTACIÓN POR CATEGORÍA');
+        $sheet->mergeCells('A' . $row . ':E' . $row);
+        $sheet->getStyle('A' . $row . ':E' . $row)->applyFromArray($styleHeader);
+        $row++;
 
-        $sheet->setCellValue('A' . $row, 'DESGLOSE DE MOVIMIENTOS');
+        $sheet->setCellValue('A' . $row, 'Categoría');
+        $sheet->mergeCells('A' . $row . ':B' . $row);
+        $sheet->setCellValue('C' . $row, 'Platillos Vendidos');
+        $sheet->setCellValue('D' . $row, '% Participación');
+        $sheet->setCellValue('E' . $row, 'Ingresos Generados');
+        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true);
+        $row++;
+
+        foreach ($ventasPorCategoria as $cat) {
+            $sheet->setCellValue('A' . $row, $cat->category);
+            $sheet->mergeCells("A{$row}:B{$row}");
+            $sheet->setCellValue('C' . $row, $cat->total_vendido);
+            
+            // Aplicación de tu fórmula matemática para el reporte
+            $porcentaje = $totalArticulosVendidos > 0 ? round(($cat->total_vendido / $totalArticulosVendidos) * 100, 2) : 0;
+            $sheet->setCellValue('D' . $row, $porcentaje . '%');
+            
+            $sheet->setCellValue('E' . $row, $cat->ingresos);
+            $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
+            $row++;
+        }
+
+        // --- SECCIÓN 3: DESGLOSE DE MOVIMIENTOS ---
+        $row += 3;
+        $sheet->setCellValue('A' . $row, 'DESGLOSE DETALLADO DE MOVIMIENTOS');
         $sheet->mergeCells('A' . $row . ':E' . $row);
         $sheet->getStyle('A' . $row . ':E' . $row)->applyFromArray($styleHeader);
         $row++;
@@ -144,7 +344,7 @@ class DashboardController extends Controller
         $row++;
 
         \App\Models\Order::whereBetween('created_at', [$startDate, $endDate])
-            ->whereIn('status', ['delivered', 'entregado'])
+            ->where('status', 'paid')
             ->orderBy('created_at', 'asc')
             ->chunk(200, function ($ordersChunk) use ($sheet, &$row) {
                 foreach ($ordersChunk as $order) {
@@ -163,19 +363,20 @@ class DashboardController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $fileName = 'Corte_Ventas_La501_' . date('d_m_Y') . '.xlsx';
+        $fileName = 'Corte_Ventas_La501_' . date('d_m_Y_His') . '.xlsx';
 
-        if (ob_get_length()) {
+        while (ob_get_level() > 0) {
             ob_end_clean();
         }
 
-        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . $fileName . '"');
-        header('Cache-Control: max-age=0');
+        $rutaSegura = storage_path('app/' . $fileName);
 
         $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $writer->save('php://output');
-        exit;
+        $writer->save($rutaSegura);
+
+        return response()->download($rutaSegura, $fileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
     }
 
     public function apiStats()
@@ -265,26 +466,23 @@ class DashboardController extends Controller
 
     public function apiCategoryRotation(Request $request)
     {
-        $period = $request->get('period', 'day');
-        $hoy = \Carbon\Carbon::today();
+        $rotacionDate = $request->input('rotacion_date', date('Y-m'));
+        try {
+            $fechaRotacion = Carbon::createFromFormat('Y-m', $rotacionDate);
+        } catch (\Exception $e) {
+            $fechaRotacion = Carbon::today();
+        }
 
-        // 1. Unimos las tablas usando ÚNICAMENTE el ID (Evita el error de collation)
+        $inicioMes = $fechaRotacion->copy()->startOfMonth();
+        $finMes = $fechaRotacion->isCurrentMonth() ? Carbon::today()->endOfDay() : $fechaRotacion->copy()->endOfMonth()->endOfDay();
+
         $query = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->where('orders.status', 'paid');
+            ->where('orders.status', 'paid')
+            ->whereBetween('orders.created_at', [$inicioMes, $finMes]);
 
-        // 2. Filtros de tiempo exactos
-        if ($period === 'day') {
-            $query->whereDate('orders.created_at', $hoy);
-        } elseif ($period === 'month') {
-            $query->whereBetween('orders.created_at', [
-                $hoy->copy()->startOfMonth(),
-                $hoy->copy()->endOfDay()
-            ]);
-        }
-
-        // 3. Agrupamos por categoría
+        // 3. Agrupamos por categoría y preparamos los datos
         $ventasPorCategoria = $query->select('products.category', DB::raw('SUM(order_items.quantity) as total_vendido'))
             ->groupBy('products.category')
             ->orderByDesc('total_vendido')
