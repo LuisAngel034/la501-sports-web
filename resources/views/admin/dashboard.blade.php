@@ -33,6 +33,21 @@
 /* ══════════════════════════════════════════
    VARIABLES — sistema admin La 501
 ══════════════════════════════════════════ */
+:root {
+    --ac:  #2563EB; --ac2: #1D4ED8;
+    --gn:  #16A34A; --gn2: #22C55E;
+    --or:  #EA580C; --am:  #D97706;
+    --pu:  #7C3AED; --tl:  #0D9488;
+    --rd:  #DC2626;
+    --bg:  #F8F8F8; --card: #FFFFFF;
+    --inp: #F4F4F5; --txt:  #18181B;
+    --sub: #71717A; --bdr:  #E4E4E7;
+}
+.dark {
+    --bg:  #0A0A0A; --card: #111111;
+    --inp: #1C1C1C; --txt:  #FAFAFA;
+    --sub: #71717A; --bdr:  rgba(255,255,255,.08);
+}
 .ds {
     --ac:  #2563EB; --ac2: #1D4ED8;
     --gn:  #16A34A; --gn2: #22C55E;
