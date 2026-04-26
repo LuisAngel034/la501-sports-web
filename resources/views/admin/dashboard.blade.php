@@ -5,6 +5,31 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
+
+
+/* ── CORRECCIÓN DE TRANSPARENCIA EN MODALES ── */
+.ds-overlay .ds-modal {
+    background-color: var(--card) !important;
+    /* Esta línea es la magia que evita que el fondo borroso traspase: */
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+}
+.ds-overlay .ds-modal-hd {
+    background-color: var(--bg) !important;
+}
+.ds-overlay .ds-modal-body,
+.ds-overlay .ds-table,
+.ds-overlay .ds-table tbody tr,
+.ds-overlay .ds-table td {
+    background-color: var(--card) !important;
+}
+.ds-overlay .ds-table thead th {
+    background-color: var(--bg) !important;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
 /* ══════════════════════════════════════════
    VARIABLES — sistema admin La 501
 ══════════════════════════════════════════ */
@@ -61,7 +86,14 @@
 .ds-stat.flashing .ds-stat-flash { opacity:1; }
 
 /* ── CHART CARD ── */
-.ds-card { background:var(--card); border:1px solid var(--bdr); border-radius:10px; overflow:hidden; transition:background .2s,border-color .2s; }
+.ds-card {
+    background: var(--card) !important; /* Fuerza el uso del color sólido de la variable */
+    border: 1px solid var(--bdr);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: background .2s, border-color .2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02); /* Sutil sombra para dar profundidad sin transparencia */
+}
 .ds-card-hd { display:flex; align-items:center; justify-content:space-between; padding:12px 18px; border-bottom:1px solid var(--bdr); flex-wrap:wrap; gap:10px; }
 .ds-card-ttl { display:flex; align-items:center; gap:8px; }
 .ds-card-ttl-ico { width:26px; height:26px; border-radius:6px; background:rgba(37,99,235,.08); border:1px solid rgba(37,99,235,.15); display:flex; align-items:center; justify-content:center; }
@@ -110,13 +142,20 @@
 .ds-table .td-name { font-weight:600; }
 .ds-table .td-sub  { color:var(--sub); font-size:11px; }
 
-/* proyección card */
+/* -- Tarjeta de Proyección -- */
 .ds-proj-card {
-    background:var(--card); border:1px solid var(--bdr);
-    border-left:3px solid var(--ac);
-    border-radius:10px; padding:20px 24px;
-    margin-top:14px;
-    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;
+    background: var(--card) !important;
+    border: 1px solid var(--bdr);
+    border-left: 3px solid var(--ac);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-top: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.03);
 }
 .ds-proj-val { font-size:30px; font-weight:800; color:var(--txt); margin:4px 0; letter-spacing:-1px; transition:color .2s; }
 .ds-proj-badge { display:inline-flex; align-items:center; gap:4px; font-size:11px; font-weight:600; color:var(--gn); }
@@ -130,8 +169,23 @@
     backdrop-filter:blur(6px) !important;
     align-items:center; justify-content:center; padding:16px;
 }
-.ds-modal { background:var(--card); border:1px solid var(--bdr); border-radius:12px; width:100%; max-width:400px; box-shadow:0 24px 64px rgba(0,0,0,.24); overflow:hidden; }
-.ds-modal-hd { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--bdr); background:var(--bg); }
+/* -- Ventanas Modales (Ver todos) -- */
+.ds-modal {
+    background: var(--card) !important; /* Fondo sólido blanco o negro */
+    border: 1px solid var(--bdr);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 550px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.3); /* Sombra pesada para que destaque sobre el fondo */
+    overflow: hidden;
+    opacity: 1 !important; /* Asegura opacidad total */
+}
+/* Ajuste para el encabezado del modal */
+.ds-modal-hd {
+    background: var(--bg) !important; /* Un tono ligeramente distinto para el título */
+    border-bottom: 1px solid var(--bdr);
+    padding: 16px 20px;
+}
 .ds-modal-hd h3 { font-size:15px; font-weight:700; color:var(--txt); margin:0 0 2px; transition:color .2s; }
 .ds-modal-hd p  { font-size:12px; color:var(--sub); margin:0; }
 .ds-modal-close { width:28px; height:28px; border-radius:7px; background:var(--inp); border:1px solid var(--bdr); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--sub); transition:background .15s; }
@@ -262,6 +316,10 @@
                         </div>
                         <h2>Consumo Promedio</h2>
                     </div>
+                    {{-- Botón Ver Todos (solo aparece si hay más de 5 registros) --}}
+                    @if(count($mediaAritmetica) > 5)
+                        <button type="button" onclick="abrirModal('modal-consumo')" style="background:none; border:none; font-size:11px; font-weight:700; color:var(--ac); cursor:pointer; padding:0;">Ver todos &rarr;</button>
+                    @endif
                 </div>
                 <div class="ds-card-body" style="padding:0 0 4px;">
                     <table class="ds-table">
@@ -273,7 +331,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($mediaAritmetica as $item)
+                            {{-- Limitamos a 5 visualmente en la tarjeta --}}
+                            @forelse($mediaAritmetica->take(5) as $item)
                             <tr>
                                 <td class="td-name">{{ $item->name }}</td>
                                 <td style="text-align:right" class="td-sub">{{ $item->total_vendido }} und.</td>
@@ -296,6 +355,10 @@
                         </div>
                         <h2>Alta Rotación</h2>
                     </div>
+                    {{-- Botón Ver Todos --}}
+                    @if(count($modaMatematica) > 5)
+                        <button type="button" onclick="abrirModal('modal-rotacion')" style="background:none; border:none; font-size:11px; font-weight:700; color:var(--ac); cursor:pointer; padding:0;">Ver todos &rarr;</button>
+                    @endif
                 </div>
                 <div class="ds-card-body" style="padding:0 0 4px;">
                     <table class="ds-table">
@@ -306,7 +369,8 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($modaMatematica as $item)
+                            {{-- Limitamos a 5 visualmente en la tarjeta --}}
+                            @forelse($modaMatematica->take(5) as $item)
                             <tr>
                                 <td class="td-name">{{ $item->name }}</td>
                                 <td style="text-align:right" class="val-pu">{{ $item->frecuencia }}</td>
@@ -321,24 +385,24 @@
         </div>
 
         {{-- Proyección interactiva, gráfica y comprobación --}}
-        <div style="background:var(--card); border:1px solid var(--bdr); border-radius:10px; margin-top:14px; overflow:hidden;">
+        <div id="modulo-prediccion" style="background:var(--card); border:1px solid var(--bdr); border-radius:10px; margin-top:14px; overflow:hidden;">
             <div style="padding:16px 20px; border-bottom:1px solid var(--bdr); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                 <div>
                     <h3 style="margin:0; font-size:15px; color:var(--ac);">Módulo de Predicción Matemática</h3>
                     <p style="margin:0; font-size:12px; color:var(--sub);">Ecuación Diferencial: P(t) = P₀eᵏᵗ (Evaluación por {{ $granularidad }}s)</p>
                 </div>
                 
-                {{-- Formulario de Fechas --}}
-                <form method="GET" action="" style="display:flex; gap:8px; align-items:flex-end;">
+                {{-- Formulario de Fechas Modificado para AJAX --}}
+                <form id="form-prediccion" onsubmit="calcularPrediccionAJAX(event)" style="display:flex; gap:8px; align-items:flex-end;">
                     <div>
                         <label style="font-size:10px; color:var(--sub); display:block;">Desde</label>
-                        <input type="date" name="start_date" value="{{ $fechaInicioPred }}" class="ds-inp" style="padding:5px 8px; font-size:12px;">
+                        <input type="date" name="start_date" id="pred_start" value="{{ $fechaInicioPred }}" class="ds-inp" style="padding:5px 8px; font-size:12px;">
                     </div>
                     <div>
                         <label style="font-size:10px; color:var(--sub); display:block;">Hasta</label>
-                        <input type="date" name="end_date" value="{{ $fechaFinPred }}" class="ds-inp" style="padding:5px 8px; font-size:12px;">
+                        <input type="date" name="end_date" id="pred_end" value="{{ $fechaFinPred }}" class="ds-inp" style="padding:5px 8px; font-size:12px;">
                     </div>
-                    <button type="submit" class="ds-pill on" style="padding:6px 12px; background:var(--ac); color:#fff; border-radius:5px;">Calcular</button>
+                    <button type="submit" id="btn-calc-pred" class="ds-pill on" style="padding:6px 12px; background:var(--ac); color:#fff; border-radius:5px; transition:0.2s;">Calcular</button>
                 </form>
             </div>
 
@@ -384,7 +448,11 @@
                 <div style="grid-column: 1 / -1; margin-top:10px; padding-top:20px; border-top:1px dashed var(--bdr);">
                     <p style="font-size:13px; font-weight:700; margin:0 0 15px; color:var(--txt);">Curva de Crecimiento (Modelo Matemático vs. Realidad)</p>
                     <div style="position:relative; height: 260px;">
-                        <canvas id="prediccionEcuacionChart"></canvas>
+                        {{-- Guardamos los datos en la etiqueta para leerlos con JS sin recargar --}}
+                        <canvas id="prediccionEcuacionChart" 
+                                data-labels="{{ $fechasChartJson ?? '[]' }}"
+                                data-reales="{{ $realesChartJson ?? '[]' }}"
+                                data-prediccion="{{ $prediccionChartJson ?? '[]' }}"></canvas>
                     </div>
                 </div>
             </div>
@@ -406,7 +474,7 @@
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
             </button>
         </div>
-        <form action="{{ route('admin.sales.export.excel') ?? '#' }}" method="GET"
+        <form id="export-form" action="{{ route('admin.export.ganancias') }}" method="GET" target="_blank"
               onsubmit="setTimeout(()=>cerrarModal('modal-export'),500)">
             <div class="ds-modal-body">
                 <div>
@@ -427,6 +495,78 @@
                 </button>
             </div>
         </form>
+    </div>
+</div>
+
+{{-- MODAL CONSUMO PROMEDIO COMPLETO --}}
+<div id="modal-consumo" class="ds-overlay">
+    <div class="ds-modal" style="max-width:600px;">
+        <div class="ds-modal-hd">
+            <div>
+                <h3>Consumo Promedio (Ranking Completo)</h3>
+                <p>Todos los platillos del periodo seleccionado</p>
+            </div>
+            <button type="button" class="ds-modal-close" onclick="cerrarModal('modal-consumo')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="ds-modal-body" style="padding:0; max-height:65vh; overflow-y:auto;">
+            <table class="ds-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:center; width:40px;">#</th>
+                        <th style="text-align:left">Platillo</th>
+                        <th style="text-align:right">Total Vendido</th>
+                        <th style="text-align:right">Media/día</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($mediaAritmetica as $index => $item)
+                    <tr>
+                        <td style="text-align:center; color:var(--sub); font-size:11px; font-weight:700;">{{ $index + 1 }}</td>
+                        <td class="td-name">{{ $item->name }}</td>
+                        <td style="text-align:right" class="td-sub">{{ $item->total_vendido }} und.</td>
+                        <td style="text-align:right" class="val-gn">{{ $item->media_diaria }} / día</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL ALTA ROTACION COMPLETO --}}
+<div id="modal-rotacion" class="ds-overlay">
+    <div class="ds-modal" style="max-width:550px;">
+        <div class="ds-modal-hd">
+            <div>
+                <h3>Alta Rotación (Ranking Completo)</h3>
+                <p>Frecuencia de pedidos por platillo en el mes</p>
+            </div>
+            <button type="button" class="ds-modal-close" onclick="cerrarModal('modal-rotacion')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="ds-modal-body" style="padding:0; max-height:65vh; overflow-y:auto;">
+            <table class="ds-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:center; width:40px;">#</th>
+                        <th style="text-align:left">Platillo</th>
+                        <th style="text-align:right">Total de Pedidos</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($modaMatematica as $index => $item)
+                    <tr>
+                        <td style="text-align:center; color:var(--sub); font-size:11px; font-weight:700;">{{ $index + 1 }}</td>
+                        <td class="td-name">{{ $item->name }}</td>
+                        <td style="text-align:right" class="val-pu">{{ $item->frecuencia }} veces</td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
@@ -604,9 +744,128 @@ function dashboardManager() {
     }
 }
 
+let prediccionChartInst = null;
+
+        // Función encargada de dibujar la gráfica leyendo los datos incrustados
+        function renderPrediccionChart() {
+            const canvas = document.getElementById('prediccionEcuacionChart');
+            if(!canvas) return;
+
+            const ctxP = canvas.getContext('2d');
+            const labels = JSON.parse(canvas.getAttribute('data-labels') || '[]');
+            const reales = JSON.parse(canvas.getAttribute('data-reales') || '[]');
+            const prediccion = JSON.parse(canvas.getAttribute('data-prediccion') || '[]');
+
+            const isDark = document.documentElement.classList.contains('dark');
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.06)';
+            const tickColor = isDark ? '#71717A' : '#9CA3AF';
+            const textColor = isDark ? '#FAFAFA' : '#18181B';
+
+            if(prediccionChartInst) {
+                prediccionChartInst.destroy(); // Eliminar gráfica anterior si existe
+            }
+
+            prediccionChartInst = new Chart(ctxP, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Ingresos Reales',
+                            data: reales,
+                            borderColor: '#2563EB',
+                            backgroundColor: 'rgba(37,99,235,0.15)',
+                            borderWidth: 2,
+                            pointRadius: 4,
+                            fill: true,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Curva del Modelo Exponencial (P₀eᵏᵗ)',
+                            data: prediccion,
+                            borderColor: '#EA580C',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            pointBackgroundColor: '#EA580C',
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            fill: false,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: textColor, font: { family: 'inherit', size: 12 } } },
+                        tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(context.parsed.y); } } }
+                    },
+                    scales: {
+                        y: { ticks: { color: tickColor, callback: function(value) { return '$' + value.toLocaleString(); } }, grid: { color: gridColor } },
+                        x: { ticks: { color: tickColor }, grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // 1. Dibujar gráfica al cargar la página por primera vez
+        document.addEventListener("DOMContentLoaded", renderPrediccionChart);
+
+        // 2. Función AJAX asíncrona para interceptar el botón Calcular
+        async function calcularPrediccionAJAX(e) {
+            e.preventDefault(); // Detiene la recarga de la página
+
+            const form = e.target;
+            const btn = document.getElementById('btn-calc-pred');
+            const start = document.getElementById('pred_start').value;
+            const end = document.getElementById('pred_end').value;
+
+            // Efecto visual de carga
+            const originalText = btn.innerText;
+            btn.innerText = 'Calculando...';
+            btn.style.opacity = '0.7';
+            btn.disabled = true;
+
+            try {
+                // Preparamos la URL con las fechas en el fondo
+                const url = new URL(window.location.href);
+                url.searchParams.set('start_date', start);
+                url.searchParams.set('end_date', end);
+
+                // Fetch invisible al servidor PHP
+                const response = await fetch(url);
+                const htmlText = await response.text();
+
+                // Extraemos solo el código de la tarjeta de predicción
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const nuevoModulo = doc.getElementById('modulo-prediccion');
+
+                // Inyectamos el nuevo HTML sin tocar el resto de la página
+                document.getElementById('modulo-prediccion').innerHTML = nuevoModulo.innerHTML;
+
+                // Redibujamos la gráfica con los nuevos datos
+                renderPrediccionChart();
+
+            } catch (error) {
+                console.error('Error al calcular:', error);
+                alert('Hubo un error al calcular la predicción.');
+            } finally {
+                // Restauramos el botón
+                const newBtn = document.getElementById('btn-calc-pred');
+                if(newBtn) {
+                    newBtn.innerText = 'Calcular';
+                    newBtn.style.opacity = '1';
+                    newBtn.disabled = false;
+                }
+            }
+        }
+
 /* ── SWITCH TABS ── */
 function switchTab(tab) {
     currentTab = tab;
+    const formExport = document.getElementById('export-form');
     const panelG = document.getElementById('panel-ganancia');
     const panelC = document.getElementById('panel-categoria');
     const panelE = document.getElementById('panel-estadisticas');
@@ -630,6 +889,7 @@ function switchTab(tab) {
         
         const alpine = document.querySelector('[x-data]').__x.$data;
         alpine.renderSalesChart();
+        if (formExport) formExport.action = "{{ route('admin.export.ganancias') }}";
     } else {
         panelG.style.display = 'none';
         panelC.style.display = 'block';
@@ -644,6 +904,7 @@ function switchTab(tab) {
         const rotacionInput = document.querySelector('input[name="rotacion_date"]');
         const rDate = rotacionInput ? rotacionInput.value : '';
         setTimeout(() => initCategoryChart(rDate), 50);
+        if (formExport) formExport.action = "{{ route('admin.export.rotacion') }}";
     }
 }
 

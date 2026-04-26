@@ -7,8 +7,6 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class DashboardController extends Controller
 {
@@ -73,7 +71,6 @@ class DashboardController extends Controller
             ->select('products.name', DB::raw($rawTotalVendido))
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('total_vendido')
-            ->limit(5)
             ->get()
             ->map(function ($item) use ($diasEvaluados) {
                 $item->media_diaria = round($item->total_vendido / $diasEvaluados, 2);
@@ -89,7 +86,6 @@ class DashboardController extends Controller
             ->select('products.name', DB::raw('COUNT(*) as frecuencia'))
             ->groupBy('products.id', 'products.name')
             ->orderByDesc('frecuencia')
-            ->limit(5)
             ->get();
 
         // MODELO PREDICTIVO
@@ -98,6 +94,7 @@ class DashboardController extends Controller
 
         $startCarbon = Carbon::parse($fechaInicioPred)->startOfDay();
         $endCarbon = Carbon::parse($fechaFinPred)->endOfDay();
+        
         $diffDays = $startCarbon->diffInDays($endCarbon) + 1;
 
         $ordersQuery = Order::where('status', 'paid')
@@ -118,7 +115,6 @@ class DashboardController extends Controller
             $semanasCompletas = floor($diffDays / 7);
             $diasCompletos = $semanasCompletas * 7;
             
-
             $fechaFinValida = $startCarbon->copy()->addDays($diasCompletos)->subSecond();
             
             $groupedTemp = $ordersQuery->where('created_at', '<=', $fechaFinValida)
@@ -131,16 +127,7 @@ class DashboardController extends Controller
         } else {
             $granularidad = 'Mes';
             $labelFormato = 'M Y';
-            $groupedOriginal = $ordersQuery->groupBy(fn($q) => Carbon::parse($q->created_at)->startOfMonth()->format('Y-m-d'));
-            
-            $ultimoMesKey = $groupedOriginal->keys()->last();
-            if ($ultimoMesKey) {
-                $finDeEseMes = Carbon::parse($ultimoMesKey)->endOfMonth()->endOfDay();
-                if ($endCarbon->lt($finDeEseMes)) {
-                    $groupedOriginal->pop();
-                }
-            }
-            $groupedTemp = $groupedOriginal;
+            $groupedTemp = $ordersQuery->groupBy(fn($q) => Carbon::parse($q->created_at)->startOfMonth()->format('Y-m-d'));
         }
 
         $historialSintetizado = collect();
@@ -202,181 +189,6 @@ class DashboardController extends Controller
             'historialSintetizado', 'fechaInicioPred', 'fechaFinPred', 'k_constante', 'p0', 'p_last',
             'fechasChartJson', 'realesChartJson', 'prediccionChartJson', 'granularidad', 'rotacionDate'
         ));
-    }
-
-    public function exportSalesCSV(Request $request)
-    {
-        $startDate = $request->start_date . ' 00:00:00';
-        $endDate   = $request->end_date . ' 23:59:59';
-
-        $summary = \App\Models\Order::selectRaw('payment_method, COUNT(*) as count, SUM(total) as sum')
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'paid')
-            ->groupBy('payment_method')
-            ->get();
-
-        $totalSum   = $summary->sum('sum');
-        $totalCount = $summary->sum('count');
-
-        $ventasPorCategoria = DB::table('order_items')
-            ->join('orders', 'order_items.order_id', '=', 'orders.id')
-            ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->where('orders.status', 'paid')
-            ->whereNotNull('products.category')
-            ->select('products.category', DB::raw('SUM(order_items.quantity) as total_vendido'), DB::raw('SUM(order_items.subtotal) as ingresos'))
-            ->groupBy('products.category')
-            ->orderByDesc('total_vendido')
-            ->get();
-        
-        $totalArticulosVendidos = $ventasPorCategoria->sum('total_vendido');
-
-        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Corte de Caja');
-
-        $styleTitle = [
-            'font' => ['bold' => true, 'size' => 15, 'color' => ['argb' => 'FFFFFFFF']],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FF18181B']],
-            'alignment' => [
-                'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
-                'vertical'   => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
-            ],
-        ];
-        $styleHeader = [
-            'font' => ['bold' => true, 'color' => ['argb' => 'FFFFFFFF']],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFDD3A1D']],
-        ];
-        $styleTotal = [
-            'font' => ['bold' => true, 'color' => ['argb' => 'FF15803D']],
-            'fill' => ['fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID, 'startColor' => ['argb' => 'FFDCFCE7']],
-        ];
-
-        $sheet->mergeCells('A1:E2');
-        $sheet->setCellValue('A1', '📊 REPORTE DE VENTAS - LA 501 SPORTS BAR');
-        $sheet->getStyle('A1:E2')->applyFromArray($styleTitle);
-
-        $sheet->setCellValue('A4', 'Sucursal:');
-        $sheet->setCellValue('B4', 'La 501');
-        $sheet->setCellValue('A5', 'Fecha de Emisión:');
-        $sheet->setCellValue('B5', date(self::DATE_FORMAT_DMY . ' h:i A'));
-        $sheet->setCellValue('A6', 'Rango Reportado:');
-        $sheet->setCellValue('B6',
-            date(self::DATE_FORMAT_DMY, strtotime($startDate)) . ' al ' .
-            date(self::DATE_FORMAT_DMY, strtotime($endDate))
-        );
-        $sheet->getStyle('A4:A6')->getFont()->setBold(true);
-
-        // SECCIÓN 1: RESUMEN DE COBROS
-        $sheet->setCellValue('A8', 'RESUMEN DE COBROS');
-        $sheet->mergeCells('A8:E8');
-        $sheet->getStyle('A8:E8')->applyFromArray($styleHeader);
-
-        $sheet->setCellValue('A9', 'Método de Pago');
-        $sheet->mergeCells('A9:B9');
-        $sheet->setCellValue('C9', 'Cant. Operaciones');
-        $sheet->setCellValue('D9', 'Monto Total');
-        $sheet->mergeCells('D9:E9');
-        $sheet->getStyle('A9:E9')->getFont()->setBold(true);
-
-        $row = 10;
-        foreach ($summary as $item) {
-            $methodName = $item->payment_method ? mb_strtoupper($item->payment_method) : 'EFECTIVO';
-            $sheet->setCellValue('A' . $row, $methodName);
-            $sheet->mergeCells("A{$row}:B{$row}");
-            $sheet->setCellValue('C' . $row, $item->count);
-            $sheet->setCellValue('D' . $row, $item->sum);
-            $sheet->mergeCells("D{$row}:E{$row}");
-            $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
-            $row++;
-        }
-
-        $sheet->setCellValue('A' . $row, 'TOTAL INGRESOS');
-        $sheet->mergeCells("A{$row}:B{$row}");
-        $sheet->setCellValue('C' . $row, $totalCount);
-        $sheet->setCellValue('D' . $row, $totalSum);
-        $sheet->mergeCells("D{$row}:E{$row}");
-        $sheet->getStyle("A{$row}:E{$row}")->applyFromArray($styleTotal);
-        $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
-
-        // SECCIÓN 2: ROTACIÓN POR CATEGORÍAS
-        $row += 3;
-        $sheet->setCellValue('A' . $row, 'ANÁLISIS DE ROTACIÓN POR CATEGORÍA');
-        $sheet->mergeCells('A' . $row . ':E' . $row);
-        $sheet->getStyle('A' . $row . ':E' . $row)->applyFromArray($styleHeader);
-        $row++;
-
-        $sheet->setCellValue('A' . $row, 'Categoría');
-        $sheet->mergeCells('A' . $row . ':B' . $row);
-        $sheet->setCellValue('C' . $row, 'Platillos Vendidos');
-        $sheet->setCellValue('D' . $row, '% Participación');
-        $sheet->setCellValue('E' . $row, 'Ingresos Generados');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true);
-        $row++;
-
-        foreach ($ventasPorCategoria as $cat) {
-            $sheet->setCellValue('A' . $row, $cat->category);
-            $sheet->mergeCells("A{$row}:B{$row}");
-            $sheet->setCellValue('C' . $row, $cat->total_vendido);
-            
-            // Aplicación de tu fórmula matemática para el reporte
-            $porcentaje = $totalArticulosVendidos > 0 ? round(($cat->total_vendido / $totalArticulosVendidos) * 100, 2) : 0;
-            $sheet->setCellValue('D' . $row, $porcentaje . '%');
-            
-            $sheet->setCellValue('E' . $row, $cat->ingresos);
-            $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
-            $row++;
-        }
-
-        // --- SECCIÓN 3: DESGLOSE DE MOVIMIENTOS ---
-        $row += 3;
-        $sheet->setCellValue('A' . $row, 'DESGLOSE DETALLADO DE MOVIMIENTOS');
-        $sheet->mergeCells('A' . $row . ':E' . $row);
-        $sheet->getStyle('A' . $row . ':E' . $row)->applyFromArray($styleHeader);
-        $row++;
-
-        $sheet->setCellValue('A' . $row, 'Folio');
-        $sheet->setCellValue('B' . $row, 'Fecha');
-        $sheet->setCellValue('C' . $row, 'Hora');
-        $sheet->setCellValue('D' . $row, 'Método Pago');
-        $sheet->setCellValue('E' . $row, 'Total');
-        $sheet->getStyle("A{$row}:E{$row}")->getFont()->setBold(true);
-        $row++;
-
-        \App\Models\Order::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'paid')
-            ->orderBy('created_at', 'asc')
-            ->chunk(200, function ($ordersChunk) use ($sheet, &$row) {
-                foreach ($ordersChunk as $order) {
-                    $metodoPago = $order->payment_method ? ucfirst(strtolower($order->payment_method)) : 'Efectivo';
-                    $sheet->setCellValue('A' . $row, '#' . str_pad($order->id, 4, '0', STR_PAD_LEFT));
-                    $sheet->setCellValue('B' . $row, $order->created_at->format(self::DATE_FORMAT_DMY));
-                    $sheet->setCellValue('C' . $row, $order->created_at->format('h:i A'));
-                    $sheet->setCellValue('D' . $row, $metodoPago);
-                    $sheet->setCellValue('E' . $row, $order->total);
-                    $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
-                    $row++;
-                }
-            });
-
-        foreach (range('A', 'E') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        $fileName = 'Corte_Ventas_La501_' . date('d_m_Y_His') . '.xlsx';
-
-        while (ob_get_level() > 0) {
-            ob_end_clean();
-        }
-
-        $rutaSegura = storage_path('app/' . $fileName);
-
-        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
-        $writer->save($rutaSegura);
-
-        return response()->download($rutaSegura, $fileName, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ])->deleteFileAfterSend(true);
     }
 
     public function apiStats()
