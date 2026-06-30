@@ -10,7 +10,9 @@ return new class extends Migration
     {
         Schema::table('products', function (Blueprint $table) {
             // Agregamos la columna para la ruta de la imagen
-            $table->string('image')->nullable()->after('description');
+            if (!Schema::hasColumn('products', 'image')) {
+                $table->string('image')->nullable()->after('description');
+            }
         });
     }
 

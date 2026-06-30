@@ -51,320 +51,6 @@ Route::get('/api/menu/products', function() {
     return response()->json(\App\Models\Product::where('available', 1)->get());
 })->name('api.menu.products');
 
-Route::get('/api/alexa/menu', function () {
-    $categoria = request('categoria');
-    $query = \App\Models\Product::where('available', 1);
-    if ($categoria) $query->where('category', $categoria);
-    
-    $platillos = $query->select('name', 'price', 'category', 'description')
-        ->orderBy('category')->orderBy('price')->limit(20)->get()
-        ->map(fn($p) => [
-            'nombre'      => $p->name,
-            'precio'      => '$' . number_format($p->price, 0),
-            'categoria'   => $p->category,
-            'descripcion' => $p->description,
-        ]);
-    return response()->json(['total' => $platillos->count(), 'platillos' => $platillos]);
-});
-
-Route::get('/api/alexa/promociones', function () {
-    $promos = \App\Models\Promotion::where('active', 1)->get()
-        ->map(fn($p) => [
-            'titulo'      => $p->title,
-            'descripcion' => $p->description,
-            'precio'      => $p->price_text,
-            'etiqueta'    => $p->tag,
-            'vigencia'    => $p->end_date ?? 'Sin fecha límite',
-        ]);
-    return response()->json(['total' => $promos->count(), 'promociones' => $promos]);
-});
-
-Route::get('/api/alexa/horarios', function () {
-    $claves = [
-        'schedule_lunes','schedule_martes','schedule_miercoles','schedule_jueves',
-        'schedule_viernes','schedule_sabado','schedule_domingo',
-        'address_line1','address_line2','address_line3',
-    ];
-    $rows = \App\Models\Setting::whereIn('key', $claves)->pluck('value', 'key');
-    
-    $horarios = [];
-    foreach (['lunes','martes','miercoles','jueves','viernes','sabado','domingo'] as $dia) {
-        if (isset($rows["schedule_$dia"])) $horarios[ucfirst($dia)] = $rows["schedule_$dia"];
-    }
-    $direccion = collect(['address_line1','address_line2','address_line3'])
-        ->map(fn($k) => $rows[$k] ?? '')->filter()->implode(', ');
-    
-    return response()->json(['horarios' => $horarios, 'direccion' => $direccion]);
-});
-
-Route::get('/api/alexa/reservaciones', function () {
-    $fecha = request('fecha', now()->toDateString());
-    $reservas = \App\Models\Reservation::where('fecha_reservacion', $fecha)
-        ->whereIn('status', ['pendiente','confirmada'])
-        ->orderBy('hora_reservacion')->get()
-        ->map(fn($r) => [
-            'hora'     => substr($r->hora_reservacion, 0, 5),
-            'personas' => $r->cantidad_personas,
-            'zona'     => $r->zona,
-            'estatus'  => $r->status,
-        ]);
-    return response()->json([
-        'fecha'                 => $fecha,
-        'reservaciones_activas' => $reservas->count(),
-        'detalle'               => $reservas,
-    ]);
-});
-
-Route::get('/api/alexa/faq', function () {
-    $tema = request('tema');
-    
-    $faq = \App\Models\Faq::where('tema', 'LIKE', "%{$tema}%")->first();
-    
-    if ($faq) {
-        return response()->json(['encontrado' => true, 'respuesta' => $faq->respuesta]);
-    }
-    
-    return response()->json(['encontrado' => false, 'respuesta' => 'Lo siento, no tengo información sobre eso.']);
-});
-
-Route::get('/api/alexa/busqueda', function () {
-    $query = request('q');
-
-    if (!$query) {
-        return response()->json([
-            'encontrado' => false, 
-            'respuesta' => '¿Qué te gustaría saber sobre nuestro menú o promociones?'
-        ]);
-    }
-
-    $query = trim($query);
-
-    $producto = \App\Models\Product::where('available', 1)
-        ->where(function($q) use ($query) {
-            $q->where('name', 'LIKE', "%{$query}%")
-              ->orWhere('description', 'LIKE', "%{$query}%");
-        })
-        ->first();
-
-    if ($producto) {
-        $msg = "Sí, en nuestro menú tenemos " . $producto->name;
-        if ($producto->description) {
-            $msg .= ", que consiste en " . $producto->description;
-        }
-        $msg .= ". Tiene un precio de $" . number_format($producto->price, 0) . ".";
-        
-        return response()->json(['encontrado' => true, 'respuesta' => $msg]);
-    }
-
-    $promocion = \App\Models\Promotion::where('active', 1)
-        ->where(function($q) use ($query) {
-            $q->where('title', 'LIKE', "%{$query}%")
-              ->orWhere('description', 'LIKE', "%{$query}%");
-        })
-        ->first();
-
-    if ($promocion) {
-        $msg = "Tenemos una promoción activa llamada: " . $promocion->title . ". " . $promocion->description;
-        if ($promocion->price_text) {
-            $msg .= " por solo " . $promocion->price_text . ".";
-        }
-        return response()->json(['encontrado' => true, 'respuesta' => $msg]);
-    }
-
-    $productoPorCategoria = \App\Models\Product::where('available', 1)
-        ->where('category', 'LIKE', "%{$query}%")
-        ->first();
-
-    if ($productoPorCategoria) {
-        $ejemplos = \App\Models\Product::where('available', 1)
-            ->where('category', $productoPorCategoria->category)
-            ->limit(3)
-            ->pluck('name')
-            ->implode(', ');
-
-        $msg = "Sí, en la categoría de " . $productoPorCategoria->category . " te puedo ofrecer opciones como: " . $ejemplos . ".";
-        return response()->json(['encontrado' => true, 'respuesta' => $msg]);
-    }
-
-    return response()->json([
-        'encontrado' => false,
-        'respuesta' => "Lo siento, busqué en nuestros datos públicos pero no encontré información sobre '" . $query . "'. ¿Te gustaría preguntar por otro platillo o promoción?"
-    ]);
-});
-Route::get('/api/alexa/busqueda', function () {
-    $rawQuery = request('q');
-
-    if (!$rawQuery) {
-        return response()->json([
-            'encontrado' => false, 
-            'respuesta' => '¿Qué te gustaría saber sobre nuestro menú o promociones?'
-        ]);
-    }
-
-    $words = explode(' ', mb_strtolower(trim($rawQuery), 'UTF-8'));
-    $fillerWords = [
-        'quiero', 'saber', 'si', 'tienen', 'tiene', 'hay', 'un', 'una', 'unos', 'unas', 
-        'de', 'del', 'el', 'la', 'los', 'las', 'por', 'favor', 'me', 'puedes', 'decir', 
-        'precio', 'venden', 'vende', 'sobre', 'buscar', 'busca', 'algo', 'que', 'en', 'para'
-    ];
-    
-    $filteredWords = array_diff($words, $fillerWords);
-    $query = implode(' ', $filteredWords);
-    
-    if (empty(trim($query))) {
-        $query = trim($rawQuery);
-    }
-
-    $productoPorNombre = \App\Models\Product::where('available', 1)
-        ->where('name', 'LIKE', "%{$query}%")
-        ->first();
-
-    if ($productoPorNombre) {
-        $msg = "Sí, en nuestro menú tenemos " . $productoPorNombre->name;
-        if ($productoPorNombre->description) {
-            $msg .= ", que consiste en " . $productoPorNombre->description;
-        }
-        $msg .= ". Tiene un precio de $" . number_format($productoPorNombre->price, 0) . ".";
-        
-        return response()->json(['encontrado' => true, 'respuesta' => $msg]);
-    }
-
-    $promocionPorTitulo = \App\Models\Promotion::where('active', 1)
-        ->where('title', 'LIKE', "%{$query}%")
-        ->first();
-
-    if ($promocionPorTitulo) {
-        $msg = "Tenemos una promoción activa para eso: " . $promocionPorTitulo->title . ". " . $promocionPorTitulo->description;
-        if ($promocionPorTitulo->price_text) {
-            $msg .= " por solo " . $promocionPorTitulo->price_text . ".";
-        }
-        return response()->json(['encontrado' => true, 'respuesta' => $msg]);
-    }
-
-    $productoPorCategoria = \App\Models\Product::where('available', 1)
-        ->where('category', 'LIKE', "%{$query}%")
-        ->first();
-
-    if ($productoPorCategoria) {
-        $ejemplos = \App\Models\Product::where('available', 1)
-            ->where('category', $productoPorCategoria->category)
-            ->limit(3)
-            ->pluck('name')
-            ->implode(', ');
-
-        $msg = "Sí, en la sección de " . $productoPorCategoria->category . " te puedo ofrecer opciones como: " . $ejemplos . ".";
-        return response()->json(['encontrado' => true, 'respuesta' => $msg]);
-    }
-
-    $productoPorDescripcion = \App\Models\Product::where('available', 1)
-        ->where('description', 'LIKE', "%{$query}%")
-        ->first();
-
-    if ($productoPorDescripcion) {
-        $msg = "No encontré un platillo llamado '" . $query . "', pero nuestro platillo '" . $productoPorDescripcion->name . "' lo incluye. Su precio es de $" . number_format($productoPorDescripcion->price, 0) . ".";
-        return response()->json(['encontrado' => true, 'respuesta' => $msg]);
-    }
-
-    return response()->json([
-        'encontrado' => false,
-        'respuesta' => "Lo siento, busqué en el menú y promociones de hoy pero no encontré nada relacionado con '" . $query . "'. ¿Te gustaría intentar buscando otra cosa?"
-    ]);
-});
-
-Route::get('/api/alexa/contexto-publico', function () {
-    $claves = [
-        'schedule_lunes','schedule_martes','schedule_miercoles','schedule_jueves',
-        'schedule_viernes','schedule_sabado','schedule_domingo',
-        'address_line1','address_line2','address_line3',
-        'phone','telefono','whatsapp','facebook','instagram'
-    ];
-
-    $settings = \App\Models\Setting::whereIn('key', $claves)->pluck('value', 'key');
-
-    $horarios = [];
-    foreach (['lunes','martes','miercoles','jueves','viernes','sabado','domingo'] as $dia) {
-        $key = "schedule_$dia";
-        if (isset($settings[$key])) {
-            $horarios[ucfirst($dia)] = $settings[$key];
-        }
-    }
-
-    $direccion = collect(['address_line1','address_line2','address_line3'])
-        ->map(fn($k) => $settings[$k] ?? '')
-        ->filter()
-        ->implode(', ');
-
-    $menu = \App\Models\Product::where('available', 1)
-        ->select('name', 'description', 'price', 'category')
-        ->orderBy('category')
-        ->orderBy('price')
-        ->get()
-        ->groupBy('category')
-        ->map(function ($items) {
-            return $items->map(fn($p) => [
-                'nombre' => $p->name,
-                'descripcion' => $p->description,
-                'precio' => '$' . number_format($p->price, 0),
-            ])->values();
-        });
-
-    $promociones = \App\Models\Promotion::where('active', 1)
-        ->select('title', 'description', 'price_text', 'tag', 'end_date')
-        ->get()
-        ->map(fn($p) => [
-            'titulo' => $p->title,
-            'descripcion' => $p->description,
-            'precio' => $p->price_text,
-            'etiqueta' => $p->tag,
-            'vigencia' => $p->end_date ?? 'Sin fecha límite',
-        ]);
-
-    $novedades = \App\Models\News::where('active', 1)
-        ->where(function ($q) {
-            $q->whereNull('start_date')->orWhere('start_date', '<=', now()->toDateString());
-        })
-        ->where(function ($q) {
-            $q->whereNull('end_date')->orWhere('end_date', '>=', now()->toDateString());
-        })
-        ->select('title', 'content', 'category', 'start_date', 'end_date')
-        ->latest()
-        ->limit(5)
-        ->get()
-        ->map(fn($n) => [
-            'titulo' => $n->title,
-            'contenido' => $n->content,
-            'categoria' => $n->category,
-            'vigencia' => trim(($n->start_date ?? '') . ' a ' . ($n->end_date ?? '')),
-        ]);
-
-    $reservacionesHoy = \App\Models\Reservation::where('fecha_reservacion', now()->toDateString())
-        ->whereIn('status', ['pendiente', 'confirmada'])
-        ->count();
-
-    return response()->json([
-        'restaurante' => [
-            'nombre' => 'La 501 Sports',
-            'descripcion' => 'Restaurante y sports bar donde la pasión por el deporte y la buena comida se unen para crear momentos inolvidables.',
-            'direccion' => $direccion,
-            'contacto' => [
-                'telefono' => $settings['phone'] ?? $settings['telefono'] ?? null,
-                'whatsapp' => $settings['whatsapp'] ?? null,
-                'facebook' => $settings['facebook'] ?? null,
-                'instagram' => $settings['instagram'] ?? null,
-            ],
-        ],
-        'horarios' => $horarios,
-        'menu' => $menu,
-        'promociones' => $promociones,
-        'novedades' => $novedades,
-        'reservaciones' => [
-            'fecha' => now()->toDateString(),
-            'reservaciones_activas' => $reservacionesHoy,
-            'nota' => 'Las reservaciones están sujetas a disponibilidad y confirmación del personal.',
-        ],
-    ], 200, [], JSON_UNESCAPED_UNICODE);
-});
-
 // Carrito de Compras
 Route::controller(CartController::class)->group(function () {
     Route::get('/carrito', 'index')->name('cart.index');
@@ -466,7 +152,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
     Route::post('/menu/store', [AdminMenuController::class, 'store'])->name('admin.menu.store');
     Route::put('/menu/{id}', [AdminMenuController::class, 'update'])->name('admin.menu.update');
     Route::delete('/menu/{id}', [AdminMenuController::class, 'destroy'])->name('admin.menu.destroy');
-    Route::get('/admin/menu/template', [MenuController::class, 'downloadTemplate'])->name('admin.menu.template');
     
     // Gestión de Usuarios / Empleados
     Route::get('/usuarios', [UserController::class, 'index'])->name('admin.users.index');
@@ -507,7 +192,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
     Route::post('/inventario/importar', [InventoryController::class, 'importCSV'])->name('admin.inventory.import');
     Route::resource('inventario', InventoryController::class)->except(['create', 'show', 'edit'])->names('admin.inventory');
     Route::put('/inventario/{id}/ajustar', [InventoryController::class, 'adjust'])->name('admin.inventory.adjust');
-    Route::get('/inventario/plantilla', [InventoryController::class, 'downloadTemplate'])->name('admin.inventory.template');
 
     // ==========================================================
     // SISTEMA Y BASE DE DATOS (Módulo Avanzado)
@@ -527,7 +211,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
 
         // Acciones de Restauración
         Route::post('/restaurar', [AdminController::class, 'restore'])->name('admin.database.restore');
-        Route::post('/restaurar-subida', [AdminController::class, 'restoreUpload'])->name('admin.database.restore.upload');
+        Route::post('admin/sistema/base-de-datos/restaurar-subida', [App\Http\Controllers\BackupController::class, 'restoreUpload'])->name('admin.database.restore.upload');
     });
     
 });
@@ -570,7 +254,6 @@ Route::post('admin/sistema/base-de-datos/reindexar', [DatabaseController::class,
 Route::post('admin/sistema/base-de-datos/limpiar', [DatabaseController::class, 'cleanup'])->name('admin.database.cleanup');
 Route::get('admin/sistema/base-de-datos/reportes', [DatabaseController::class, 'reports'])->name('admin.database.reports');
 Route::post('admin/sistema/base-de-datos/descargar-reporte', [DatabaseController::class, 'downloadReport'])->name('admin.database.report.download');
-Route::post('admin/sistema/base-de-datos/restaurar-subida', [App\Http\Controllers\BackupController::class, 'restoreUpload'])->name('admin.database.restore.upload');
 Route::get('/admin/api/category-sales', [App\Http\Controllers\Admin\DashboardController::class, 'apiCategoryRotation'])->name('admin.api.category_sales');
 Route::get('/admin/export/ganancias', [DashboardExportController::class, 'exportGanancias'])->name('admin.export.ganancias');
 Route::get('/admin/export/rotacion', [DashboardExportController::class, 'exportRotacion'])->name('admin.export.rotacion');

@@ -21,7 +21,7 @@ class CheckoutController extends Controller
 
         // BARRERA DE SEGURIDAD 2: Justo antes de mostrar la pantalla de cobro
         foreach ($cart as $id => $details) {
-            $product = Product::find($id);
+            $product = Product::find($details['id'] ?? $id);
             if (!$product || $product->available == 0) {
                 // Si algo se agotó en el último segundo, lo mandamos de regreso al carrito
                 return redirect()->route('cart.index')->with('error', '¡Ups! Un platillo que ibas a pedir se acaba de agotar. Por favor revisa tu pedido.');
@@ -76,7 +76,7 @@ class CheckoutController extends Controller
         }
 
         foreach ($cart as $id => $details) {
-            $product = Product::find($id);
+            $product = Product::find($details['id'] ?? $id);
             if (!$product || $product->available == 0) {
                 return redirect()->route('cart.index')->with('error', 'La compra no pudo completarse porque un platillo ya no está disponible en inventario.');
             }
@@ -117,11 +117,12 @@ class CheckoutController extends Controller
         foreach ($cart as $id => $details) {
             OrderItem::create([
                 'order_id' => $order->id,
-                'product_id' => $id,
+                'product_id' => $details['id'] ?? $id,
                 'product_name' => $details['name'],
                 'quantity' => $details['quantity'],
                 'price' => $details['price'],
                 'subtotal' => $details['price'] * $details['quantity'],
+                'excluded_ingredients' => $details['excluded_ingredients'] ?? [],
             ]);
         }
 

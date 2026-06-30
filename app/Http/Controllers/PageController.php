@@ -10,7 +10,7 @@ use App\Models\Promotion;
 class PageController extends Controller
 {
     public function index() {
-        $products = \App\Models\Product::where('available', 1)->get();
+        $products = \App\Models\Product::with('ingredientes')->where('available', 1)->get();
         return view('pedido', compact('products'));
     }
 

@@ -382,6 +382,11 @@
                     {{-- Info --}}
                     <div class="cart-item-info">
                         <p class="cart-item-name">{{ $details['name'] }}</p>
+                        @if(!empty($details['excluded_ingredients']))
+                            <p class="cart-item-exclusions" style="font-size: 11px; color: var(--or); margin: 2px 0 4px; font-weight: 500;">
+                                <strong>Sin:</strong> {{ implode(', ', $details['excluded_ingredients']) }}
+                            </p>
+                        @endif
                         <p class="cart-item-price">${{ number_format($details['price'], 2) }} c/u</p>
                     </div>
 

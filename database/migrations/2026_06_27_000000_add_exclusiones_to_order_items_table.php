@@ -9,11 +9,11 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up()
+    public function up(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'avatar')) {
-                $table->string('avatar')->nullable()->after('email');
+        Schema::table('order_items', function (Blueprint $table) {
+            if (!Schema::hasColumn('order_items', 'exclusiones')) {
+                $table->text('exclusiones')->nullable()->after('subtotal');
             }
         });
     }
@@ -23,8 +23,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
+        Schema::table('order_items', function (Blueprint $table) {
+            $table->dropColumn('exclusiones');
         });
     }
 };

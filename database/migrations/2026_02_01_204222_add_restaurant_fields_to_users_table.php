@@ -13,10 +13,18 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             // Datos extra para el restaurante
-            $table->string('telefono')->nullable();
-            $table->string('pregunta_secreta')->nullable(); // Criterio: Pregunta secreta segura [cite: 3]
-            $table->string('respuesta_secreta')->nullable(); // Se guardará con Hash [cite: 3]
-            $table->string('direccion_favorita')->nullable();
+            if (!Schema::hasColumn('users', 'telefono')) {
+                $table->string('telefono')->nullable();
+            }
+            if (!Schema::hasColumn('users', 'pregunta_secreta')) {
+                $table->string('pregunta_secreta')->nullable(); // Criterio: Pregunta secreta segura [cite: 3]
+            }
+            if (!Schema::hasColumn('users', 'respuesta_secreta')) {
+                $table->string('respuesta_secreta')->nullable(); // Se guardará con Hash [cite: 3]
+            }
+            if (!Schema::hasColumn('users', 'direccion_favorita')) {
+                $table->string('direccion_favorita')->nullable();
+            }
         });
     }
 

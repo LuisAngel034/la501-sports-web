@@ -25,4 +25,53 @@ class Order extends Model
     {
         return $this->hasMany(OrderItem::class);
     }
+
+    protected static function booted()
+    {
+        static::updated(function ($order) {
+            if ($order->isDirty('status') && $order->status === 'paid') {
+                $order->discountInventoryStock();
+            }
+        });
+
+        static::created(function ($order) {
+            if ($order->status === 'paid') {
+                $order->discountInventoryStock();
+            }
+        });
+    }
+
+    public function discountInventoryStock()
+    {
+        $this->load('items.product.ingredientes');
+
+        foreach ($this->items as $item) {
+            $product = $item->product;
+            if (!$product) {
+                continue;
+            }
+
+            $excluded = is_array($item->excluded_ingredients)
+                ? $item->excluded_ingredients
+                : json_decode($item->excluded_ingredients, true) ?? [];
+
+            foreach ($product->ingredientes as $ingrediente) {
+                if ($ingrediente->inventory_id) {
+                    $isExcluded = collect($excluded)->contains(function ($value) use ($ingrediente) {
+                        return strtolower(trim($value)) === strtolower(trim($ingrediente->nombre));
+                    });
+
+                    if (!$isExcluded) {
+                        $qtyToDiscount = $item->quantity * $ingrediente->cantidad_usada;
+                        
+                        $inventory = \App\Models\Inventory::find($ingrediente->inventory_id);
+                        if ($inventory) {
+                            $inventory->current_stock = max(0, $inventory->current_stock - $qtyToDiscount);
+                            $inventory->save();
+                        }
+                    }
+                }
+            }
+        }
+    }
 }

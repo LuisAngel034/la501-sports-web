@@ -15,7 +15,12 @@ class OrderItem extends Model
         'product_name',
         'quantity',
         'price',
-        'subtotal'
+        'subtotal',
+        'excluded_ingredients'
+    ];
+
+    protected $casts = [
+        'excluded_ingredients' => 'array'
     ];
 
     public function order()

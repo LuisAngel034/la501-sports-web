@@ -14,7 +14,8 @@ class CartController extends Controller
         $total = 0;
 
         foreach ($cart as $id => $details) {
-            $product = Product::find($id);
+            $productId = $details['id'] ?? $id;
+            $product = Product::find($productId);
 
             if (!$product || $product->available == 0) {
                 unset($cart[$id]);
@@ -44,20 +45,27 @@ class CartController extends Controller
             'name' => 'required|string',
             'price' => 'required|numeric',
             'quantity' => 'required|integer|min:1',
-            'image' => 'nullable|string'
+            'image' => 'nullable|string',
+            'excluded_ingredients' => 'nullable|array'
         ]);
 
         $cart = session()->get('cart', []);
         $id = $request->id;
+        
+        $excluded = $request->input('excluded_ingredients', []);
+        sort($excluded);
+        $cartKey = empty($excluded) ? $id : $id . '_' . md5(json_encode($excluded));
 
-        if(isset($cart[$id])) {
-            $cart[$id]['quantity'] += $request->quantity;
+        if(isset($cart[$cartKey])) {
+            $cart[$cartKey]['quantity'] += $request->quantity;
         } else {
-            $cart[$id] = [
+            $cart[$cartKey] = [
+                "id" => (int)$id,
                 "name" => $request->name,
                 "quantity" => $request->quantity,
                 "price" => $request->price,
-                "image" => $request->image
+                "image" => $request->image,
+                "excluded_ingredients" => $excluded
             ];
         }
 
