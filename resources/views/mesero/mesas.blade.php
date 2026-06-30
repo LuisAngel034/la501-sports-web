@@ -52,10 +52,16 @@
 
                 <div>
                     @if($mesa['ocupada'])
-                        <button type="button" @click="abrirCobro({{ $mesa['id'] }}, {{ $mesa['total'] }})"
-                                class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase tracking-wider py-3 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
-                            💰 Cobrar Mesa
-                        </button>
+                        <div class="flex flex-col gap-2">
+                            <a href="{{ route('mesero.pedido', $mesa['id']) }}"
+                               class="block text-center w-full bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm">
+                                ➕ Agregar Más
+                            </a>
+                            <button type="button" @click="abrirCobro({{ $mesa['id'] }}, {{ $mesa['total'] }})"
+                                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm">
+                                💰 Cobrar Mesa
+                            </button>
+                        </div>
                     @else
                         <a href="{{ route('mesero.pedido', $mesa['id']) }}"
                            class="block text-center w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider py-3 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5">

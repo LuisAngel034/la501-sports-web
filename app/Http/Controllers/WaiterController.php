@@ -43,7 +43,7 @@ class WaiterController extends Controller
             return abort(403);
         }
 
-        $menu = Product::all()->groupBy('category');
+        $menu = Product::with('ingredientes')->get()->groupBy('category');
         return view('mesero.tomar_pedido', compact('mesaId', 'menu'));
     }
 
@@ -100,12 +100,13 @@ class WaiterController extends Controller
 
         foreach ($carrito as $item) {
             \App\Models\OrderItem::create([
-                'order_id'     => $order->id,
-                'product_id'   => $item['id'],
-                'product_name' => $item['name'],
-                'quantity'     => $item['cantidad'],
-                'price'        => $item['price'],
-                'subtotal'     => $item['price'] * $item['cantidad'],
+                'order_id'             => $order->id,
+                'product_id'           => $item['id'],
+                'product_name'         => $item['name'],
+                'quantity'             => $item['cantidad'],
+                'price'                => $item['price'],
+                'subtotal'             => $item['price'] * $item['cantidad'],
+                'excluded_ingredients' => $item['excluded_ingredients'] ?? [],
             ]);
         }
 
