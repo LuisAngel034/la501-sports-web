@@ -35,15 +35,15 @@ $promoPrefix = 'promociones';
 | 1. RUTAS PÚBLICAS
 |--------------------
 */
-Route::get('/', function () { return view('quienes-somos'); })->name('nosotros');
-Route::get('/contacto', function () { return view('contacto'); })->name('contacto');
-Route::get('/reservaciones', function () { return view('reservaciones'); })->name('reservaciones');
+Route::get('/', function () { return view('quienes-somos'); })->name('nosotros')->middleware('non-client');
+Route::get('/contacto', function () { return view('contacto'); })->name('contacto')->middleware('non-client');
+Route::get('/reservaciones', function () { return view('reservaciones'); })->name('reservaciones')->middleware('non-client');
 Route::post('/reservaciones/store', [ReservationController::class, 'store'])->name('reservations.store');
-Route::get('/ubicacion', function () { return view('ubicacion'); })->name('ubicacion');
+Route::get('/ubicacion', function () { return view('ubicacion'); })->name('ubicacion')->middleware('non-client');
 
 Route::get('/a-domicilio', [PageController::class, 'index'])->name('pedido')->middleware('non-client');
-Route::get('/novedades', [PageController::class, 'novedades'])->name('novedades');
-Route::get("/{$promoPrefix}", [PageController::class, 'promociones'])->name('promociones');
+Route::get('/novedades', [PageController::class, 'novedades'])->name('novedades')->middleware('non-client');
+Route::get("/{$promoPrefix}", [PageController::class, 'promociones'])->name('promociones')->middleware('non-client');
 Route::post('/contacto/enviar', [PageController::class, 'enviarContacto'])->name('contacto.enviar');
 
 Route::get('/menu', [MenuController::class, 'index'])->name('menu')->middleware('non-client');

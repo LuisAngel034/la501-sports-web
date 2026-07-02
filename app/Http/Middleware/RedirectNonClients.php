@@ -18,7 +18,7 @@ class RedirectNonClients
     public function handle(Request $request, Closure $next)
     {
         if (Auth::check()) {
-            $role = Auth::user()->role;
+            $role = trim(strtolower(Auth::user()->role));
             if (in_array($role, ['admin', 'cocinero', 'empleado'])) {
                 return $this->redirectByRole($role);
             }
