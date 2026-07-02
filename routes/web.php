@@ -265,3 +265,14 @@ Route::get('/admin/api/category-sales', [App\Http\Controllers\Admin\DashboardCon
 Route::get('/admin/export/ganancias', [DashboardExportController::class, 'exportGanancias'])->name('admin.export.ganancias');
 Route::get('/admin/export/rotacion', [DashboardExportController::class, 'exportRotacion'])->name('admin.export.rotacion');
 Route::get('/admin/export/cortediario', [DashboardExportController::class, 'exportCorteDiario'])->name('admin.export.cortediario');
+
+Route::get('/test-debug', function () {
+    $path = resource_path('views/admin/dashboard.blade.php');
+    if (!file_exists($path)) {
+        return "El archivo no existe en: " . $path;
+    }
+    $content = file_get_contents($path);
+    $hasCorte = str_contains($content, 'tab-corte') ? 'SÍ' : 'NO';
+    $mtime = date('Y-m-d H:i:s', filemtime($path));
+    return "Archivo: " . $path . "<br>Modificado (Server): " . $mtime . "<br>¿Tiene 'tab-corte'?: " . $hasCorte;
+});
