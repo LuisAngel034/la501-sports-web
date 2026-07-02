@@ -219,12 +219,149 @@ class DashboardController extends Controller
         $realesChartJson = json_encode($realesChart);
         $prediccionChartJson = json_encode($prediccionChart);
 
+        // --- DIARIO CORTE DE CAJA ---
+        $corteDate = $request->input('corte_date', date('Y-m-d'));
+        
+        $ordersCorte = Order::whereDate('created_at', $corteDate)
+            ->where(function ($q) {
+                $q->where('status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('table_number')
+                         ->where('status', 'ready');
+                  });
+            })
+            ->get();
+
+        $corteTotal = $ordersCorte->sum('total');
+        $corteCount = $ordersCorte->count();
+        $corteFirstTime = $ordersCorte->min('created_at') ? Carbon::parse($ordersCorte->min('created_at'))->format('h:i A') : 'N/A';
+        $corteLastTime = $ordersCorte->max('created_at') ? Carbon::parse($ordersCorte->max('created_at'))->format('h:i A') : 'N/A';
+
+        // Ventas por tipo de servicio (Mesa vs A Domicilio)
+        $ventasMesa = $ordersCorte->whereNotNull('table_number')->sum('total');
+        $ventasDelivery = $ordersCorte->whereNull('table_number')->sum('total');
+        $cantMesa = $ordersCorte->whereNotNull('table_number')->count();
+        $cantDelivery = $ordersCorte->whereNull('table_number')->count();
+
+        $corteServicios = [
+            'Mesa' => ['monto' => $ventasMesa, 'cantidad' => $cantMesa],
+            'A Domicilio' => ['monto' => $ventasDelivery, 'cantidad' => $cantDelivery]
+        ];
+
+        // Productos más vendidos del día
+        $topProductsCorte = DB::table('order_items')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->whereDate('orders.created_at', $corteDate)
+            ->where(function ($q) {
+                $q->where('orders.status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('orders.table_number')
+                         ->where('orders.status', 'ready');
+                  });
+            })
+            ->select('order_items.product_name as name', DB::raw('SUM(order_items.quantity) as total_vendido'), DB::raw('SUM(order_items.subtotal) as ingresos'))
+            ->groupBy('order_items.product_name')
+            ->orderByDesc('ingresos')
+            ->limit(5)
+            ->get();
+
+        // Formas de pago más utilizadas del día
+        $totalsCorte = ['efectivo' => 0.0, 'tarjeta' => 0.0, 'transferencia' => 0.0];
+        $detailedPayments = [
+            'Efectivo' => ['orders' => [], 'total' => 0.0],
+            'Tarjeta' => ['orders' => [], 'total' => 0.0],
+            'Transferencia' => ['orders' => [], 'total' => 0.0]
+        ];
+
+        foreach ($ordersCorte as $order) {
+            $method = $order->payment_method ?: 'Efectivo';
+            $parsed = self::parsePaymentMethodAmounts($method, (float) $order->total);
+            
+            $totalsCorte['efectivo'] += $parsed['efectivo'];
+            $totalsCorte['tarjeta'] += $parsed['tarjeta'];
+            $totalsCorte['transferencia'] += $parsed['transferencia'];
+
+            if ($parsed['efectivo'] > 0) {
+                $detailedPayments['Efectivo']['orders'][] = [
+                    'id' => $order->id,
+                    'monto' => $parsed['efectivo'],
+                    'customer_name' => $order->customer_name ?: ('Mesa ' . $order->table_number),
+                    'created_at' => $order->created_at->format('h:i A')
+                ];
+                $detailedPayments['Efectivo']['total'] += $parsed['efectivo'];
+            }
+            if ($parsed['tarjeta'] > 0) {
+                $detailedPayments['Tarjeta']['orders'][] = [
+                    'id' => $order->id,
+                    'monto' => $parsed['tarjeta'],
+                    'customer_name' => $order->customer_name ?: ('Mesa ' . $order->table_number),
+                    'created_at' => $order->created_at->format('h:i A')
+                ];
+                $detailedPayments['Tarjeta']['total'] += $parsed['tarjeta'];
+            }
+            if ($parsed['transferencia'] > 0) {
+                $detailedPayments['Transferencia']['orders'][] = [
+                    'id' => $order->id,
+                    'monto' => $parsed['transferencia'],
+                    'customer_name' => $order->customer_name ?: ('Mesa ' . $order->table_number),
+                    'created_at' => $order->created_at->format('h:i A')
+                ];
+                $detailedPayments['Transferencia']['total'] += $parsed['transferencia'];
+            }
+        }
+
+        // Pedidos Web vs Local
+        $ventasWeb = $ordersCorte->whereNotNull('user_id')->sum('total');
+        $cantWeb = $ordersCorte->whereNotNull('user_id')->count();
+        $ventasLocal = $ordersCorte->whereNull('user_id')->sum('total');
+        $cantLocal = $ordersCorte->whereNull('user_id')->count();
+
+        $corteWebLocal = [
+            'Web' => ['monto' => $ventasWeb, 'cantidad' => $cantWeb],
+            'Local / Mesas' => ['monto' => $ventasLocal, 'cantidad' => $cantLocal]
+        ];
+
         return view('admin.dashboard', compact(
             'stats', 'primeraFecha', 'ultimaFecha', 'topProducts',
             'mediaAritmetica', 'modaMatematica', 'gananciaProyectada',
             'historialSintetizado', 'fechaInicioPred', 'fechaFinPred', 'k_constante', 'p0', 'p_last',
-            'fechasChartJson', 'realesChartJson', 'prediccionChartJson', 'granularidad', 'rotacionDate'
+            'fechasChartJson', 'realesChartJson', 'prediccionChartJson', 'granularidad', 'rotacionDate',
+            'corteDate', 'corteTotal', 'corteCount', 'corteFirstTime', 'corteLastTime', 'corteServicios',
+            'topProductsCorte', 'totalsCorte', 'detailedPayments', 'corteWebLocal'
         ));
+    }
+
+    private static function parsePaymentMethodAmounts(string $method, float $total)
+    {
+        $efectivo = 0.0;
+        $tarjeta = 0.0;
+        $transferencia = 0.0;
+
+        $methodLower = strtolower(trim($method));
+
+        if (str_starts_with($methodLower, 'mixto')) {
+            if (preg_match('/efectivo:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
+                $efectivo = (float) $m[1];
+            }
+            if (preg_match('/tarjeta:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
+                $tarjeta = (float) $m[1];
+            }
+            if (preg_match('/transferencia:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
+                $transferencia = (float) $m[1];
+            }
+        } elseif (str_contains($methodLower, 'efectivo')) {
+            $efectivo = $total;
+        } elseif (str_contains($methodLower, 'tarjeta') || str_contains($methodLower, 'terminal')) {
+            $tarjeta = $total;
+        } else {
+            $transferencia = $total;
+        }
+
+        return [
+            'efectivo' => $efectivo,
+            'tarjeta' => $tarjeta,
+            'transferencia' => $transferencia,
+        ];
     }
 
     public function apiStats()

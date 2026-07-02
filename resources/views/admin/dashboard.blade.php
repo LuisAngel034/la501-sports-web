@@ -281,6 +281,11 @@
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/></svg>
                         Rotación
                     </button>
+                    <button type="button" id="tab-corte" class="ds-pill"
+                            onclick="switchTab('corte')" style="display:flex;align-items:center;gap:5px;">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m16-2a4 4 0 01-4-4H7M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Corte Diario
+                    </button>
                 </div>
 
                 {{-- Período --}}
@@ -297,9 +302,18 @@
                         <input type="month" name="rotacion_date" value="{{ $rotacionDate ?? date('Y-m') }}" class="ds-inp" style="padding:4px 8px; font-size:12px; width:auto; height:28px;" onchange="this.form.submit()">
                     </form>
                 </div>
+
+                {{-- Controles Corte Diario --}}
+                <div id="filter-corte" style="display:none;">
+                    <form method="GET" action="" style="display:flex; gap:8px; margin:0; align-items:center;">
+                        <input type="hidden" name="active_tab" value="corte">
+                        <label style="font-size:11px; color:var(--sub); font-weight:600;">Fecha del Corte:</label>
+                        <input type="date" name="corte_date" value="{{ $corteDate ?? date('Y-m-d') }}" class="ds-inp" style="padding:4px 8px; font-size:12px; width:auto; height:28px;" onchange="this.form.submit()">
+                    </form>
+                </div>
                 
                 {{-- Exportar --}}
-                <button type="button" class="ds-export-btn" onclick="abrirModal('modal-export')">
+                <button type="button" class="ds-export-btn" onclick="ejecutarExport()">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                     Exportar
                 </button>
@@ -313,6 +327,173 @@
             <div id="panel-categoria" style="display:none;">
                 <div style="position:relative;height:240px;">
                     <canvas id="categoryChartCanvas"></canvas>
+                </div>
+            </div>
+            <div id="panel-corte" style="display:none;" class="space-y-6">
+                <!-- GRID DE RESUMEN (Tipo de la imagen) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    
+                    <!-- Tarjeta 1: Ventas por Tipo de Servicio -->
+                    <div class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/5 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Ventas por Servicio</h3>
+                                <span class="text-xs bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 font-bold px-2 py-0.5 rounded-full">Servicios</span>
+                            </div>
+                            <div class="space-y-2 mt-4">
+                                @foreach($corteServicios as $tipo => $data)
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold mb-1">
+                                            <span class="text-zinc-700 dark:text-zinc-300">{{ $tipo }} ({{ $data['cantidad'] }})</span>
+                                            <span class="text-zinc-900 dark:text-white font-bold">${{ number_format($data['monto'], 2) }}</span>
+                                        </div>
+                                        <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                                            <div class="bg-blue-500 h-1.5 rounded-full" style="width: {{ $corteTotal > 0 ? ($data['monto'] / $corteTotal * 100) : 0 }}%"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta 2: Productos más vendidos -->
+                    <div class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/5 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Productos más vendidos</h3>
+                                <span class="text-xs bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 font-bold px-2 py-0.5 rounded-full">Top 5</span>
+                            </div>
+                            <div class="space-y-2 mt-3">
+                                @forelse($topProductsCorte as $prod)
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold mb-1">
+                                            <span class="text-zinc-700 dark:text-zinc-300 truncate max-w-[120px]">{{ $prod->name }}</span>
+                                            <span class="text-zinc-900 dark:text-white font-bold">{{ $prod->total_vendido }} und.</span>
+                                        </div>
+                                        <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                                            <div class="bg-orange-500 h-1.5 rounded-full" style="width: {{ $topProductsCorte->first() && $topProductsCorte->first()->total_vendido > 0 ? ($prod->total_vendido / $topProductsCorte->first()->total_vendido * 100) : 0 }}%"></div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="text-xs text-zinc-400 dark:text-zinc-500 text-center py-4">Sin ventas registradas hoy.</p>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta 3: Formas de pago más utilizadas -->
+                    <div class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/5 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Formas de Pago</h3>
+                                <span class="text-xs bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 font-bold px-2 py-0.5 rounded-full">Métodos</span>
+                            </div>
+                            <div class="space-y-2 mt-4">
+                                @foreach($totalsCorte as $metodo => $monto)
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold mb-1">
+                                            <span class="text-zinc-700 dark:text-zinc-300 capitalize">
+                                                {{ $metodo === 'mercadopago' ? 'Transferencia' : $metodo }}
+                                            </span>
+                                            <span class="text-zinc-900 dark:text-white font-bold">${{ number_format($monto, 2) }}</span>
+                                        </div>
+                                        <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                                            <div class="bg-green-600 h-1.5 rounded-full" style="width: {{ $corteTotal > 0 ? ($monto / $corteTotal * 100) : 0 }}%"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tarjeta 4: Pedidos Web vs Local -->
+                    <div class="bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/5 rounded-xl p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-500">Pedidos Web / Local</h3>
+                                <span class="text-xs bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 font-bold px-2 py-0.5 rounded-full">Origen</span>
+                            </div>
+                            <div class="space-y-2 mt-4">
+                                @foreach($corteWebLocal as $origen => $data)
+                                    <div>
+                                        <div class="flex justify-between text-xs font-semibold mb-1">
+                                            <span class="text-zinc-700 dark:text-zinc-300">{{ $origen }} ({{ $data['cantidad'] }})</span>
+                                            <span class="text-zinc-900 dark:text-white font-bold">${{ number_format($data['monto'], 2) }}</span>
+                                        </div>
+                                        <div class="w-full bg-zinc-200 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                                            <div class="bg-purple-600 h-1.5 rounded-full" style="width: {{ $corteTotal > 0 ? ($data['monto'] / $corteTotal * 100) : 0 }}%"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- SEPARADOR Y TABLA DETALLADA TIPO BSALE (1783028191.xls) -->
+                <div class="border-t border-dashed border-zinc-200 dark:border-white/10 pt-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-bold uppercase tracking-widest text-zinc-500 font-['Oswald']">
+                            Reporte de Cierre de Caja (Formato Excel / Caja)
+                        </h3>
+                        <button type="button" onclick="window.print()" class="text-xs font-bold text-blue-500 hover:text-blue-600 flex items-center gap-1 transition">
+                            🖨️ Imprimir Cierre
+                        </button>
+                    </div>
+
+                    <div class="bg-white dark:bg-black border border-zinc-200 dark:border-white/5 rounded-xl p-6 shadow-sm font-mono text-xs text-zinc-800 dark:text-zinc-300 space-y-4 max-w-2xl mx-auto">
+                        <div class="border-b border-zinc-200 dark:border-white/10 pb-4 text-center">
+                            <p class="font-bold text-sm uppercase">La 501 Sports Bar</p>
+                            <p class="text-zinc-500">Corte de Caja Diario</p>
+                        </div>
+
+                        <div class="space-y-1">
+                            <p><b>Fecha de Cierre:</b> {{ date('d/m/Y', strtotime($corteDate)) }}</p>
+                            <p><b>Hora Reg. Apertura:</b> {{ $corteFirstTime }}</p>
+                            <p><b>Hora Reg. Cierre:</b> {{ $corteLastTime }}</p>
+                        </div>
+
+                        <div class="border-t border-b border-dashed border-zinc-300 dark:border-zinc-700 py-3 my-3">
+                            <p class="font-bold text-center uppercase tracking-wider mb-2">Resumen de Ventas</p>
+
+                            @php $hasVentas = false; @endphp
+                            @foreach($detailedPayments as $metodo => $data)
+                                @if($data['total'] > 0)
+                                    @php $hasVentas = true; @endphp
+                                    <div class="mt-3">
+                                        <div class="flex justify-between font-bold text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-1">
+                                            <span>{{ strtoupper($metodo) }} ({{ count($data['orders']) }})</span>
+                                            <span>${{ number_format($data['total'], 2) }}</span>
+                                        </div>
+                                        <div class="pl-4 mt-1.5 space-y-1">
+                                            <div class="grid grid-cols-3 text-zinc-400 font-semibold mb-1 text-[10px]">
+                                                <span>Tipo Documento</span>
+                                                <span class="text-center">Nº Documento</span>
+                                                <span class="text-right">Monto</span>
+                                            </div>
+                                            @foreach($data['orders'] as $ord)
+                                                <div class="grid grid-cols-3 text-zinc-600 dark:text-zinc-400">
+                                                    <span class="truncate">TICKET DE VENTA T</span>
+                                                    <span class="text-center">#{{ str_pad($ord['id'], 4, '0', STR_PAD_LEFT) }}</span>
+                                                    <span class="text-right">${{ number_format($ord['monto'], 2) }}</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+
+                            @if(!$hasVentas)
+                                <p class="text-center text-zinc-400 dark:text-zinc-500 py-4">No se registraron ventas en la fecha seleccionada.</p>
+                            @endif
+                        </div>
+
+                        <div class="flex justify-between font-bold text-sm text-zinc-950 dark:text-white pt-2">
+                            <span>TOTAL GENERAL VENTAS</span>
+                            <span>${{ number_format($corteTotal, 2) }}</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -694,6 +875,8 @@ function dashboardManager() {
             const urlParams = new URLSearchParams(window.location.search);
             if(urlParams.get('active_tab') === 'categoria' || urlParams.get('rotacion_date')) {
                 setTimeout(() => switchTab('categoria'), 100);
+            } else if(urlParams.get('active_tab') === 'corte' || urlParams.get('corte_date')) {
+                setTimeout(() => switchTab('corte'), 100);
             }
         },
 
@@ -884,42 +1067,69 @@ function switchTab(tab) {
     const panelG = document.getElementById('panel-ganancia');
     const panelC = document.getElementById('panel-categoria');
     const panelE = document.getElementById('panel-estadisticas');
+    const panelCorte = document.getElementById('panel-corte');
     const btnG   = document.getElementById('tab-ganancia');
     const btnC   = document.getElementById('tab-categoria');
+    const btnCorte = document.getElementById('tab-corte');
     const title  = document.getElementById('ds-section-title');
     
     // Contenedores de botones
     const periodControls = document.getElementById('period-controls');
     const filterRotacion = document.getElementById('filter-rotacion');
+    const filterCorte = document.getElementById('filter-corte');
 
     if (tab === 'ganancia') {
         panelG.style.display = 'block';
         panelC.style.display = 'none';
         if (panelE) panelE.style.display = 'none';
-        btnG.classList.add('on'); btnC.classList.remove('on');
+        if (panelCorte) panelCorte.style.display = 'none';
+        btnG.classList.add('on'); btnC.classList.remove('on'); if(btnCorte) btnCorte.classList.remove('on');
         title.textContent = 'Reporte de Ventas';
         
         if (periodControls) periodControls.style.display = 'flex';
         if (filterRotacion) filterRotacion.style.display = 'none';
+        if (filterCorte) filterCorte.style.display = 'none';
         
         const alpine = document.querySelector('[x-data]').__x.$data;
         alpine.renderSalesChart();
         if (formExport) formExport.action = "{{ route('admin.export.ganancias') }}";
-    } else {
+    } else if (tab === 'categoria') {
         panelG.style.display = 'none';
         panelC.style.display = 'block';
         if (panelE) panelE.style.display = 'block';
-        btnG.classList.remove('on'); btnC.classList.add('on');
+        if (panelCorte) panelCorte.style.display = 'none';
+        btnG.classList.remove('on'); btnC.classList.add('on'); if(btnCorte) btnCorte.classList.remove('on');
         title.textContent = 'Rotación por Categoría';
         
         if (periodControls) periodControls.style.display = 'none';
         if (filterRotacion) filterRotacion.style.display = 'flex';
+        if (filterCorte) filterCorte.style.display = 'none';
         
         currentPeriod = 'month';
         const rotacionInput = document.querySelector('input[name="rotacion_date"]');
         const rDate = rotacionInput ? rotacionInput.value : '';
         setTimeout(() => initCategoryChart(rDate), 50);
         if (formExport) formExport.action = "{{ route('admin.export.rotacion') }}";
+    } else if (tab === 'corte') {
+        panelG.style.display = 'none';
+        panelC.style.display = 'none';
+        if (panelE) panelE.style.display = 'none';
+        if (panelCorte) panelCorte.style.display = 'block';
+        btnG.classList.remove('on'); btnC.classList.remove('on'); if(btnCorte) btnCorte.classList.add('on');
+        title.textContent = 'Corte de Caja Diario';
+        
+        if (periodControls) periodControls.style.display = 'none';
+        if (filterRotacion) filterRotacion.style.display = 'none';
+        if (filterCorte) filterCorte.style.display = 'flex';
+    }
+}
+
+function ejecutarExport() {
+    if (currentTab === 'corte') {
+        const corteDate = document.querySelector('input[name="corte_date"]').value;
+        window.location.href = `{{ route('admin.export.cortediario') }}?corte_date=${corteDate}`;
+    } else {
+        abrirModal('modal-export');
     }
 }
 

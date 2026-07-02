@@ -5,10 +5,51 @@
         showModal: false,
         mesaActual: 0,
         totalActual: 0,
+        pagos: [],
         abrirCobro(mesa, total) {
             this.mesaActual = mesa;
             this.totalActual = total;
+            this.pagos = [
+                { metodo: 'efectivo', monto: Number(total).toFixed(2) }
+            ];
             this.showModal = true;
+        },
+        agregarPago() {
+            let restante = Math.max(0, this.totalActual - this.totalIngresado);
+            this.pagos.push({
+                metodo: 'efectivo',
+                monto: restante > 0 ? Number(restante).toFixed(2) : ''
+            });
+        },
+        eliminarPago(index) {
+            this.pagos.splice(index, 1);
+        },
+        get totalIngresado() {
+            return this.pagos.reduce((sum, p) => sum + (parseFloat(p.monto) || 0), 0);
+        },
+        get isValido() {
+            return this.totalIngresado >= this.totalActual - 0.009;
+        },
+        get formattedPaymentMethod() {
+            if (this.pagos.length === 1) {
+                let p = this.pagos[0];
+                if (p.metodo === 'efectivo') return 'Efectivo';
+                if (p.metodo === 'tarjeta') return 'Tarjeta';
+                if (p.metodo === 'mercadopago') return 'Transferencia';
+                return p.metodo;
+            }
+            let parts = [];
+            let totals = { efectivo: 0, tarjeta: 0, mercadopago: 0 };
+            this.pagos.forEach(p => {
+                let m = parseFloat(p.monto) || 0;
+                if (totals[p.metodo] !== undefined) {
+                    totals[p.metodo] += m;
+                }
+            });
+            if (totals.efectivo > 0) parts.push('Efectivo: $' + totals.efectivo.toFixed(2));
+            if (totals.tarjeta > 0) parts.push('Tarjeta: $' + totals.tarjeta.toFixed(2));
+            if (totals.mercadopago > 0) parts.push('Transferencia: $' + totals.mercadopago.toFixed(2));
+            return 'Mixto (' + parts.join(', ') + ')';
         }
     }">
     
@@ -105,24 +146,76 @@
                 @csrf
                 @method('PUT')
                 
+                <input type="hidden" name="payment_method" :value="formattedPaymentMethod">
+
                 <div class="p-6 space-y-6">
-                    <div class="text-center bg-zinc-100 dark:bg-[#1A1A1A] rounded-xl p-4 border border-zinc-200 dark:border-white/5">
-                        <p class="text-sm text-zinc-500 uppercase font-bold tracking-widest mb-1">Total a Pagar</p>
-                        <p class="text-5xl font-black text-green-600 dark:text-green-500">
-                            $<span x-text="Number(totalActual).toFixed(2)"></span>
-                        </p>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="block text-xs font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-widest font-['Oswald']">
+                            Distribución de Pagos
+                        </label>
+                        <button type="button" @click="agregarPago()"
+                                class="text-xs font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 transition">
+                            ➕ Agregar Pago
+                        </button>
                     </div>
 
-                    <div>
-                        <label for="payment_method" class="block text-sm font-bold text-zinc-700 dark:text-zinc-300 mb-2 uppercase tracking-wide">
-                            Método de Pago
-                        </label>
-                        <select id="payment_method" name="payment_method" required
-                                class="w-full bg-white dark:bg-[#1A1A1A] border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg p-3 outline-none focus:ring-2 focus:ring-orange-500 transition font-bold">
-                            <option value="efectivo">💵 Efectivo</option>
-                            <option value="tarjeta">💳 Tarjeta (Terminal)</option>
-                            <option value="mercadopago">📱 Transferencia / MercadoPago</option>
-                        </select>
+                    {{-- Lista de Pagos Dinámica --}}
+                    <div class="space-y-3 max-h-60 overflow-y-auto pr-1">
+                        <template x-for="(pago, index) in pagos" :key="index">
+                            <div class="flex items-center gap-2 bg-zinc-50 dark:bg-black/25 border border-zinc-200 dark:border-white/5 rounded-xl p-2.5 transition">
+                                {{-- Selector de Método --}}
+                                <select x-model="pago.metodo"
+                                        class="bg-white dark:bg-[#1A1A1A] border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg px-2.5 py-2 outline-none focus:ring-2 focus:ring-orange-500 transition text-sm font-bold flex-shrink-0">
+                                    <option value="efectivo">💵 Efectivo</option>
+                                    <option value="tarjeta">💳 Tarjeta</option>
+                                    <option value="mercadopago">📱 Transf.</option>
+                                </select>
+
+                                {{-- Entrada de Monto --}}
+                                <div class="relative flex-1">
+                                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 font-bold text-sm">$</span>
+                                    <input type="number" step="0.01" x-model="pago.monto" placeholder="0.00" required
+                                           class="w-full pl-6 pr-3 py-2 bg-white dark:bg-[#1A1A1A] border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-orange-500 transition font-bold text-sm">
+                                </div>
+
+                                {{-- Botón Eliminar --}}
+                                <button type="button" @click="eliminarPago(index)" x-show="pagos.length > 1"
+                                        class="text-zinc-400 hover:text-red-500 p-2 rounded-lg hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition flex-shrink-0">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </template>
+                    </div>
+
+                    {{-- Resumen de Cobro --}}
+                    <div class="bg-zinc-50 dark:bg-black/40 border border-zinc-200 dark:border-white/5 rounded-xl p-4 space-y-2.5 mt-4">
+                        <div class="flex justify-between text-xs font-bold text-zinc-500">
+                            <span>Total a Pagar:</span>
+                            <span class="text-zinc-800 dark:text-zinc-300" x-text="'$' + Number(totalActual).toFixed(2)"></span>
+                        </div>
+                        <div class="flex justify-between text-xs font-bold text-zinc-500">
+                            <span>Total Pagado:</span>
+                            <span class="text-zinc-900 dark:text-white font-extrabold" x-text="'$' + totalIngresado.toFixed(2)"></span>
+                        </div>
+
+                        {{-- Faltante --}}
+                        <div x-show="!isValido" class="bg-yellow-50 dark:bg-yellow-950/20 text-yellow-800 dark:text-yellow-400 text-xs font-bold px-3 py-2.5 rounded-lg border border-yellow-200 dark:border-yellow-900 flex items-center justify-between shadow-sm">
+                            <span>⚠️ Faltan por cubrir:</span>
+                            <span x-text="'$' + (totalActual - totalIngresado).toFixed(2)"></span>
+                        </div>
+
+                        {{-- Cambio --}}
+                        <div x-show="isValido && totalIngresado > totalActual" class="bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-400 text-sm font-extrabold px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-900 flex items-center justify-between shadow-sm border-t pt-2 mt-2">
+                            <span>💵 Cambio:</span>
+                            <span x-text="'$' + (totalIngresado - totalActual).toFixed(2)"></span>
+                        </div>
+
+                        {{-- Pago Exacto --}}
+                        <div x-show="isValido && Math.abs(totalIngresado - totalActual) < 0.01" class="bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-400 text-xs font-bold px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-900 flex items-center justify-center gap-1.5 shadow-sm">
+                            <span>✅ Monto cubierto exactamente</span>
+                        </div>
                     </div>
                 </div>
 
@@ -130,7 +223,9 @@
                     <button type="button" @click="showModal = false" class="px-5 py-2.5 rounded-lg text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition">
                         Cancelar
                     </button>
-                    <button type="submit" class="px-5 py-2.5 rounded-lg text-sm font-bold text-white bg-green-600 hover:bg-green-700 shadow-lg shadow-green-500/30 transition flex items-center gap-2">
+                    <button type="submit" :disabled="!isValido"
+                            :class="!isValido ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed opacity-50' : 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/30'"
+                            class="px-5 py-2.5 rounded-lg text-sm font-bold transition flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         Confirmar Pago
                     </button>

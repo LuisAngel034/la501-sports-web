@@ -262,6 +262,154 @@ class DashboardExportController extends Controller
         return $this->downloadExcel($spreadsheet, 'Reporte_Rotacion_La501');
     }
 
+    public function exportCorteDiario(Request $request)
+    {
+        $corteDate = $request->input('corte_date', date('Y-m-d'));
+        
+        $ordersCorte = Order::whereDate('created_at', $corteDate)
+            ->where(function ($q) {
+                $q->where('status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('table_number')
+                         ->where('status', 'ready');
+                  });
+            })
+            ->get();
+
+        $corteTotal = $ordersCorte->sum('total');
+        $corteCount = $ordersCorte->count();
+        $corteFirstTime = $ordersCorte->min('created_at') ? Carbon::parse($ordersCorte->min('created_at'))->format('d/m/Y h:i A') : 'N/A';
+        $corteLastTime = $ordersCorte->max('created_at') ? Carbon::parse($ordersCorte->max('created_at'))->format('d/m/Y h:i A') : 'N/A';
+
+        // Parse orders by payment method
+        $detailedPayments = [
+            'EFECTIVO' => ['orders' => [], 'total' => 0.0],
+            'TARJETA DE CRÉDITO / DÉBITO' => ['orders' => [], 'total' => 0.0],
+            'TRANSFERENCIA / MERCADOPAGO' => ['orders' => [], 'total' => 0.0]
+        ];
+
+        foreach ($ordersCorte as $order) {
+            $method = $order->payment_method ?: 'Efectivo';
+            $parsed = self::parsePaymentMethodAmountsStatic($method, (float) $order->total);
+
+            if ($parsed['efectivo'] > 0) {
+                $detailedPayments['EFECTIVO']['orders'][] = [
+                    'id' => $order->id,
+                    'monto' => $parsed['efectivo']
+                ];
+                $detailedPayments['EFECTIVO']['total'] += $parsed['efectivo'];
+            }
+            if ($parsed['tarjeta'] > 0) {
+                $detailedPayments['TARJETA DE CRÉDITO / DÉBITO']['orders'][] = [
+                    'id' => $order->id,
+                    'monto' => $parsed['tarjeta']
+                ];
+                $detailedPayments['TARJETA DE CRÉDITO / DÉBITO']['total'] += $parsed['tarjeta'];
+            }
+            if ($parsed['transferencia'] > 0) {
+                $detailedPayments['TRANSFERENCIA / MERCADOPAGO']['orders'][] = [
+                    'id' => $order->id,
+                    'monto' => $parsed['transferencia']
+                ];
+                $detailedPayments['TRANSFERENCIA / MERCADOPAGO']['total'] += $parsed['transferencia'];
+            }
+        }
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Cierre Diario');
+
+        // Styles
+        $sheet->setCellValue('A1', 'Sucursal: La 501 Sports Bar');
+        $sheet->mergeCells('A1:D1');
+        $sheet->getStyle('A1')->getFont()->setBold(true);
+
+        $sheet->setCellValue('A2', 'Fecha de Cierre: ' . date('d/m/Y', strtotime($corteDate)));
+        $sheet->mergeCells('A2:D2');
+
+        $sheet->setCellValue('A3', 'Fecha y Hora Reg. de Apertura: ' . $corteFirstTime);
+        $sheet->mergeCells('A3:D3');
+
+        $sheet->setCellValue('A4', 'Fecha y Hora Reg. de Cierre: ' . $corteLastTime);
+        $sheet->mergeCells('A4:D4');
+
+        $sheet->setCellValue('A6', 'Resumen de Ventas');
+        $sheet->getStyle('A6')->getFont()->setBold(true)->setSize(12);
+
+        $row = 8;
+        foreach ($detailedPayments as $methodName => $data) {
+            if ($data['total'] <= 0) continue;
+
+            $sheet->setCellValue('A' . $row, $methodName . ' (' . count($data['orders']) . ')');
+            $sheet->setCellValue('B' . $row, $data['total']);
+            $sheet->getStyle('A' . $row . ':B' . $row)->getFont()->setBold(true);
+            $sheet->getStyle('B' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
+            $row++;
+
+            // Headers
+            $sheet->setCellValue('B' . $row, 'Tipo Documento');
+            $sheet->setCellValue('C' . $row, 'Nº Documento');
+            $sheet->setCellValue('D' . $row, 'Monto Movimiento');
+            $sheet->getStyle("B{$row}:D{$row}")->getFont()->setItalic(true)->setBold(true);
+            $row++;
+
+            // Orders list
+            foreach ($data['orders'] as $ord) {
+                $sheet->setCellValue('B' . $row, 'TICKET DE VENTA T');
+                $sheet->setCellValue('C' . $row, '#' . str_pad($ord['id'], 4, '0', STR_PAD_LEFT));
+                $sheet->setCellValue('D' . $row, $ord['monto']);
+                $sheet->getStyle('D' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
+                $row++;
+            }
+            $row++; // blank line
+        }
+
+        // Total
+        $sheet->setCellValue('A' . $row, 'Total');
+        $sheet->setCellValue('B' . $row, $corteTotal);
+        $sheet->getStyle('A' . $row . ':B' . $row)->getFont()->setBold(true)->setSize(11);
+        $sheet->getStyle('B' . $row)->getNumberFormat()->setFormatCode(self::NUMBER_FORMAT_MX);
+
+        foreach (range('A', 'D') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+
+        return $this->downloadExcel($spreadsheet, 'Corte_Diario_La501_' . $corteDate);
+    }
+
+    private static function parsePaymentMethodAmountsStatic(string $method, float $total)
+    {
+        $efectivo = 0.0;
+        $tarjeta = 0.0;
+        $transferencia = 0.0;
+
+        $methodLower = strtolower(trim($method));
+
+        if (str_starts_with($methodLower, 'mixto')) {
+            if (preg_match('/efectivo:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
+                $efectivo = (float) $m[1];
+            }
+            if (preg_match('/tarjeta:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
+                $tarjeta = (float) $m[1];
+            }
+            if (preg_match('/transferencia:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
+                $transferencia = (float) $m[1];
+            }
+        } elseif (str_contains($methodLower, 'efectivo')) {
+            $efectivo = $total;
+        } elseif (str_contains($methodLower, 'tarjeta') || str_contains($methodLower, 'terminal')) {
+            $tarjeta = $total;
+        } else {
+            $transferencia = $total;
+        }
+
+        return [
+            'efectivo' => $efectivo,
+            'tarjeta' => $tarjeta,
+            'transferencia' => $transferencia,
+        ];
+    }
+
     private function downloadExcel($spreadsheet, $name)
     {
         $fileName = $name . '_' . date('d_m_Y_His') . '.xlsx';

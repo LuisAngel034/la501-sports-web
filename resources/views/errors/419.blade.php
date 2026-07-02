@@ -4,6 +4,6 @@
         <h2 style="text-transform:uppercase;">Tu sesión se tomó un descanso</h2>
         <p style="font-size:18px;">Por tu seguridad, el formulario de pedido ha expirado.</p>
         <p style="color:#888;">Solo necesitas refrescar la página para continuar con tu orden.</p>
-        <button onclick="window.location.reload()" style="background:#3498db; color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">REFRESCAR AHORA</button>
+        <button onclick="window.location.href = window.location.pathname.endsWith('/logout') ? (window.location.origin + window.location.pathname.replace(/\/logout$/, '/')) : window.location.href;" style="background:#3498db; color:#fff; border:none; padding:10px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">REFRESCAR AHORA</button>
     </div>
 </body>
