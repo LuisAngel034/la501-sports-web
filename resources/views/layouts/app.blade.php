@@ -195,8 +195,27 @@
     {{-- ══════════════════════════════════════
          NAVBAR
     ══════════════════════════════════════ --}}
-    <nav x-data="{ mobileMenuOpen: false }"
-         class="sticky top-0 z-50 bg-white/90 dark:bg-black/85 backdrop-blur-md nav-bottom-border">
+    @if(Auth::check() && in_array(trim(strtolower(Auth::user()->role)), ['admin', 'cocinero', 'empleado']) && (request()->routeIs('perfil') || request()->is('perfil*')))
+        <header class="bg-[#111111] dark:bg-[#080808] text-white py-4 px-6 border-b border-white/5 flex items-center justify-between no-print sticky top-0 z-50">
+            <div class="flex items-center gap-3">
+                <span class="text-xl">👤</span>
+                <span class="font-bold tracking-wider font-['Oswald'] text-sm uppercase">Perfil de {{ Auth::user()->name }} ({{ ucfirst(Auth::user()->role) }})</span>
+            </div>
+            @php
+                $backUrl = route('admin.dashboard');
+                if (Auth::user()->role === 'cocinero') {
+                    $backUrl = route('kitchen.index');
+                } elseif (Auth::user()->role === 'empleado') {
+                    $backUrl = route('mesero.mesas');
+                }
+            @endphp
+            <a href="{{ $backUrl }}" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-all decoration-none">
+                🔙 Volver al Panel
+            </a>
+        </header>
+    @else
+        <nav x-data="{ mobileMenuOpen: false }"
+             class="sticky top-0 z-50 bg-white/90 dark:bg-black/85 backdrop-blur-md nav-bottom-border">
 
         <div class="relative flex items-center justify-between px-6 py-4 w-full">
 
@@ -367,6 +386,7 @@
         </div>
 
     </nav>
+    @endif
 
     {{-- ══════════════════════════════════════
          CONTENIDO DE CADA VISTA

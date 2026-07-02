@@ -16,11 +16,29 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
-        $totalVentas  = Order::where('status', 'paid')->sum('total');
-        $totalPedidos = Order::where('status', 'paid')->count();
+        $totalVentas  = Order::where(function ($q) {
+            $q->where('status', 'paid')
+              ->orWhere(function ($sq) {
+                  $sq->whereNull('table_number')
+                     ->where('status', 'ready');
+              });
+        })->sum('total');
+        $totalPedidos = Order::where(function ($q) {
+            $q->where('status', 'paid')
+              ->orWhere(function ($sq) {
+                  $sq->whereNull('table_number')
+                     ->where('status', 'ready');
+              });
+        })->count();
         $ticketPromedio = $totalPedidos > 0 ? ($totalVentas / $totalPedidos) : 0;
         $pedidosHoy   = Order::whereDate('created_at', Carbon::today())->count();
-        $enProceso    = Order::where('status', 'pending')->count();
+        $enProceso    = Order::where(function ($query) {
+            $query->whereNotNull('table_number')
+                  ->whereIn('status', ['pending', 'preparing', 'ready']);
+        })->orWhere(function ($query) {
+            $query->whereNull('table_number')
+                  ->whereIn('status', ['paid', 'preparing']);
+        })->count();
 
         $stats = [
             'total_ventas'    => $totalVentas,
@@ -66,7 +84,13 @@ class DashboardController extends Controller
         $mediaAritmetica = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->where('orders.status', 'paid')
+            ->where(function ($q) {
+                $q->where('orders.status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('orders.table_number')
+                         ->where('orders.status', 'ready');
+                  });
+            })
             ->whereBetween('orders.created_at', [$inicioMes, $finMes])
             ->select('products.name', DB::raw($rawTotalVendido))
             ->groupBy('products.id', 'products.name')
@@ -81,7 +105,13 @@ class DashboardController extends Controller
         $modaMatematica = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->where('orders.status', 'paid')
+            ->where(function ($q) {
+                $q->where('orders.status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('orders.table_number')
+                         ->where('orders.status', 'ready');
+                  });
+            })
             ->whereBetween('orders.created_at', [$inicioMes, $finMes])
             ->select('products.name', DB::raw('COUNT(*) as frecuencia'))
             ->groupBy('products.id', 'products.name')
@@ -97,7 +127,13 @@ class DashboardController extends Controller
         
         $diffDays = $startCarbon->diffInDays($endCarbon) + 1;
 
-        $ordersQuery = Order::where('status', 'paid')
+        $ordersQuery = Order::where(function ($q) {
+                $q->where('status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('table_number')
+                         ->where('status', 'ready');
+                  });
+            })
             ->whereBetween('created_at', [$startCarbon, $endCarbon])
             ->orderBy('created_at', 'asc')
             ->get();
@@ -193,9 +229,21 @@ class DashboardController extends Controller
 
     public function apiStats()
     {
-        $totalVentas = Order::where('status', 'paid')->sum('total');
+        $totalVentas = Order::where(function ($q) {
+            $q->where('status', 'paid')
+              ->orWhere(function ($sq) {
+                  $sq->whereNull('table_number')
+                     ->where('status', 'ready');
+              });
+        })->sum('total');
         $pedidosHoy  = Order::whereDate('created_at', Carbon::today())->count();
-        $enProceso   = Order::where('status', 'pending')->count();
+        $enProceso   = Order::where(function ($query) {
+            $query->whereNotNull('table_number')
+                  ->whereIn('status', ['pending', 'preparing', 'ready']);
+        })->orWhere(function ($query) {
+            $query->whereNull('table_number')
+                  ->whereIn('status', ['paid', 'preparing']);
+        })->count();
 
         return response()->json([
             'total_ventas' => (float) $totalVentas,
@@ -207,7 +255,13 @@ class DashboardController extends Controller
     public function apiSales(Request $request)
     {
         $period = $request->get('period', 'day');
-        $query  = Order::where('status', 'paid');
+        $query  = Order::where(function ($q) {
+            $q->where('status', 'paid')
+              ->orWhere(function ($sq) {
+                  $sq->whereNull('table_number')
+                     ->where('status', 'ready');
+              });
+        });
 
         $result = match ($period) {
             'month' => $this->buildMonthlyData($query),
@@ -291,7 +345,13 @@ class DashboardController extends Controller
         $query = DB::table('order_items')
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
-            ->where('orders.status', 'paid')
+            ->where(function ($q) {
+                $q->where('orders.status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('orders.table_number')
+                         ->where('orders.status', 'ready');
+                  });
+            })
             ->whereBetween('orders.created_at', [$inicioMes, $finMes]);
 
         // 3. Agrupamos por categoría y preparamos los datos

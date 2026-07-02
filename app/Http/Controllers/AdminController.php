@@ -29,7 +29,13 @@ class AdminController extends Controller
             'total_ventas'  => Order::sum('total'),
             'pedidos_hoy'   => Order::whereDate('created_at', today())->count(),
             'reservaciones' => 0,
-            'en_proceso'    => Order::where('status', 'pending')->count(),
+            'en_proceso'    => Order::where(function ($query) {
+                                   $query->whereNotNull('table_number')
+                                         ->whereIn('status', ['pending', 'preparing', 'ready']);
+                               })->orWhere(function ($query) {
+                                   $query->whereNull('table_number')
+                                         ->whereIn('status', ['paid', 'preparing']);
+                               })->count(),
         ];
 
         return view('admin.dashboard', compact('recentOrders', 'stats'));

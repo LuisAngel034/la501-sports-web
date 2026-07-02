@@ -27,7 +27,13 @@ class DashboardExportController extends Controller
 
         $summary = Order::selectRaw('payment_method, COUNT(*) as count, SUM(total) as sum')
             ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'paid')
+            ->where(function ($q) {
+                $q->where('status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('table_number')
+                         ->where('status', 'ready');
+                  });
+            })
             ->groupBy('payment_method')
             ->get();
 
@@ -46,7 +52,13 @@ class DashboardExportController extends Controller
             ->join('orders', 'order_items.order_id', '=', 'orders.id')
             ->join('products', 'order_items.product_id', '=', 'products.id')
             ->whereBetween('orders.created_at', [$startDate, $endDate])
-            ->where('orders.status', 'paid')
+            ->where(function ($q) {
+                $q->where('orders.status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('orders.table_number')
+                         ->where('orders.status', 'ready');
+                  });
+            })
             ->whereNotNull('products.category')
             ->select('products.category', DB::raw('SUM(order_items.quantity) as total_vendido'), DB::raw('SUM(order_items.subtotal) as ingresos'))
             ->groupBy('products.category')
@@ -164,7 +176,13 @@ class DashboardExportController extends Controller
         $row++;
 
         Order::whereBetween('created_at', [$startDate, $endDate])
-            ->where('status', 'paid')
+            ->where(function ($q) {
+                $q->where('status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('table_number')
+                         ->where('status', 'ready');
+                  });
+            })
             ->orderBy('created_at', 'asc')
             ->chunk(200, function ($ordersChunk) use ($sheet, &$row) {
                 foreach ($ordersChunk as $order) {

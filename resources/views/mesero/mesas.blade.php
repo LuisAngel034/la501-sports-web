@@ -27,7 +27,7 @@
         </div>
     @endif
 
-    {{-- Cuadrícula de Mesas --}}
+    {{-- Cuadrícula de Mesas (Blade estándar) --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         @foreach($mesas as $mesa)
             <div class="rounded-xl border shadow-sm transition-all duration-300 flex flex-col justify-between {{ $mesa['ocupada'] ? 'bg-orange-50/50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900' : 'bg-white border-zinc-200 dark:bg-[#111111] dark:border-white/10' }} p-6">
@@ -57,10 +57,18 @@
                                class="block text-center w-full bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm">
                                 ➕ Agregar Más
                             </a>
-                            <button type="button" @click="abrirCobro({{ $mesa['id'] }}, {{ $mesa['total'] }})"
-                                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm">
-                                💰 Cobrar Mesa
-                            </button>
+                            
+                            @if($mesa['tiene_pendientes'])
+                                <button type="button" disabled
+                                        class="w-full bg-zinc-700 text-zinc-400 font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg cursor-not-allowed opacity-60 text-sm flex items-center justify-center gap-2 border border-white/5">
+                                    🍳 Cocinando...
+                                </button>
+                            @else
+                                <button type="button" @click="abrirCobro({{ $mesa['id'] }}, {{ $mesa['total'] }})"
+                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2">
+                                    💰 Cobrar Mesa (Listo)
+                                </button>
+                            @endif
                         </div>
                     @else
                         <a href="{{ route('mesero.pedido', $mesa['id']) }}"
@@ -73,7 +81,7 @@
         @endforeach
     </div>
 
-    {{-- MODAL DE COBRO (ALpineJS) --}}
+    {{-- MODAL DE COBRO (AlpineJS) --}}
     <div x-show="showModal" style="display: none;"
          class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
         

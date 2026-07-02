@@ -226,7 +226,7 @@
                     <span class="menu-stat-lbl">Platillos</span>
                 </div>
                 <div>
-                    <span class="menu-stat-num">14</span>
+                    <span class="menu-stat-num" x-text="listaCategorias.length">14</span>
                     <span class="menu-stat-lbl">Categorías</span>
                 </div>
                 <div>
@@ -329,22 +329,7 @@
             filtro:    'Hamburguesas',
             subfiltro: 'Todos',
 
-            listaCategorias: [
-                { nombre: 'Hamburguesas',       icono: '🍔' },
-                { nombre: 'Jochos',             icono: '🌭' },
-                { nombre: 'Burritos',           icono: '🌯' },
-                { nombre: 'Tacos',              icono: '🌮' },
-                { nombre: 'Strombolis',         icono: '🍕' },
-                { nombre: 'Alitas y Costillas', icono: '🍗' },
-                { nombre: 'Especialidades',     icono: '🍟' },
-                { nombre: 'Opción Fit',         icono: '🥗' },
-                { nombre: 'Algo Dulce',         icono: '🍰' },
-                { nombre: 'Sin Alcohol',        icono: '🥤' },
-                { nombre: 'Cervezas',           icono: '🍺' },
-                { nombre: 'Coctelería',         icono: '🍹' },
-                { nombre: 'Destilados',         icono: '🥃' },
-                { nombre: 'Salsas y Extras',    icono: '🌶️' },
-            ],
+            listaCategorias: [],
 
             subcategoriasMap: {
                 'Coctelería': ['Ron', 'Vodka', 'Tequila', 'Mezcal', 'Ginebra', 'Digestivos'],
@@ -356,6 +341,37 @@
 
             initMenu() {
                 this.lastDataHash = JSON.stringify(this.allProductos);
+                
+                // Extract unique categories from active database products
+                const cats = [...new Set(this.allProductos.map(p => p.category))];
+                const iconMap = {
+                    'Hamburguesas': '🍔',
+                    'Jochos': '🌭',
+                    'Burritos': '🌯',
+                    'Tacos': '🌮',
+                    'Strombolis': '🍕',
+                    'Alitas y Costillas': '🍗',
+                    'Especialidades': '🍟',
+                    'Opción Fit': '🥗',
+                    'Algo Dulce': '🍰',
+                    'Sin Alcohol': '🥤',
+                    'Cervezas': '🍺',
+                    'Coctelería': '🍹',
+                    'Destilados': '🥃',
+                    'Salsas y Extras': '🌶️'
+                };
+                
+                this.listaCategorias = cats.map(c => ({
+                    nombre: c,
+                    icono: iconMap[c] || '🍽️'
+                }));
+
+                if (cats.includes('Hamburguesas')) {
+                    this.filtro = 'Hamburguesas';
+                } else if (cats.length > 0) {
+                    this.filtro = cats[0];
+                }
+
                 const pusher  = new Pusher('491d18da8b8b427e4969', { cluster: 'us2' });
                 const channel = pusher.subscribe('menu-channel');
                 channel.bind('menu.updated', () => { this.fetchLiveProducts(); });

@@ -15,6 +15,21 @@ class WaiterController extends Controller
             return abort(403);
         }
 
+        $mesas = $this->getMesasData();
+        return view('mesero.mesas', compact('mesas'));
+    }
+
+    public function apiGetMesas()
+    {
+        if (!in_array(Auth::user()->role, ['empleado', 'mesero', 'admin']) && Auth::id() !== 2) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        return response()->json($this->getMesasData());
+    }
+
+    private function getMesasData()
+    {
         $ordenesActivas = Order::whereIn('status', ['pending', 'preparing', 'ready'])
                                ->whereNotNull('table_number')
                                ->get();
@@ -27,14 +42,19 @@ class WaiterController extends Controller
                 return (int) $orden->table_number === $i;
             });
 
+            $tienePendientes = $ordenesMesa->contains(function ($orden) {
+                return in_array($orden->status, ['pending', 'preparing']);
+            });
+
             $mesas[] = [
-                'id'     => $i,
-                'ocupada'=> $ordenesMesa->count() > 0,
-                'total'  => $ordenesMesa->sum('total'),
+                'id'              => $i,
+                'ocupada'         => $ordenesMesa->count() > 0,
+                'total'           => (float) $ordenesMesa->sum('total'),
+                'tiene_pendientes'=> $tienePendientes,
             ];
         }
 
-        return view('mesero.mesas', compact('mesas'));
+        return $mesas;
     }
 
     public function tomarPedido($mesaId)
@@ -88,7 +108,7 @@ class WaiterController extends Controller
         }
 
         $order = Order::create([
-            'user_id'          => Auth::id(),
+            'user_id'          => null,
             'customer_name'    => 'Mesa ' . $mesaId,
             'customer_phone'   => 'Local',
             'customer_address' => 'Consumo en sucursal',

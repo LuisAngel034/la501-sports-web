@@ -14,8 +14,22 @@ use Carbon\Carbon;
 
 class AuthController extends Controller
 {
-    public function showLogin()     { return view('auth.login'); }
-    public function showRegistro()  { return view('auth.registro'); }
+    public function showLogin()
+    {
+        if (Auth::check()) {
+            return $this->redirectByRole(Auth::user()->role);
+        }
+        return view('auth.login');
+    }
+
+    public function showRegistro()
+    {
+        if (Auth::check()) {
+            return $this->redirectByRole(Auth::user()->role);
+        }
+        return view('auth.registro');
+    }
+
     public function showRecuperar() { return view('auth.recuperar'); }
 
     // =========================================================================
@@ -70,13 +84,19 @@ class AuthController extends Controller
 
     private function redirectByRole(string $role)
     {
+        if ($role === 'cocinero') {
+            return redirect()->route('kitchen.index');
+        }
         if ($role === 'cliente') {
-            return redirect()->intended('/a-domicilio');
+            return redirect()->route('pedido');
         }
         if ($role === 'empleado') {
             return redirect()->route('mesero.mesas');
         }
-        return redirect()->intended('/admin/dashboard');
+        if ($role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+        return redirect('/');
     }
 
     public function registrar(Request $request)
@@ -129,7 +149,11 @@ class AuthController extends Controller
         $unlockedIds          = $user->achievements()->pluck('achievement_id')->toArray();
         $reservacionesTotales = \App\Models\Reservation::where('correo_electronico', $user->email)->count();
 
-        return view('auth.perfil', compact('user', 'allAchievements', 'unlockedIds', 'reservacionesTotales'));
+        $orders = \App\Models\Order::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return view('auth.perfil', compact('user', 'allAchievements', 'unlockedIds', 'reservacionesTotales', 'orders'));
     }
 
     public function updatePerfil(Request $request)

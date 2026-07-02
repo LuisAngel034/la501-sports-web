@@ -41,19 +41,19 @@ Route::get('/reservaciones', function () { return view('reservaciones'); })->nam
 Route::post('/reservaciones/store', [ReservationController::class, 'store'])->name('reservations.store');
 Route::get('/ubicacion', function () { return view('ubicacion'); })->name('ubicacion');
 
-Route::get('/a-domicilio', [PageController::class, 'index'])->name('pedido');
+Route::get('/a-domicilio', [PageController::class, 'index'])->name('pedido')->middleware('non-client');
 Route::get('/novedades', [PageController::class, 'novedades'])->name('novedades');
 Route::get("/{$promoPrefix}", [PageController::class, 'promociones'])->name('promociones');
 Route::post('/contacto/enviar', [PageController::class, 'enviarContacto'])->name('contacto.enviar');
 
-Route::get('/menu', [MenuController::class, 'index'])->name('menu');
+Route::get('/menu', [MenuController::class, 'index'])->name('menu')->middleware('non-client');
 Route::get('/api/menu/products', function() {
     return response()->json(\App\Models\Product::where('available', 1)->get());
 })->name('api.menu.products');
 
 // Carrito de Compras
 Route::controller(CartController::class)->group(function () {
-    Route::get('/carrito', 'index')->name('cart.index');
+    Route::get('/carrito', 'index')->name('cart.index')->middleware('non-client');
     Route::post('/carrito/agregar', 'add')->name('cart.add');
     Route::post('/carrito/actualizar', 'update')->name('cart.update');
     Route::delete('/carrito/eliminar', 'remove')->name('cart.remove');
@@ -61,10 +61,12 @@ Route::controller(CartController::class)->group(function () {
 });
 
 // Pagos y Checkout
-Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
-Route::post('/checkout/procesar', [CheckoutController::class, 'process'])->name('checkout.process');
+Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index')->middleware('non-client');
+Route::post('/checkout/procesar', [CheckoutController::class, 'process'])->name('checkout.process')->middleware('non-client');
 Route::get('/pago/exitoso', [CheckoutController::class, 'success'])->name('payment.success');
 Route::get('/pago/fallido', [CheckoutController::class, 'failure'])->name('payment.failure');
+Route::get('/pedido/confirmacion/{id}', [CheckoutController::class, 'confirmation'])->name('payment.confirmation');
+Route::get('/api/pedido/{id}/status', [CheckoutController::class, 'apiStatus'])->name('api.order.status');
 
 /*
 |-----------------------------
@@ -104,8 +106,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/mesas/{id}/pedido', [WaiterController::class, 'tomarPedido'])->name('mesero.pedido');
         Route::put('/mesas/{id}/cobrar', [WaiterController::class, 'cobrar'])->name('mesero.cobrar');
         Route::post('/mesas/{id}/pedido', [WaiterController::class, 'guardarPedido'])->name('mesero.guardar_pedido');
-        
+        Route::get('/api/mesas', [WaiterController::class, 'apiGetMesas'])->name('mesero.api_mesas');
     });
+
+    // Cocina
+    Route::get('/cocina', [\App\Http\Controllers\KitchenController::class, 'index'])->name('kitchen.index');
+    Route::post('/cocina/orden/{id}/ready', [\App\Http\Controllers\KitchenController::class, 'markAsReady'])->name('kitchen.ready');
+    Route::get('/api/cocina/ordenes', [\App\Http\Controllers\KitchenController::class, 'apiActiveOrders'])->name('kitchen.api_orders');
 
     // Solo para activar el enlace en el servidor
     Route::get('/link-storage', function () {

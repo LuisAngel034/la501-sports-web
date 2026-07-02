@@ -148,7 +148,8 @@ class CheckoutController extends Controller
 
                 (new \App\Services\AchievementService())->check($user);
             }
-            return redirect()->route('pedido')->with('success', '¡Pedido recibido! Lo prepararemos enseguida y pagarás al recibir.');
+            session()->put('last_order_id', $order->id);
+            return redirect()->route('payment.confirmation', $order->id)->with('success', '¡Pedido recibido! Lo prepararemos enseguida y pagarás al recibir.');
         }
         
         // Lógica si es TARJETA (Mercado Pago)
@@ -199,7 +200,12 @@ class CheckoutController extends Controller
 
                     (new \App\Services\AchievementService())->check($user);
                 }
+                session()->put('last_order_id', $order->id);
             }
+        }
+
+        if (isset($order)) {
+            return redirect()->route('payment.confirmation', $order->id)->with('success', '¡Pago aprobado! 💳 Tu pedido ya se está preparando en cocina.');
         }
 
         return redirect()->route('pedido')->with('success', '¡Pago aprobado! 💳 Tu pedido ya se está preparando en cocina.');
@@ -208,5 +214,47 @@ class CheckoutController extends Controller
     public function failure()
     {
         return redirect()->route('pedido')->with('error', 'El pago fue rechazado o cancelado. Tu pedido no se ha procesado.');
+    }
+
+    public function confirmation($id)
+    {
+        $order = Order::with('items')->findOrFail($id);
+
+        $isAuthorized = false;
+        if (Auth::check()) {
+            if ($order->user_id === Auth::id() || in_array(Auth::user()->role, ['admin', 'cocinero', 'empleado'])) {
+                $isAuthorized = true;
+            }
+        }
+        if (session('last_order_id') == $id) {
+            $isAuthorized = true;
+        }
+
+        if (!$isAuthorized) {
+            abort(403, 'No tienes permiso para ver este ticket.');
+        }
+
+        return view('pedido_confirmacion', compact('order'));
+    }
+
+    public function apiStatus($id)
+    {
+        $order = Order::findOrFail($id);
+
+        $isAuthorized = false;
+        if (Auth::check()) {
+            if ($order->user_id === Auth::id() || in_array(Auth::user()->role, ['admin', 'cocinero', 'empleado'])) {
+                $isAuthorized = true;
+            }
+        }
+        if (session('last_order_id') == $id) {
+            $isAuthorized = true;
+        }
+
+        if (!$isAuthorized) {
+            return response()->json(['error' => 'No autorizado'], 403);
+        }
+
+        return response()->json(['status' => $order->status]);
     }
 }
