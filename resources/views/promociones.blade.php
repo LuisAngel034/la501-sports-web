@@ -342,7 +342,7 @@
                 {{-- Imagen / Emoji --}}
                 <div class="promo-card-img {{ !$promo->image ? 'bg-gradient-to-br ' . $promo->color_gradient : '' }}">
                     @if($promo->image)
-                        <img src="{{ asset('storage/' . $promo->image) }}" alt="{{ $promo->title }}">
+                        <img src="{{ (str_starts_with($promo->image, 'http://') || str_starts_with($promo->image, 'https://')) ? $promo->image : asset('storage/' . $promo->image) }}" alt="{{ $promo->title }}">
                         <div class="promo-card-img-overlay"></div>
                     @else
                         <span class="promo-card-emoji">{{ $promo->icon }}</span>

@@ -27,7 +27,9 @@ class SettingController extends Controller
             'sabado' => Setting::where('key', 'schedule_sabado')->value('value'),
         ];
         
-        return view('admin.settings.index', compact('logo', 'map_url', 'address_line1', 'address_line2', 'address_line3', 'schedule'));
+        $carouselSlides = \App\Models\CarouselSlide::orderBy('order')->get();
+        
+        return view('admin.settings.index', compact('logo', 'map_url', 'address_line1', 'address_line2', 'address_line3', 'schedule', 'carouselSlides'));
     }
 
     public function updateLogo(Request $request)
@@ -39,12 +41,16 @@ class SettingController extends Controller
         $setting = Setting::firstOrCreate(['key' => 'logo']);
 
         if ($request->hasFile('logo')) {
-            if ($setting->value && str_starts_with($setting->value, 'logos/')) {
-                Storage::disk('public')->delete($setting->value);
-            }
+            try {
+                if ($setting->value && str_starts_with($setting->value, 'logos/')) {
+                    Storage::disk('public')->delete($setting->value);
+                }
 
-            $path = $request->file('logo')->store('logos', 'public');
-            $setting->update(['value' => $path]);
+                $url = \App\Services\CloudinaryService::upload($request->file('logo'));
+                $setting->update(['value' => $url]);
+            } catch (\Exception $e) {
+                return back()->with('error', 'Error al subir el logo a Cloudinary: ' . $e->getMessage());
+            }
         }
 
         return back()->with('success', 'Logo actualizado con éxito.');

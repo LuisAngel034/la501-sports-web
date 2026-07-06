@@ -266,7 +266,7 @@
                     <div class="nov-card-img">
                         <div x-data="{ imgError: false }">
                             <img x-show="!imgError"
-                                 src="{{ asset('storage/' . $item->image) }}"
+                                 src="{{ (str_starts_with($item->image, 'http://') || str_starts_with($item->image, 'https://')) ? $item->image : asset('storage/' . $item->image) }}"
                                  alt="{{ $item->title }}"
                                  x-on:error="imgError = true">
                             <div x-show="imgError" class="nov-card-img-fallback" aria-hidden="true">
@@ -311,7 +311,7 @@
                         {{-- FIX L295: mismo patrón Alpine sin onerror --}}
                         <div x-data="{ imgError: false }">
                             <img x-show="!imgError"
-                                 src="{{ asset('storage/' . $item->image) }}"
+                                 src="{{ (str_starts_with($item->image, 'http://') || str_starts_with($item->image, 'https://')) ? $item->image : asset('storage/' . $item->image) }}"
                                  alt="{{ $item->title }}"
                                  x-on:error="imgError = true">
                             <div x-show="imgError" class="nov-card-img-fallback" aria-hidden="true">
@@ -356,7 +356,7 @@
                         {{-- FIX L331: mismo patrón Alpine sin onerror --}}
                         <div x-data="{ imgError: false }">
                             <img x-show="!imgError"
-                                 src="{{ asset('storage/' . $item->image) }}"
+                                 src="{{ (str_starts_with($item->image, 'http://') || str_starts_with($item->image, 'https://')) ? $item->image : asset('storage/' . $item->image) }}"
                                  alt="{{ $item->title }}"
                                  x-on:error="imgError = true">
                             <div x-show="imgError" class="nov-card-img-fallback" aria-hidden="true">

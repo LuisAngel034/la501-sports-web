@@ -1,57 +1,91 @@
 @extends('layouts.admin')
 
 @section('content')
-<div x-data="{
-        showModal: false,
-        mesaActual: 0,
-        totalActual: 0,
-        pagos: [],
-        abrirCobro(mesa, total) {
-            this.mesaActual = mesa;
-            this.totalActual = total;
-            this.pagos = [
-                { metodo: 'efectivo', monto: Number(total).toFixed(2) }
-            ];
-            this.showModal = true;
-        },
-        agregarPago() {
-            let restante = Math.max(0, this.totalActual - this.totalIngresado);
-            this.pagos.push({
-                metodo: 'efectivo',
-                monto: restante > 0 ? Number(restante).toFixed(2) : ''
-            });
-        },
-        eliminarPago(index) {
-            this.pagos.splice(index, 1);
-        },
-        get totalIngresado() {
-            return this.pagos.reduce((sum, p) => sum + (parseFloat(p.monto) || 0), 0);
-        },
-        get isValido() {
-            return this.totalIngresado >= this.totalActual - 0.009;
-        },
-        get formattedPaymentMethod() {
-            if (this.pagos.length === 1) {
-                let p = this.pagos[0];
-                if (p.metodo === 'efectivo') return 'Efectivo';
-                if (p.metodo === 'tarjeta') return 'Tarjeta';
-                if (p.metodo === 'mercadopago') return 'Transferencia';
-                return p.metodo;
-            }
-            let parts = [];
-            let totals = { efectivo: 0, tarjeta: 0, mercadopago: 0 };
-            this.pagos.forEach(p => {
-                let m = parseFloat(p.monto) || 0;
-                if (totals[p.metodo] !== undefined) {
-                    totals[p.metodo] += m;
+<script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+<script>
+    function mapaMesas(initialMesas) {
+        return {
+            showModal: false,
+            mesaActual: 0,
+            totalActual: 0,
+            pagos: [],
+            mesas: initialMesas,
+            
+            abrirCobro(mesa, total) {
+                this.mesaActual = mesa;
+                this.totalActual = total;
+                this.pagos = [
+                    { metodo: 'efectivo', monto: Number(total).toFixed(2) }
+                ];
+                this.showModal = true;
+            },
+            agregarPago() {
+                let restante = Math.max(0, this.totalActual - this.totalIngresado);
+                this.pagos.push({
+                    metodo: 'efectivo',
+                    monto: restante > 0 ? Number(restante).toFixed(2) : ''
+                });
+            },
+            eliminarPago(index) {
+                this.pagos.splice(index, 1);
+            },
+            get totalIngresado() {
+                return this.pagos.reduce((sum, p) => sum + (parseFloat(p.monto) || 0), 0);
+            },
+            get isValido() {
+                return this.totalIngresado >= this.totalActual - 0.009;
+            },
+            get formattedPaymentMethod() {
+                if (this.pagos.length === 1) {
+                    let p = this.pagos[0];
+                    if (p.metodo === 'efectivo') return 'Efectivo';
+                    if (p.metodo === 'tarjeta') return 'Tarjeta';
+                    if (p.metodo === 'mercadopago') return 'Transferencia';
+                    return p.metodo;
                 }
-            });
-            if (totals.efectivo > 0) parts.push('Efectivo: $' + totals.efectivo.toFixed(2));
-            if (totals.tarjeta > 0) parts.push('Tarjeta: $' + totals.tarjeta.toFixed(2));
-            if (totals.mercadopago > 0) parts.push('Transferencia: $' + totals.mercadopago.toFixed(2));
-            return 'Mixto (' + parts.join(', ') + ')';
+                let parts = [];
+                let totals = { efectivo: 0, tarjeta: 0, mercadopago: 0 };
+                this.pagos.forEach(p => {
+                    let m = parseFloat(p.monto) || 0;
+                    if (totals[p.metodo] !== undefined) {
+                        totals[p.metodo] += m;
+                    }
+                });
+                if (totals.efectivo > 0) parts.push('Efectivo: $' + totals.efectivo.toFixed(2));
+                if (totals.tarjeta > 0) parts.push('Tarjeta: $' + totals.tarjeta.toFixed(2));
+                if (totals.mercadopago > 0) parts.push('Transferencia: $' + totals.mercadopago.toFixed(2));
+                return 'Mixto (' + parts.join(', ') + ')';
+            },
+            async actualizarMesas() {
+                try {
+                    const response = await fetch('{{ route('mesero.api_mesas') }}');
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.mesas = data;
+                    }
+                } catch (e) {
+                    console.log('Error actualizando mesas:', e);
+                }
+            },
+            init() {
+                try {
+                    const pusher = new Pusher('491d18da8b8b427e4969', { cluster: 'us2' });
+                    const channel = pusher.subscribe('dashboard-channel');
+                    channel.bind('dashboard.updated', () => {
+                        this.actualizarMesas();
+                    });
+                } catch (e) {
+                    console.log('Pusher initialization error:', e);
+                }
+                setInterval(() => {
+                    this.actualizarMesas();
+                }, 6000);
+            }
         }
-    }">
+    }
+</script>
+
+<div x-data="mapaMesas({{ json_encode($mesas) }})">
     
     <div class="mb-6 flex justify-between items-center">
         <div>
@@ -68,55 +102,58 @@
         </div>
     @endif
 
-    {{-- Cuadrícula de Mesas (Blade estándar) --}}
+    {{-- Cuadrícula de Mesas (Blade + Alpine) --}}
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        @foreach($mesas as $mesa)
-            <div class="rounded-xl border shadow-sm transition-all duration-300 flex flex-col justify-between {{ $mesa['ocupada'] ? 'bg-orange-50/50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900' : 'bg-white border-zinc-200 dark:bg-[#111111] dark:border-white/10' }} p-6">
+        @foreach($mesas as $index => $mesa)
+            <div class="rounded-xl border shadow-sm transition-all duration-300 flex flex-col justify-between p-6"
+                 :class="mesas[{{ $index }}].ocupada ? 'bg-orange-50/50 border-orange-200 dark:bg-orange-950/20 dark:border-orange-900' : 'bg-white border-zinc-200 dark:bg-[#111111] dark:border-white/10'">
                 
                 <div class="flex justify-between items-start mb-6">
                     <div>
-                        <h2 class="text-4xl font-black font-['Oswald'] {{ $mesa['ocupada'] ? 'text-orange-600 dark:text-orange-500' : 'text-zinc-800 dark:text-white' }}">
+                        <h2 class="text-4xl font-black font-['Oswald']"
+                            :class="mesas[{{ $index }}].ocupada ? 'text-orange-600 dark:text-orange-500' : 'text-zinc-800 dark:text-white'">
                             #{{ $mesa['id'] }}
                         </h2>
-                        <p class="text-xs font-bold uppercase tracking-widest mt-1 {{ $mesa['ocupada'] ? 'text-orange-500' : 'text-green-500' }}">
+                        <p class="text-xs font-bold uppercase tracking-widest mt-1"
+                           :class="mesas[{{ $index }}].ocupada ? 'text-orange-500' : 'text-green-500'"
+                           x-text="mesas[{{ $index }}].ocupada ? 'Ocupada' : 'Disponible'">
                             {{ $mesa['ocupada'] ? 'Ocupada' : 'Disponible' }}
                         </p>
                     </div>
                     
-                    @if($mesa['ocupada'])
-                        <div class="text-right">
-                            <p class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Total</p>
-                            <p class="text-2xl font-black text-zinc-900 dark:text-white">${{ number_format($mesa['total'], 2) }}</p>
-                        </div>
-                    @endif
+                    <div class="text-right" x-show="mesas[{{ $index }}].ocupada" style="display: {{ $mesa['ocupada'] ? 'block' : 'none' }};">
+                        <p class="text-xs text-zinc-500 uppercase font-bold tracking-wider mb-1">Total</p>
+                        <p class="text-2xl font-black text-zinc-900 dark:text-white"
+                           x-text="'$' + Number(mesas[{{ $index }}].total).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })">
+                            ${{ number_format($mesa['total'], 2) }}
+                        </p>
+                    </div>
                 </div>
 
                 <div>
-                    @if($mesa['ocupada'])
-                        <div class="flex flex-col gap-2">
-                            <a href="{{ route('mesero.pedido', $mesa['id']) }}"
-                               class="block text-center w-full bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm">
-                                ➕ Agregar Más
-                            </a>
-                            
-                            @if($mesa['tiene_pendientes'])
-                                <button type="button" disabled
-                                        class="w-full bg-zinc-700 text-zinc-400 font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg cursor-not-allowed opacity-60 text-sm flex items-center justify-center gap-2 border border-white/5">
-                                    🍳 Cocinando...
-                                </button>
-                            @else
-                                <button type="button" @click="abrirCobro({{ $mesa['id'] }}, {{ $mesa['total'] }})"
-                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2">
-                                    💰 Cobrar Mesa (Listo)
-                                </button>
-                            @endif
-                        </div>
-                    @else
-                        <a href="{{ route('mesero.pedido', $mesa['id']) }}"
+                    <div class="flex flex-col gap-2" x-show="mesas[{{ $index }}].ocupada" style="display: {{ $mesa['ocupada'] ? 'flex' : 'none' }};">
+                        <a :href="'{{ url('mesero/mesas') }}/' + mesas[{{ $index }}].id + '/pedido'"
+                           class="block text-center w-full bg-blue-600 hover:bg-blue-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm">
+                            ➕ Agregar Más
+                        </a>
+                        
+                        <button type="button" disabled x-show="mesas[{{ $index }}].tiene_pendientes" style="display: {{ ($mesa['ocupada'] && $mesa['tiene_pendientes']) ? 'flex' : 'none' }};"
+                                class="w-full bg-zinc-700 text-zinc-400 font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg cursor-not-allowed opacity-60 text-sm flex items-center justify-center gap-2 border border-white/5">
+                            🍳 Cocinando...
+                        </button>
+                        
+                        <button type="button" @click="abrirCobro(mesas[{{ $index }}].id, mesas[{{ $index }}].total)" x-show="!mesas[{{ $index }}].tiene_pendientes" style="display: {{ ($mesa['ocupada'] && !$mesa['tiene_pendientes']) ? 'flex' : 'none' }};"
+                                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2">
+                            💰 Cobrar Mesa (Listo)
+                        </button>
+                    </div>
+                    
+                    <div x-show="!mesas[{{ $index }}].ocupada" style="display: {{ !$mesa['ocupada'] ? 'block' : 'none' }};">
+                        <a :href="'{{ url('mesero/mesas') }}/' + mesas[{{ $index }}].id + '/pedido'"
                            class="block text-center w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider py-3 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5">
                             📝 Tomar Pedido
                         </a>
-                    @endif
+                    </div>
                 </div>
             </div>
         @endforeach

@@ -197,9 +197,14 @@
                         </template>
                         <template x-if="!imagePreview">
                             @php
-                                $logoPath = ($logo && str_starts_with($logo->value, 'logos/'))
-                                    ? asset('storage/' . $logo->value)
-                                    : asset('images/logo_501.png');
+                                $logoPath = asset('images/logo_501.png');
+                                if ($logo) {
+                                    if (str_starts_with($logo->value, 'http://') || str_starts_with($logo->value, 'https://')) {
+                                        $logoPath = $logo->value;
+                                    } elseif (str_starts_with($logo->value, 'logos/')) {
+                                        $logoPath = asset('storage/' . $logo->value);
+                                    }
+                                }
                             @endphp
                             <img src="{{ $logoPath }}" alt="Logo actual">
                         </template>
@@ -406,6 +411,174 @@
         </div>
 
     </div>
+
+    {{-- ── GESTIÓN DEL CARRUSEL DE IMÁGENES ── --}}
+    <div class="as-card" style="margin-top: 24px;" x-data="{ editingSlide: null, showAddForm: false }">
+        <div class="as-card-head" style="justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <div class="as-card-head-icon" style="background: rgba(249,115,22,.08); border-color: rgba(249,115,22,.15);">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" style="color: #F97316;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <h2>Imágenes del Carrusel de Inicio</h2>
+            </div>
+            <button type="button" @click="showAddForm = !showAddForm" class="as-btn" style="width: auto; padding: 6px 14px; background: #16A34A; box-shadow: 0 1px 3px rgba(22,163,74,.3);" onmouseover="this.style.background='#15803D'" onmouseout="this.style.background='#16A34A'">
+                <span x-text="showAddForm ? 'Cancelar' : '➕ Agregar Diapositiva'"></span>
+            </button>
+        </div>
+
+        <div class="as-card-body">
+            
+            {{-- Mensajes de estado --}}
+            @if(session('status'))
+                <div class="as-info" style="border-color: rgba(22,163,74,.3); background: rgba(22,163,74,.05); color: #16A34A; font-weight: 600; margin-bottom: 12px;">
+                    ✅ {{ session('status') }}
+                </div>
+            @endif
+            @if(session('error'))
+                <div class="as-info" style="border-color: rgba(220,38,38,.3); background: rgba(220,38,38,.05); color: #EF4444; font-weight: 600; margin-bottom: 12px;">
+                    ❌ {{ session('error') }}
+                </div>
+            @endif
+
+            {{-- Formulario para Agregar --}}
+            <div x-show="showAddForm" x-cloak style="background: var(--bg-input); border: 1px solid var(--bdr); border-radius: 8px; padding: 18px; margin-bottom: 18px;">
+                <h3 style="font-size:13px; font-weight:700; margin-bottom:12px; color:var(--txt);">Nueva Diapositiva (Subida Directa a Cloudinary)</h3>
+                <form action="{{ route('admin.carousel.store') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 12px;">
+                    @csrf
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div>
+                            <label class="as-label">Subir Imagen Local (Se mandará a Cloudinary)</label>
+                            <input type="file" name="image" accept="image/*" class="as-input" style="padding: 5px 10px;">
+                        </div>
+                        <div>
+                            <label class="as-label">O Enlace URL Externo existente</label>
+                            <input type="url" name="image_url" placeholder="https://res.cloudinary.com/..." class="as-input">
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                        <div>
+                            <label class="as-label">Subtítulo</label>
+                            <input type="text" name="subtitle" placeholder="Ej: Gourmet & Grill" class="as-input">
+                        </div>
+                        <div>
+                            <label class="as-label">Título Principal</label>
+                            <input type="text" name="title" placeholder="Ej: SABOR INIGUALABLE" class="as-input">
+                        </div>
+                        <div>
+                            <label class="as-label">Orden</label>
+                            <input type="number" name="order" value="1" required class="as-input">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="as-label">Descripción</label>
+                        <textarea name="description" rows="2" placeholder="Descripción breve..." class="as-input" style="resize: none;"></textarea>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end;">
+                        <button type="submit" class="as-btn" style="width: auto; padding: 8px 20px;">Subir y Guardar</button>
+                    </div>
+                </form>
+            </div>
+
+            {{-- Listado de Diapositivas --}}
+            @if($carouselSlides->isEmpty())
+                <div style="text-align: center; padding: 24px 0; color: var(--txt-sub);">
+                    <p style="font-size: 24px; margin-bottom: 6px;">🎠</p>
+                    <p style="font-size: 13px; font-weight: 600;">No hay diapositivas configuradas</p>
+                    <p style="font-size: 11px;">Usa el botón de arriba para agregar tu primera diapositiva al carrusel.</p>
+                </div>
+            @else
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    @foreach($carouselSlides as $slide)
+                        <div style="background: var(--bg-input); border: 1px solid var(--bdr); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+                            
+                            {{-- Vista previa --}}
+                            <div style="width: 100px; height: 65px; border-radius: 6px; overflow: hidden; flex-shrink: 0; background: #000; border: 1px solid var(--bdr);">
+                                <img src="{{ $slide->image_path }}" alt="Slide" style="width: 100%; height: 100%; object-fit: cover;">
+                            </div>
+
+                            {{-- Info --}}
+                            <div style="flex: 1; min-width: 200px;">
+                                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
+                                    <span style="font-size: 10px; font-weight: 700; background: #F97316; color: #fff; padding: 2px 6px; border-radius: 4px;">Orden #{{ $slide->order }}</span>
+                                    @if(!$slide->is_active)
+                                        <span style="font-size: 10px; font-weight: 700; background: #EF4444; color: #fff; padding: 2px 6px; border-radius: 4px;">Inactivo</span>
+                                    @endif
+                                </div>
+                                <h3 style="font-size: 13px; font-weight: 700; margin: 0; color: var(--txt);">
+                                    {{ $slide->title ?? 'Sin Título' }} 
+                                    <span style="font-size: 11px; font-weight: 500; color: var(--txt-sub);">({{ $slide->subtitle ?? 'Sin Subtítulo' }})</span>
+                                </h3>
+                                <p style="font-size: 11px; color: var(--txt-sub); margin: 2px 0 0;">{{ $slide->description ?? 'Sin descripción.' }}</p>
+                            </div>
+
+                            {{-- Acciones --}}
+                            <div style="display: flex; gap: 8px;">
+                                <button type="button" @click="editingSlide = (editingSlide === {{ $slide->id }} ? null : {{ $slide->id }})" class="as-btn" style="width: auto; background: #2563EB; font-size: 11px; padding: 6px 12px;">
+                                    Editar
+                                </button>
+                                <form action="{{ route('admin.carousel.destroy', $slide->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar esta diapositiva?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="as-btn" style="width: auto; background: #EF4444; font-size: 11px; padding: 6px 12px;">
+                                        Eliminar
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {{-- Edición Form --}}
+                        <div x-show="editingSlide === {{ $slide->id }}" x-cloak style="background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 8px; padding: 16px; margin-top: -8px;">
+                            <h4 style="font-size:12px; font-weight:700; margin-bottom:10px; color:var(--txt);">Editar Diapositiva #{{ $slide->order }}</h4>
+                            <form action="{{ route('admin.carousel.update', $slide->id) }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
+                                @csrf
+                                @method('PUT')
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                                    <div>
+                                        <label class="as-label">Reemplazar Imagen (Se subirá a Cloudinary)</label>
+                                        <input type="file" name="image" accept="image/*" class="as-input" style="padding: 5px 10px;">
+                                    </div>
+                                    <div>
+                                        <label class="as-label">O Reemplazar URL externa</label>
+                                        <input type="url" name="image_url" value="{{ !str_contains($slide->image_path, 'cloudinary.com') ? $slide->image_path : '' }}" placeholder="https://res.cloudinary.com/..." class="as-input">
+                                    </div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+                                    <div>
+                                        <label class="as-label">Subtítulo</label>
+                                        <input type="text" name="subtitle" value="{{ $slide->subtitle }}" class="as-input">
+                                    </div>
+                                    <div>
+                                        <label class="as-label">Título Principal</label>
+                                        <input type="text" name="title" value="{{ $slide->title }}" class="as-input">
+                                    </div>
+                                    <div>
+                                        <label class="as-label">Orden</label>
+                                        <input type="number" name="order" value="{{ $slide->order }}" required class="as-input">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="as-label">Descripción</label>
+                                    <textarea name="description" rows="2" class="as-input" style="resize: none;">{{ $slide->description }}</textarea>
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="checkbox" id="edit_active_{{ $slide->id }}" name="is_active" value="1" {{ $slide->is_active ? 'checked' : '' }} style="width: 14px; height: 14px;">
+                                    <label for="edit_active_{{ $slide->id }}" style="font-size: 11px; font-weight: 600; color: var(--txt-sub); text-transform: uppercase;">Mostrar diapositiva en el carrusel (Activo)</label>
+                                </div>
+                                <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                                    <button type="button" @click="editingSlide = null" class="as-btn" style="width: auto; background: #6B7280; padding: 6px 14px;">Cancelar</button>
+                                    <button type="submit" class="as-btn" style="width: auto; padding: 6px 18px;">Guardar Cambios</button>
+                                </div>
+                            </form>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+
+        </div>
+    </div>
+
 </div>
 
 @endsection

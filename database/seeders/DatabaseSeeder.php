@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             IngredientInventorySeeder::class,
+            CarouselSlideSeeder::class,
         ]);
     }
 }

@@ -40,7 +40,11 @@ class MenuController extends Controller
 
         $imagePath = null;
         if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('products', 'public');
+            try {
+                $imagePath = \App\Services\CloudinaryService::upload($request->file('image'));
+            } catch (\Exception $e) {
+                return back()->with('error', 'Error al subir la imagen a Cloudinary: ' . $e->getMessage());
+            }
         }
 
         $product = Product::create([
@@ -78,10 +82,14 @@ class MenuController extends Controller
         ]);
 
         if ($request->hasFile('image')) {
-            if ($product->image) {
-                Storage::disk('public')->delete($product->image);
+            try {
+                if ($product->image && !str_starts_with($product->image, 'http')) {
+                    Storage::disk('public')->delete($product->image);
+                }
+                $product->image = \App\Services\CloudinaryService::upload($request->file('image'));
+            } catch (\Exception $e) {
+                return back()->with('error', 'Error al subir la imagen a Cloudinary: ' . $e->getMessage());
             }
-            $product->image = $request->file('image')->store('products', 'public');
         }
 
         $product->update([

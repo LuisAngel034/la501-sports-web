@@ -26,16 +26,33 @@
     </header>
 
     <main class="p-4 max-w-md mx-auto space-y-8 mt-2">
+        {{-- BUSCADOR EN VIVO --}}
+        <div class="bg-white dark:bg-[#1a1612] border border-zinc-200 dark:border-white/5 rounded-[24px] p-3 shadow-sm">
+            <div class="relative flex items-center bg-zinc-50 dark:bg-black/40 rounded-2xl border border-zinc-100 dark:border-white/5 px-3 py-2">
+                <span class="text-zinc-400 select-none mr-2">🔍</span>
+                <input type="text" 
+                       x-model="searchQuery" 
+                       placeholder="Buscar platillo o bebida..." 
+                       class="w-full bg-transparent border-none outline-none text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-0 p-0">
+                <button x-show="searchQuery" 
+                        @click="searchQuery = ''" 
+                        type="button" 
+                        class="text-zinc-400 hover:text-red-500 font-bold text-lg leading-none pl-2 select-none">
+                    &times;
+                </button>
+            </div>
+        </div>
+
         {{-- BUCLE DE CATEGORÍAS Y PRODUCTOS --}}
         @foreach($menu as $categoria => $productos)
-            <div>
+            <div x-show="categoryHasMatches({{ json_encode($productos->pluck('id')->toArray()) }})" x-transition>
                 <h2 class="text-sm font-black text-zinc-500 uppercase tracking-widest mb-4 pl-2 border-l-4 border-blue-500">{{ $categoria }}</h2>
                 <div class="space-y-3">
                     @foreach($productos as $producto)
-                        <div class="bg-white dark:bg-[#1a1612] border border-zinc-200 dark:border-white/5 rounded-[24px] p-3 shadow-sm flex items-center gap-4">
+                        <div x-show="productMatches({{ $producto->id }})" x-transition class="bg-white dark:bg-[#1a1612] border border-zinc-200 dark:border-white/5 rounded-[24px] p-3 shadow-sm flex items-center gap-4">
                             {{-- IMAGEN DEL PRODUCTO --}}
                             @php
-                                $imagenSrc = $producto->image ? asset('storage/' . $producto->image) : 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png';
+                                $imagenSrc = $producto->image ? ((str_starts_with($producto->image, 'http://') || str_starts_with($producto->image, 'https://')) ? $producto->image : asset('storage/' . $producto->image)) : 'https://cdn-icons-png.flaticon.com/512/3075/3075977.png';
                             @endphp
                             <img src="{{ $imagenSrc }}" alt="{{ $producto->name }}" class="w-16 h-16 rounded-2xl object-cover bg-zinc-50">
                             
@@ -120,7 +137,7 @@
                 <div class="flex gap-4 items-center">
                     <div class="w-16 h-16 rounded-2xl bg-zinc-100 dark:bg-black flex items-center justify-center text-3xl overflow-hidden flex-shrink-0">
                         <template x-if="customizingProduct.image">
-                            <img :src="'/storage/' + customizingProduct.image" :alt="customizingProduct.name" class="w-full h-full object-cover">
+                            <img :src="customizingProduct.image.startsWith('http') ? customizingProduct.image : '/storage/' + customizingProduct.image" :alt="customizingProduct.name" class="w-full h-full object-cover">
                         </template>
                         <template x-if="!customizingProduct.image">
                             <span>🍔</span>
@@ -161,6 +178,7 @@
                 productosMap: {},
                 items: {},
                 total: 0,
+                searchQuery: '',
                 
                 // Customization Modal State
                 showCustomizeModal: false,
@@ -170,6 +188,21 @@
                 init() {
                     allProducts.forEach(p => {
                         this.productosMap[p.id] = p;
+                    });
+                },
+
+                productMatches(id) {
+                    if (!this.searchQuery) return true;
+                    const p = this.productosMap[id];
+                    return p && p.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+                },
+                
+                categoryHasMatches(ids) {
+                    if (!this.searchQuery) return true;
+                    const query = this.searchQuery.toLowerCase();
+                    return ids.some(id => {
+                        const p = this.productosMap[id];
+                        return p && p.name.toLowerCase().includes(query);
                     });
                 },
                 

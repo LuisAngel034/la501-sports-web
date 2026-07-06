@@ -34,7 +34,11 @@ class NewsController extends Controller
         $data['active'] = 1;
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('news', 'public');
+            try {
+                $data['image'] = \App\Services\CloudinaryService::upload($request->file('image'));
+            } catch (\Exception $e) {
+                return back()->with('error', 'Error al subir la imagen a Cloudinary: ' . $e->getMessage());
+            }
         }
 
         News::create($data);
@@ -57,10 +61,14 @@ class NewsController extends Controller
         $data = $request->except(['image']);
 
         if ($request->hasFile('image')) {
-            if ($news->image) {
-                Storage::disk('public')->delete($news->image);
+            try {
+                if ($news->image && !str_starts_with($news->image, 'http')) {
+                    Storage::disk('public')->delete($news->image);
+                }
+                $data['image'] = \App\Services\CloudinaryService::upload($request->file('image'));
+            } catch (\Exception $e) {
+                return back()->with('error', 'Error al subir la imagen a Cloudinary: ' . $e->getMessage());
             }
-            $data['image'] = $request->file('image')->store('news', 'public');
         }
 
         $news->update($data);

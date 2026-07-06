@@ -68,6 +68,97 @@ Route::get('/pago/fallido', [CheckoutController::class, 'failure'])->name('payme
 Route::get('/pedido/confirmacion/{id}', [CheckoutController::class, 'confirmation'])->name('payment.confirmation');
 Route::get('/api/pedido/{id}/status', [CheckoutController::class, 'apiStatus'])->name('api.order.status');
 
+// Ejecutar migraciones temporalmente desde la web (Hostinger)
+Route::get('/run-migrations', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
+        $output = \Illuminate\Support\Facades\Artisan::output();
+        
+        // Ejecutar semillero si está vacío
+        if (\App\Models\CarouselSlide::count() === 0) {
+            \Illuminate\Support\Facades\Artisan::call('db:seed', [
+                '--class' => 'CarouselSlideSeeder',
+                '--force' => true
+            ]);
+            $output .= "\n" . \Illuminate\Support\Facades\Artisan::output();
+        }
+        
+        return '<pre>Migraciones y Semilla ejecutadas con éxito:' . "\n" . $output . '</pre>';
+    } catch (\Exception $e) {
+        return 'Error al ejecutar: ' . $e->getMessage();
+    }
+});
+
+Route::get('/check-db-slides', function () {
+    return response()->json(\App\Models\CarouselSlide::all());
+});
+
+Route::get('/clear-laravel-cache', function () {
+    try {
+        \Illuminate\Support\Facades\Artisan::call('view:clear');
+        \Illuminate\Support\Facades\Artisan::call('cache:clear');
+        \Illuminate\Support\Facades\Artisan::call('config:clear');
+        return 'Caché de Laravel limpia con éxito: ' . \Illuminate\Support\Facades\Artisan::output();
+    } catch (\Exception $e) {
+        return 'Error al limpiar: ' . $e->getMessage();
+    }
+});
+
+Route::get('/view-remote-logs', function () {
+    $path = storage_path('logs/laravel.log');
+    if (!file_exists($path)) {
+        return 'No hay archivo de logs en storage/logs/laravel.log';
+    }
+    $content = file_get_contents($path);
+    $lines = explode("\n", $content);
+    $lastLines = array_slice($lines, -150);
+    return '<pre>' . htmlspecialchars(implode("\n", $lastLines)) . '</pre>';
+});
+
+Route::get('/check-db-logo', function () {
+    return response()->json(\App\Models\Setting::where('key', 'logo')->first());
+});
+
+Route::get('/diagnostic-upload', function () {
+    try {
+        // Generar una imagen de 1x1 píxeles
+        $img = imagecreatetruecolor(1, 1);
+        $tempFile = tempnam(sys_get_temp_dir(), 'diag');
+        imagepng($img, $tempFile);
+        imagedestroy($img);
+
+        $uploadedFile = new \Illuminate\Http\UploadedFile(
+            $tempFile,
+            'diagnostic.png',
+            'image/png',
+            null,
+            true // test mode
+        );
+
+        $url = \App\Services\CloudinaryService::upload($uploadedFile);
+        unlink($tempFile);
+
+        // Hacer una petición HEAD para verificar si devuelve 200
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_NOBODY, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_exec($ch);
+        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        return response()->json([
+            'status' => 'success',
+            'cloudinary_url' => $url,
+            'http_status_code' => $statusCode
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ], 500);
+    }
+});
+
 /*
 |-----------------------------
 | 2. RUTAS DE AUTENTICACIÓN
@@ -129,6 +220,13 @@ Route::middleware(['auth'])->group(function () {
 Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($promoPrefix) {
 
     Route::get('/reservaciones', [ReservationAdminController::class, 'index'])->name('admin.reservations.index');
+    
+    // Gestión del Carrusel
+    Route::prefix('carrusel')->group(function () {
+        Route::post('/store', [App\Http\Controllers\Admin\CarouselController::class, 'store'])->name('admin.carousel.store');
+        Route::put('/{id}', [App\Http\Controllers\Admin\CarouselController::class, 'update'])->name('admin.carousel.update');
+        Route::delete('/{id}', [App\Http\Controllers\Admin\CarouselController::class, 'destroy'])->name('admin.carousel.destroy');
+    });
     
     Route::patch('/reservations/{reservation}/status/{status}', [ReservationAdminController::class, 'updateStatus'])
         ->name('admin.reservations.update-status');
@@ -228,13 +326,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
 | 5. RUTAS DE MANTENIMIENTO Y TAREAS PROGRAMADAS
 |------------------------------------------------------
 */
-Route::get('/limpiar-magico', function () {
-    \Illuminate\Support\Facades\Artisan::call('view:clear');
-    \Illuminate\Support\Facades\Artisan::call('cache:clear');
-    \Illuminate\Support\Facades\Artisan::call('config:clear');
-    \Illuminate\Support\Facades\Artisan::call('route:clear');
-    return '¡Caché, configuración y rutas de Hostinger borradas con éxito!';
-});
+
 
 Route::get('/run-auto-backup', [BackupController::class, 'runAutoBackup']);
 
@@ -266,13 +358,4 @@ Route::get('/admin/export/ganancias', [DashboardExportController::class, 'export
 Route::get('/admin/export/rotacion', [DashboardExportController::class, 'exportRotacion'])->name('admin.export.rotacion');
 Route::get('/admin/export/cortediario', [DashboardExportController::class, 'exportCorteDiario'])->name('admin.export.cortediario');
 
-Route::get('/test-debug', function () {
-    $path = resource_path('views/admin/dashboard.blade.php');
-    if (!file_exists($path)) {
-        return "El archivo no existe en: " . $path;
-    }
-    $content = file_get_contents($path);
-    $hasCorte = str_contains($content, 'tab-corte') ? 'SÍ' : 'NO';
-    $mtime = date('Y-m-d H:i:s', filemtime($path));
-    return "Archivo: " . $path . "<br>Modificado (Server): " . $mtime . "<br>¿Tiene 'tab-corte'?: " . $hasCorte;
-});
+

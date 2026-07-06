@@ -395,6 +395,95 @@
 
 <div class="s501-page">
 
+    {{-- CARRUSEL DE IMÁGENES PRINCIPALES --}}
+    @php
+        $carouselSlides = \App\Models\CarouselSlide::where('is_active', true)->orderBy('order')->get();
+        if ($carouselSlides->isEmpty()) {
+            $carouselSlides = collect([
+                (object)[
+                    'image_path' => 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?q=80&w=1200&auto=format&fit=crop',
+                    'subtitle' => 'Gourmet & Grill',
+                    'title' => 'SABOR INIGUALABLE',
+                    'description' => 'Las mejores hamburguesas a la parrilla y cerveza artesanal bien fría.'
+                ],
+                (object)[
+                    'image_path' => 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=1200&auto=format&fit=crop',
+                    'subtitle' => 'La emoción del juego',
+                    'title' => 'PASIÓN DEPORTIVA',
+                    'description' => 'El mejor ambiente familiar para disfrutar de tus deportes favoritos.'
+                ],
+                (object)[
+                    'image_path' => 'https://images.unsplash.com/photo-1608039829572-78524f79c4c7?q=80&w=1200&auto=format&fit=crop',
+                    'subtitle' => 'Para picar',
+                    'title' => 'MOMENTOS COMPARTIDOS',
+                    'description' => 'Deliciosas alitas y snacks perfectos para disfrutar con amigos.'
+                ]
+            ]);
+        }
+    @endphp
+
+    <div x-data="{ 
+            activeSlide: 0, 
+            slides: @json($carouselSlides),
+            next() { this.activeSlide = (this.activeSlide + 1) % this.slides.length },
+            prev() { this.activeSlide = (this.activeSlide - 1 + this.slides.length) % this.slides.length },
+            init() {
+                if(this.slides.length > 1) {
+                    setInterval(() => this.next(), 6000);
+                }
+            }
+         }" 
+         class="relative w-full h-[70vh] md:h-[80vh] overflow-hidden bg-black select-none border-b-2 border-orange-500">
+        
+        <!-- Slides -->
+        <template x-for="(slide, index) in slides" :key="index">
+            <div x-show="activeSlide === index"
+                 x-transition:enter="transition ease-in-out duration-700 transform"
+                 x-transition:enter-start="opacity-0 translate-x-full"
+                 x-transition:enter-end="opacity-100 translate-x-0"
+                 x-transition:leave="transition ease-in-out duration-700 transform"
+                 x-transition:leave-start="opacity-100 translate-x-0"
+                 x-transition:leave-end="opacity-0 -translate-x-full"
+                 class="absolute inset-0 w-full h-full">
+                <!-- Imagen con filtro oscuro para legibilidad del texto -->
+                <div class="absolute inset-0 bg-black/60 z-10"></div>
+                <img :src="slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path" class="w-full h-full object-cover" alt="Banner de carrusel">
+                
+                <!-- Contenido del Slide -->
+                <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-6 z-20">
+                    <span class="inline-block bg-orange-600 text-white font-['Oswald'] text-xs font-bold uppercase tracking-[4px] px-3 py-1.5 rounded-md mb-4 shadow-lg shadow-orange-600/30" x-text="slide.subtitle"></span>
+                    <h2 class="text-white font-['Bebas_Neue'] text-4xl sm:text-6xl md:text-8xl tracking-widest drop-shadow-2xl" x-text="slide.title"></h2>
+                    <p class="text-zinc-200 text-sm sm:text-lg max-w-xl mt-3 font-medium drop-shadow-md" x-text="slide.description"></p>
+                    
+                    <!-- Botón de acción rápido -->
+                    <a href="{{ route('pedido') }}" class="mt-6 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-['Oswald'] text-xs font-bold uppercase tracking-[2px] rounded-xl shadow-lg shadow-green-600/30 transition transform hover:-translate-y-0.5 active:scale-95">
+                        🍽️ VER MENÚ / PEDIR AHORA
+                    </a>
+                </div>
+            </div>
+        </template>
+
+        <!-- Botón Izquierdo -->
+        <button @click="prev()" type="button" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-full flex items-center justify-center border border-white/10 transition active:scale-90 hover:border-orange-500">
+            &larr;
+        </button>
+
+        <!-- Botón Derecho -->
+        <button @click="next()" type="button" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-full flex items-center justify-center border border-white/10 transition active:scale-90 hover:border-orange-500">
+            &rarr;
+        </button>
+
+        <!-- Indicadores de Slide -->
+        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2.5">
+            <template x-for="(slide, index) in slides" :key="index">
+                <button @click="activeSlide = index" 
+                        type="button" 
+                        class="w-8 h-1.5 rounded-full transition-all duration-300"
+                        :class="activeSlide === index ? 'bg-orange-500 w-12' : 'bg-white/40 hover:bg-white/60'"></button>
+            </template>
+        </div>
+    </div>
+
     {{-- HERO --}}
     <div class="s501-hero">
         <div class="s501-hero-badge">La 501 Sports Restaurant alan gome</div>

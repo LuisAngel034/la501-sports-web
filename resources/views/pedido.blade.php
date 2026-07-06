@@ -443,7 +443,7 @@
                 <div class="ped-card">
                     <div class="ped-card-img">
                         <template x-if="item.image">
-                            <img :src="'/storage/' + item.image" :alt="item.name">
+                            <img :src="item.image.startsWith('http') ? item.image : '/storage/' + item.image" :alt="item.name">
                         </template>
                         <template x-if="!item.image">
                             <div class="ped-card-no-img" aria-hidden="true">🍔</div>
@@ -513,7 +513,7 @@
                 <div class="cust-product-info">
                     <div class="cust-product-img">
                         <template x-if="customizingProduct.image">
-                            <img :src="'/storage/' + customizingProduct.image" :alt="customizingProduct.name">
+                            <img :src="customizingProduct.image.startsWith('http') ? customizingProduct.image : '/storage/' + customizingProduct.image" :alt="customizingProduct.name">
                         </template>
                         <template x-if="!customizingProduct.image">
                             <span>🍔</span>

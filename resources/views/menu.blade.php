@@ -298,7 +298,7 @@
                 <div class="menu-card">
                     <div class="menu-card-img">
                         <template x-if="item.image">
-                            <img :src="'/storage/' + item.image" :alt="item.name">
+                            <img :src="item.image.startsWith('http') ? item.image : '/storage/' + item.image" :alt="item.name">
                         </template>
                         <template x-if="!item.image">
                             <div class="menu-card-no-img" aria-hidden="true">🍔</div>

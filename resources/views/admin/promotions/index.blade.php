@@ -303,7 +303,7 @@
             {{-- Image strip --}}
             <div class="ap-card-img {{ !$item->image ? 'bg-gradient-to-br ' . $item->color_gradient : '' }}">
                 @if($item->image)
-                    <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title }}">
+                    <img src="{{ (str_starts_with($item->image, 'http://') || str_starts_with($item->image, 'https://')) ? $item->image : asset('storage/' . $item->image) }}" alt="{{ $item->title }}">
                 @else
                     <span class="ap-card-emoji">{{ $item->icon }}</span>
                 @endif
@@ -505,7 +505,7 @@
             openEdit(item) {
                 this.isEdit = true;
                 this.actionUrl = '{{ route("admin.promotions.update", ":id") }}'.replace(':id', item.id);
-                this.imagePreview = item.image ? `/storage/${item.image}` : null;
+                this.imagePreview = item.image ? (item.image.startsWith('http') ? item.image : `/storage/${item.image}`) : null;
                 this.promoData = {
                     title: item.title,
                     description: item.description,

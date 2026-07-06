@@ -373,7 +373,7 @@
                     {{-- Imagen --}}
                     <div class="cart-item-img">
                         @if($details['image'])
-                            <img src="{{ asset('storage/' . $details['image']) }}" alt="{{ $details['name'] }}">
+                            <img src="{{ (str_starts_with($details['image'], 'http://') || str_starts_with($details['image'], 'https://')) ? $details['image'] : asset('storage/' . $details['image']) }}" alt="{{ $details['name'] }}">
                         @else
                             🍔
                         @endif

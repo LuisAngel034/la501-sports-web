@@ -303,9 +303,14 @@
             $logoRoute = route('mesero.mesas');
         }
         $logoSetting = \App\Models\Setting::where('key', 'logo')->first();
-        $logoSrc = ($logoSetting && str_starts_with($logoSetting->value, 'logos/'))
-                    ? asset('storage/' . $logoSetting->value)
-                    : asset('images/logo_501.png');
+        $logoSrc = asset('images/logo_501.png');
+        if ($logoSetting) {
+            if (str_starts_with($logoSetting->value, 'http://') || str_starts_with($logoSetting->value, 'https://')) {
+                $logoSrc = $logoSetting->value;
+            } elseif (str_starts_with($logoSetting->value, 'logos/')) {
+                $logoSrc = asset('storage/' . $logoSetting->value);
+            }
+        }
     @endphp
 
     <aside class="adm-aside">

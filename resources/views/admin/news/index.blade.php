@@ -254,7 +254,7 @@
             {{-- Thumbnail --}}
             <div class="an-thumb">
                 @if($item->image)
-                    <img src="{{ asset('storage/' . $item->image) }}" alt="{{ $item->title }}">
+                    <img src="{{ (str_starts_with($item->image, 'http://') || str_starts_with($item->image, 'https://')) ? $item->image : asset('storage/' . $item->image) }}" alt="{{ $item->title }}">
                 @else
                     <div class="an-thumb-placeholder">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -420,7 +420,7 @@
             openEdit(item) {
                 this.isEdit = true;
                 this.actionUrl = '{{ route("admin.news.update", ":id") }}'.replace(':id', item.id);
-                this.imagePreview = item.image ? `/storage/${item.image}` : null;
+                this.imagePreview = item.image ? (item.image.startsWith('http') ? item.image : `/storage/${item.image}`) : null;
                 this.newsData = {
                     title: item.title,
                     category: item.category,

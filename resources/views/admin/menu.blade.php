@@ -310,7 +310,7 @@
 
             <div class="am-row-l">
                 @if($product->image)
-                    <img src="{{ asset('storage/'.$product->image) }}" class="am-thumb" alt="{{ $product->name }}">
+                    <img src="{{ (str_starts_with($product->image, 'http://') || str_starts_with($product->image, 'https://')) ? $product->image : asset('storage/'.$product->image) }}" class="am-thumb" alt="{{ $product->name }}">
                 @else
                     <div class="am-thumb-ph">🍔</div>
                 @endif
@@ -683,7 +683,7 @@ function menuAdmin() {
             this.ingredients  = (ingList && ingList.length > 0) ? [...ingList] : [];
             this.ingQuery     = '';
             this.ingOpen      = false;
-            this.imagePreview = product.image ? `/storage/${product.image}` : null;
+            this.imagePreview = product.image ? (product.image.startsWith('http') ? product.image : `/storage/${product.image}`) : null;
             this.modalOpen    = true;
         },
 

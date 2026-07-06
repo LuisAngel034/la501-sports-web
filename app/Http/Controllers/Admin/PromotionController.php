@@ -32,7 +32,11 @@ class PromotionController extends Controller
         $data['active'] = 1;
 
         if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('promotions', 'public');
+            try {
+                $data['image'] = \App\Services\CloudinaryService::upload($request->file('image'));
+            } catch (\Exception $e) {
+                return back()->with('error', 'Error al subir la imagen a Cloudinary: ' . $e->getMessage());
+            }
         }
 
         Promotion::create($data);
@@ -58,10 +62,14 @@ class PromotionController extends Controller
         $data = $request->except(['image']);
 
         if ($request->hasFile('image')) {
-            if ($promotion->image) {
-                Storage::disk('public')->delete($promotion->image);
+            try {
+                if ($promotion->image && !str_starts_with($promotion->image, 'http')) {
+                    Storage::disk('public')->delete($promotion->image);
+                }
+                $data['image'] = \App\Services\CloudinaryService::upload($request->file('image'));
+            } catch (\Exception $e) {
+                return back()->with('error', 'Error al subir la imagen a Cloudinary: ' . $e->getMessage());
             }
-            $data['image'] = $request->file('image')->store('promotions', 'public');
         }
 
         $promotion->update($data);

@@ -288,7 +288,7 @@
                     </button>
                 </div>
 
-                {{-- Período --}}
+                {{-- Períodos --}}
                 <div class="ds-pill-group" id="period-controls">
                     <button id="btn-day" class="ds-pill on" @click="changePeriod('day')">30 Días</button>
                     <button id="btn-month" class="ds-pill" @click="changePeriod('month')">Meses</button>
@@ -299,7 +299,7 @@
                     <form method="GET" action="" style="display:flex; gap:8px; margin:0; align-items:center;">
                         <input type="hidden" name="active_tab" value="categoria">
                         <label style="font-size:11px; color:var(--sub); font-weight:600;">Filtrar Mes:</label>
-                        <input type="month" name="rotacion_date" value="{{ $rotacionDate ?? date('Y-m') }}" class="ds-inp" style="padding:4px 8px; font-size:12px; width:auto; height:28px;" onchange="this.form.submit()">
+                        <input type="month" name="rotacion_date" value="{{ $rotacionDate ?? date('Y-m') }}" class="ds-inp" style="padding:4px 8px; font-size:12px; width:auto; height:28px;" onchange="this.form.submit()" onclick="this.showPicker()">
                     </form>
                 </div>
 
@@ -308,7 +308,7 @@
                     <form method="GET" action="" style="display:flex; gap:8px; margin:0; align-items:center;">
                         <input type="hidden" name="active_tab" value="corte">
                         <label style="font-size:11px; color:var(--sub); font-weight:600;">Fecha del Corte:</label>
-                        <input type="date" name="corte_date" value="{{ $corteDate ?? date('Y-m-d') }}" class="ds-inp" style="padding:4px 8px; font-size:12px; width:auto; height:28px;" onchange="this.form.submit()">
+                        <input type="date" name="corte_date" value="{{ $corteDate ?? date('Y-m-d') }}" class="ds-inp" style="padding:4px 8px; font-size:12px; width:auto; height:28px;" onchange="this.form.submit()" onclick="this.showPicker()">
                     </form>
                 </div>
                 
@@ -475,7 +475,11 @@
                                             @foreach($data['orders'] as $ord)
                                                 <div class="grid grid-cols-3 text-zinc-600 dark:text-zinc-400">
                                                     <span class="truncate">TICKET DE VENTA T</span>
-                                                    <span class="text-center">#{{ str_pad($ord['id'], 4, '0', STR_PAD_LEFT) }}</span>
+                                                    <span class="text-center">
+                                                        <a href="{{ route('payment.confirmation', $ord['id']) }}" target="_blank" class="text-blue-500 hover:text-blue-600 underline font-bold transition-all">
+                                                            #{{ str_pad($ord['id'], 4, '0', STR_PAD_LEFT) }}
+                                                        </a>
+                                                    </span>
                                                     <span class="text-right">${{ number_format($ord['monto'], 2) }}</span>
                                                 </div>
                                             @endforeach
@@ -592,11 +596,11 @@
                 <form id="form-prediccion" onsubmit="calcularPrediccionAJAX(event)" style="display:flex; gap:8px; align-items:flex-end;">
                     <div>
                         <label style="font-size:10px; color:var(--sub); display:block;">Desde</label>
-                        <input type="date" name="start_date" id="pred_start" value="{{ $fechaInicioPred }}" class="ds-inp" style="padding:5px 8px; font-size:12px;">
+                        <input type="date" name="start_date" id="pred_start" value="{{ $fechaInicioPred }}" class="ds-inp" style="padding:5px 8px; font-size:12px;" onclick="this.showPicker()">
                     </div>
                     <div>
                         <label style="font-size:10px; color:var(--sub); display:block;">Hasta</label>
-                        <input type="date" name="end_date" id="pred_end" value="{{ $fechaFinPred }}" class="ds-inp" style="padding:5px 8px; font-size:12px;">
+                        <input type="date" name="end_date" id="pred_end" value="{{ $fechaFinPred }}" class="ds-inp" style="padding:5px 8px; font-size:12px;" onclick="this.showPicker()">
                     </div>
                     <button type="submit" id="btn-calc-pred" class="ds-pill on" style="padding:6px 12px; background:var(--ac); color:#fff; border-radius:5px; transition:0.2s;">Calcular</button>
                 </form>

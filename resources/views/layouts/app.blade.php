@@ -223,9 +223,14 @@
             <a href="/" class="flex-shrink-0 z-10">
                 @php
                     $logoSetting = \App\Models\Setting::where('key', 'logo')->first();
-                    $logoSrc = ($logoSetting && str_starts_with($logoSetting->value, 'logos/'))
-                                ? asset('storage/' . $logoSetting->value)
-                                : asset('images/logo_501.png');
+                    $logoSrc = asset('images/logo_501.png');
+                    if ($logoSetting) {
+                        if (str_starts_with($logoSetting->value, 'http://') || str_starts_with($logoSetting->value, 'https://')) {
+                            $logoSrc = $logoSetting->value;
+                        } elseif (str_starts_with($logoSetting->value, 'logos/')) {
+                            $logoSrc = asset('storage/' . $logoSetting->value);
+                        }
+                    }
                 @endphp
                 <img src="{{ $logoSrc }}" alt="Logo La 501" class="h-14 w-auto nav-logo-img">
             </a>
