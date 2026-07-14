@@ -66,7 +66,9 @@ class CarouselController extends Controller
                 // Eliminar anterior si era archivo local
                 if (str_starts_with($slide->image_path, 'storage/carousel/')) {
                     $oldPath = str_replace('storage/', '', $slide->image_path);
-                    Storage::disk('public')->delete($oldPath);
+                    if (Storage::disk('public')->exists($oldPath)) {
+                        Storage::disk('public')->delete($oldPath);
+                    }
                 }
                 $slide->image_path = \App\Services\CloudinaryService::upload($request->file('image'));
             } catch (\Exception $e) {
@@ -93,7 +95,9 @@ class CarouselController extends Controller
         // Eliminar anterior si era archivo local
         if (str_starts_with($slide->image_path, 'storage/carousel/')) {
             $oldPath = str_replace('storage/', '', $slide->image_path);
-            Storage::disk('public')->delete($oldPath);
+            if (Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
         }
 
         $slide->delete();

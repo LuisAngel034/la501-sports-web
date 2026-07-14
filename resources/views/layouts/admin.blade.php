@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Panel Empleados · La 501</title>
 
-    <link rel="icon" type="image/png" href="{{ asset('images/logo_501_trasparente.png') }}?v=2">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo_501_transparente.png') }}?v=2">
 
     <script>
         if (localStorage.theme === 'light') {

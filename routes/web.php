@@ -35,7 +35,15 @@ $promoPrefix = 'promociones';
 | 1. RUTAS PÚBLICAS
 |--------------------
 */
-Route::get('/', function () { return view('quienes-somos'); })->name('nosotros')->middleware('non-client');
+Route::get('/', function () {
+    return response()
+        ->view('quienes-somos')
+        ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+        ->header('Pragma', 'no-cache')
+        ->header('Expires', '0')
+        ->header('X-LiteSpeed-Cache-Control', 'no-cache')
+        ->header('X-LiteSpeed-Purge', '*');
+})->name('nosotros')->middleware('non-client');
 Route::get('/contacto', function () { return view('contacto'); })->name('contacto')->middleware('non-client');
 Route::get('/reservaciones', function () { return view('reservaciones'); })->name('reservaciones')->middleware('non-client');
 Route::post('/reservaciones/store', [ReservationController::class, 'store'])->name('reservations.store');
@@ -68,31 +76,7 @@ Route::get('/pago/fallido', [CheckoutController::class, 'failure'])->name('payme
 Route::get('/pedido/confirmacion/{id}', [CheckoutController::class, 'confirmation'])->name('payment.confirmation');
 Route::get('/api/pedido/{id}/status', [CheckoutController::class, 'apiStatus'])->name('api.order.status');
 
-// Ejecutar migraciones temporalmente desde la web (Hostinger)
-Route::get('/run-migrations', function () {
-    try {
-        \Illuminate\Support\Facades\Artisan::call('migrate', ['--force' => true]);
-        $output = \Illuminate\Support\Facades\Artisan::output();
-        
-        // Ejecutar semillero si está vacío
-        if (\App\Models\CarouselSlide::count() === 0) {
-            \Illuminate\Support\Facades\Artisan::call('db:seed', [
-                '--class' => 'CarouselSlideSeeder',
-                '--force' => true
-            ]);
-            $output .= "\n" . \Illuminate\Support\Facades\Artisan::output();
-        }
-        
-        return '<pre>Migraciones y Semilla ejecutadas con éxito:' . "\n" . $output . '</pre>';
-    } catch (\Exception $e) {
-        return 'Error al ejecutar: ' . $e->getMessage();
-    }
-});
-
-Route::get('/check-db-slides', function () {
-    return response()->json(\App\Models\CarouselSlide::all());
-});
-
+// Final de rutas públicas
 Route::get('/clear-laravel-cache', function () {
     try {
         \Illuminate\Support\Facades\Artisan::call('view:clear');
@@ -104,60 +88,7 @@ Route::get('/clear-laravel-cache', function () {
     }
 });
 
-Route::get('/view-remote-logs', function () {
-    $path = storage_path('logs/laravel.log');
-    if (!file_exists($path)) {
-        return 'No hay archivo de logs en storage/logs/laravel.log';
-    }
-    $content = file_get_contents($path);
-    $lines = explode("\n", $content);
-    $lastLines = array_slice($lines, -150);
-    return '<pre>' . htmlspecialchars(implode("\n", $lastLines)) . '</pre>';
-});
 
-Route::get('/check-db-logo', function () {
-    return response()->json(\App\Models\Setting::where('key', 'logo')->first());
-});
-
-Route::get('/diagnostic-upload', function () {
-    try {
-        // Generar una imagen de 1x1 píxeles
-        $img = imagecreatetruecolor(1, 1);
-        $tempFile = tempnam(sys_get_temp_dir(), 'diag');
-        imagepng($img, $tempFile);
-        imagedestroy($img);
-
-        $uploadedFile = new \Illuminate\Http\UploadedFile(
-            $tempFile,
-            'diagnostic.png',
-            'image/png',
-            null,
-            true // test mode
-        );
-
-        $url = \App\Services\CloudinaryService::upload($uploadedFile);
-        unlink($tempFile);
-
-        // Hacer una petición HEAD para verificar si devuelve 200
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_NOBODY, true);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($ch);
-        $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        return response()->json([
-            'status' => 'success',
-            'cloudinary_url' => $url,
-            'http_status_code' => $statusCode
-        ]);
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage()
-        ], 500);
-    }
-});
 
 /*
 |-----------------------------

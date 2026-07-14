@@ -466,12 +466,7 @@
                         <div x-show="isInCart(item.id)" x-cloak>
                             <p class="ped-in-cart-label">✓ En tu pedido</p>
                             <div class="ped-qty-row">
-                                <form action="{{ route('cart.update') }}" method="POST">
-                                    @csrf
-                                    <input type="hidden" name="id"       :value="getCartKeyToUpdate(item.id)">
-                                    <input type="hidden" name="quantity" :value="getCartQty(item.id) - 1">
-                                    <button type="submit" class="ped-qty-btn minus" :aria-label="'Quitar una unidad de ' + item.name">−</button>
-                                </form>
+                                <button type="button" @click.prevent="updateCartQty(getCartKeyToUpdate(item.id), getCartQty(item.id) - 1)" class="ped-qty-btn minus" :aria-label="'Quitar una unidad de ' + item.name">−</button>
                                 <output class="ped-qty-display" :aria-label="'Cantidad: ' + getCartQty(item.id)">
                                     <span x-text="getCartQty(item.id)"></span>
                                 </output>
@@ -657,23 +652,122 @@
                 );
             },
             submitAddToCart(id, name, price, image, excludedIngredients) {
-                document.getElementById('hidden-product-id').value = id;
-                document.getElementById('hidden-product-name').value = name;
-                document.getElementById('hidden-product-price').value = price;
-                document.getElementById('hidden-product-image').value = image || '';
-                
-                const container = document.getElementById('hidden-excluded-ingredients-container');
-                container.innerHTML = '';
-                
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('id', id);
+                formData.append('name', name);
+                formData.append('price', price);
+                formData.append('image', image || '');
+                formData.append('quantity', 1);
                 excludedIngredients.forEach(ing => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'excluded_ingredients[]';
-                    input.value = ing;
-                    container.appendChild(input);
+                    formData.append('excluded_ingredients[]', ing);
                 });
-                
-                document.getElementById('hidden-add-to-cart-form').submit();
+
+                fetch('{{ route('cart.add') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        this.cartData = data.cart;
+                        this.updateGlobalCartBadge(data.total_items);
+                        this.showNotification('¡Platillo agregado al pedido!');
+                    } else {
+                        this.showNotification(data.message || 'Error al agregar');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    this.showNotification('Error de conexión');
+                });
+            },
+            updateCartQty(key, newQty) {
+                const formData = new FormData();
+                formData.append('_token', '{{ csrf_token() }}');
+                formData.append('id', key);
+                formData.append('quantity', newQty);
+
+                fetch('{{ route('cart.update') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        this.cartData = data.cart;
+                        this.updateGlobalCartBadge(data.total_items);
+                        this.showNotification('Pedido actualizado');
+                    } else {
+                        this.showNotification(data.message || 'Error al actualizar');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    this.showNotification('Error de conexión');
+                });
+            },
+            updateGlobalCartBadge(totalItems) {
+                const badge = document.getElementById('global-cart-badge');
+                if (badge) {
+                    if (totalItems > 0) {
+                        badge.innerText = totalItems;
+                        badge.style.display = 'flex';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            },
+            showNotification(message) {
+                let container = document.getElementById('floating-notification-container');
+                if (!container) {
+                    container = document.createElement('div');
+                    container.id = 'floating-notification-container';
+                    container.style.position = 'fixed';
+                    container.style.bottom = '30px';
+                    container.style.right = '30px';
+                    container.style.zIndex = '9999';
+                    container.style.display = 'flex';
+                    container.style.flexDirection = 'column';
+                    container.style.gap = '10px';
+                    document.body.appendChild(container);
+                }
+
+                const toast = document.createElement('div');
+                toast.style.background = '#F97316';
+                toast.style.color = '#FFFFFF';
+                toast.style.padding = '12px 24px';
+                toast.style.borderRadius = '30px';
+                toast.style.fontWeight = 'bold';
+                toast.style.fontSize = '14px';
+                toast.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                toast.style.transition = 'all 0.3s ease-out';
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(20px)';
+                toast.innerText = message;
+
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateY(0)';
+                }, 10);
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateY(-20px)';
+                    setTimeout(() => {
+                        toast.remove();
+                    }, 300);
+                }, 2500);
             }
         }
     }

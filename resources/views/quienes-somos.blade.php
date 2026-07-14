@@ -424,10 +424,18 @@
 
     <div x-data="{ 
             activeSlide: 0, 
-            slides: @json($carouselSlides),
+            slides: @js($carouselSlides).map(s => ({ ...s, isWide: true })),
             next() { this.activeSlide = (this.activeSlide + 1) % this.slides.length },
             prev() { this.activeSlide = (this.activeSlide - 1 + this.slides.length) % this.slides.length },
             init() {
+                this.slides.forEach(slide => {
+                    const img = new Image();
+                    img.onload = () => {
+                        slide.isWide = (img.width / img.height) > 1.25 && img.width >= 1000;
+                    };
+                    img.src = slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path;
+                });
+
                 if(this.slides.length > 1) {
                     setInterval(() => this.next(), 6000);
                 }
@@ -444,16 +452,24 @@
                  x-transition:leave="transition ease-in-out duration-700 transform"
                  x-transition:leave-start="opacity-100 translate-x-0"
                  x-transition:leave-end="opacity-0 -translate-x-full"
-                 class="absolute inset-0 w-full h-full">
-                <!-- Imagen con filtro oscuro para legibilidad del texto -->
-                <div class="absolute inset-0 bg-black/60 z-10"></div>
-                <img :src="slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path" class="w-full h-full object-cover" alt="Banner de carrusel">
+                 class="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
+                <!-- Fondo difuminado para rellenar los bordes en caso de imágenes cuadradas o verticales (solo si no es panorámica) -->
+                <div class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none" x-show="slide.isWide === false" x-cloak>
+                    <img :src="slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path" class="w-full h-full object-cover blur-2xl scale-110 opacity-45" aria-hidden="true" alt="">
+                </div>
+                <!-- Imagen con filtro oscuro para legibilidad del texto (solo si hay texto) -->
+                <div class="absolute inset-0 bg-black/35 z-10" x-show="(slide.title && slide.title.trim() !== '') || (slide.subtitle && slide.subtitle.trim() !== '') || (slide.description && slide.description.trim() !== '')"></div>
+                <!-- Imagen real -->
+                <img :src="slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path" 
+                     class="z-1" 
+                     :class="slide.isWide === false ? 'relative max-w-full max-h-full object-contain' : 'absolute inset-0 w-full h-full object-cover'"
+                     alt="Banner de carrusel">
                 
-                <!-- Contenido del Slide -->
-                <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-6 z-20">
-                    <span class="inline-block bg-orange-600 text-white font-['Oswald'] text-xs font-bold uppercase tracking-[4px] px-3 py-1.5 rounded-md mb-4 shadow-lg shadow-orange-600/30" x-text="slide.subtitle"></span>
-                    <h2 class="text-white font-['Bebas_Neue'] text-4xl sm:text-6xl md:text-8xl tracking-widest drop-shadow-2xl" x-text="slide.title"></h2>
-                    <p class="text-zinc-200 text-sm sm:text-lg max-w-xl mt-3 font-medium drop-shadow-md" x-text="slide.description"></p>
+                <!-- Contenido del Slide (solo si hay textos) -->
+                <div class="absolute inset-0 flex flex-col justify-center items-center text-center p-6 z-20" x-show="(slide.title && slide.title.trim() !== '') || (slide.subtitle && slide.subtitle.trim() !== '') || (slide.description && slide.description.trim() !== '')">
+                    <span class="inline-block bg-orange-600 text-white font-['Oswald'] text-xs font-bold uppercase tracking-[4px] px-3 py-1.5 rounded-md mb-4 shadow-lg shadow-orange-600/30" x-show="slide.subtitle && slide.subtitle.trim() !== ''" x-text="slide.subtitle"></span>
+                    <h2 class="text-white font-['Bebas_Neue'] text-4xl sm:text-6xl md:text-8xl tracking-widest drop-shadow-2xl" x-show="slide.title && slide.title.trim() !== ''" x-text="slide.title"></h2>
+                    <p class="text-zinc-200 text-sm sm:text-lg max-w-xl mt-3 font-medium drop-shadow-md" x-show="slide.description && slide.description.trim() !== ''" x-text="slide.description"></p>
                     
                     <!-- Botón de acción rápido -->
                     <a href="{{ route('pedido') }}" class="mt-6 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-['Oswald'] text-xs font-bold uppercase tracking-[2px] rounded-xl shadow-lg shadow-green-600/30 transition transform hover:-translate-y-0.5 active:scale-95">

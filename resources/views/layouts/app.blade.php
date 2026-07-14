@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La 501 Sports</title>
 
-    <link rel="icon" type="image/png" href="{{ asset('images/logo_501_trasparente.png') }}?v=2">
+    <link rel="icon" type="image/png" href="{{ asset('images/logo_501_transparente.png') }}?v=2">
 
     {{-- Tema antes de pintar --}}
     <script>
@@ -61,25 +61,31 @@
         /* ── NAV LINK UNDERLINE DESLIZANTE ── */
         .nav-link {
             position: relative;
+            display: inline-block;
             font-family: 'Oswald', sans-serif;
             font-size: 13px;
             font-weight: 500;
             letter-spacing: 1.5px;
             text-transform: uppercase;
             text-decoration: none;
-            padding-bottom: 4px;
+            padding: 0 12px 4px 12px;
             transition: color 0.2s;
         }
         .nav-link::after {
             content: '';
             position: absolute;
-            bottom: 0; left: 0;
-            width: 0; height: 2px;
+            bottom: 0;
+            left: 12px;
+            right: 12px;
+            height: 2px;
             background: var(--or);
-            transition: width 0.25s ease;
+            transform: scaleX(0);
+            transition: transform 0.25s ease;
         }
         .nav-link:hover::after,
-        .nav-link.active::after { width: 100%; }
+        .nav-link.active::after {
+            transform: scaleX(1);
+        }
 
         /* ── BOTÓN CTA NAV ── */
         .nav-cta-btn {
@@ -236,13 +242,13 @@
             </a>
 
             {{-- Links Escritorio --}}
-            <ul class="hidden lg:flex gap-1 items-center absolute left-1/2 -translate-x-1/2">
-                <li><a href="{{ route('nosotros') }}" class="nav-link px-3 {{ request()->routeIs('nosotros') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Quienes Somos</a></li>
-                <li><a href="{{ route('contacto') }}" class="nav-link px-3 {{ request()->routeIs('contacto') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Contacto</a></li>
-                <li><a href="{{ route('reservaciones') }}" class="nav-link px-3 {{ request()->routeIs('reservaciones') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Reservaciones</a></li>
-                <li><a href="{{ route('promociones') }}" class="nav-link px-3 {{ request()->routeIs('promociones') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Promociones</a></li>
-                <li><a href="{{ route('novedades') }}" class="nav-link px-3 {{ request()->routeIs('novedades') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Novedades</a></li>
-                <li><a href="{{ route('ubicacion') }}" class="nav-link px-3 {{ request()->routeIs('ubicacion') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Ubicación</a></li>
+            <ul class="hidden lg:flex gap-1 items-center flex-1 justify-center mx-4">
+                <li><a href="{{ route('nosotros') }}" class="nav-link {{ request()->routeIs('nosotros') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Quienes Somos</a></li>
+                <li><a href="{{ route('contacto') }}" class="nav-link {{ request()->routeIs('contacto') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Contacto</a></li>
+                <li><a href="{{ route('reservaciones') }}" class="nav-link {{ request()->routeIs('reservaciones') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Reservaciones</a></li>
+                <li><a href="{{ route('promociones') }}" class="nav-link {{ request()->routeIs('promociones') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Promociones</a></li>
+                <li><a href="{{ route('novedades') }}" class="nav-link {{ request()->routeIs('novedades') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Novedades</a></li>
+                <li><a href="{{ route('ubicacion') }}" class="nav-link {{ request()->routeIs('ubicacion') ? 'active text-orange-500' : 'text-zinc-500 dark:text-zinc-400 hover:text-orange-500' }}">Ubicación</a></li>
             </ul>
 
             {{-- Acciones --}}
@@ -330,14 +336,11 @@
                     </a>
                 @endauth
 
-                {{-- Carrito --}}
-                <a href="{{ route('cart.index') }}" class="cart-link bg-zinc-100 dark:bg-zinc-800">
+                <a href="{{ route('cart.index') }}" id="global-cart-btn" class="cart-link bg-zinc-100 dark:bg-zinc-800">
                     <span class="text-xl">🛒</span>
-                    @if(count((array) session('cart')) > 0)
-                        <span class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-[#0f0d0a] animate-bounce">
-                            {{ count((array) session('cart')) }}
-                        </span>
-                    @endif
+                    <span id="global-cart-badge" class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border-2 border-white dark:border-[#0f0d0a] animate-bounce" style="{{ count((array) session('cart')) > 0 ? '' : 'display: none;' }}">
+                        {{ count((array) session('cart')) }}
+                    </span>
                 </a>
 
                 {{-- Hamburguesa --}}

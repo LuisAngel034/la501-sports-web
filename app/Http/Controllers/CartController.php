@@ -71,6 +71,15 @@ class CartController extends Controller
 
         session()->put('cart', $cart);
 
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'cart' => $cart,
+                'total_items' => count((array)$cart),
+                'message' => '¡Platillo agregado al carrito!'
+            ]);
+        }
+
         return back()->with('success', '¡Platillo agregado al carrito!');
     }
 
@@ -82,7 +91,21 @@ class CartController extends Controller
                 unset($cart[$request->id]);
                 session()->put('cart', $cart);
             }
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'cart' => $cart,
+                    'total_items' => count((array)$cart),
+                    'message' => 'Platillo eliminado del carrito.'
+                ]);
+            }
             return back()->with('success', 'Platillo eliminado del carrito.');
+        }
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ID no proporcionado.'
+            ], 400);
         }
     }
 
@@ -108,6 +131,15 @@ class CartController extends Controller
                 $cart[$request->id]['quantity'] = $request->quantity;
             }
             session()->put('cart', $cart);
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'cart' => $cart,
+                'total_items' => count((array)$cart),
+                'message' => 'Carrito actualizado.'
+            ]);
         }
 
         return back();

@@ -42,7 +42,7 @@ class SettingController extends Controller
 
         if ($request->hasFile('logo')) {
             try {
-                if ($setting->value && str_starts_with($setting->value, 'logos/')) {
+                if ($setting->value && str_starts_with($setting->value, 'logos/') && Storage::disk('public')->exists($setting->value)) {
                     Storage::disk('public')->delete($setting->value);
                 }
 

@@ -63,7 +63,7 @@ class PromotionController extends Controller
 
         if ($request->hasFile('image')) {
             try {
-                if ($promotion->image && !str_starts_with($promotion->image, 'http')) {
+                if ($promotion->image && !str_starts_with($promotion->image, 'http') && Storage::disk('public')->exists($promotion->image)) {
                     Storage::disk('public')->delete($promotion->image);
                 }
                 $data['image'] = \App\Services\CloudinaryService::upload($request->file('image'));

@@ -11,7 +11,12 @@ class PageController extends Controller
 {
     public function index() {
         $products = \App\Models\Product::with('ingredientes')->where('available', 1)->get();
-        return view('pedido', compact('products'));
+        return response()
+            ->view('pedido', compact('products'))
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0')
+            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
     }
 
     public function novedades()
@@ -32,7 +37,12 @@ class PageController extends Controller
         $avisos = (clone $baseQuery)->where('category', 'Aviso')->orderBy('created_at', 'desc')->get();
         $eventos = (clone $baseQuery)->where('category', 'Evento')->orderBy('created_at', 'desc')->get();
 
-        return view('novedades', compact('deportes', 'avisos', 'eventos'));
+        return response()
+            ->view('novedades', compact('deportes', 'avisos', 'eventos'))
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0')
+            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
     }
 
     public function promociones()
@@ -47,7 +57,12 @@ class PageController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('promociones', compact('promotions'));
+        return response()
+            ->view('promociones', compact('promotions'))
+            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', '0')
+            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
     }
 
     public function enviarContacto(Request $request)

@@ -62,7 +62,7 @@ class NewsController extends Controller
 
         if ($request->hasFile('image')) {
             try {
-                if ($news->image && !str_starts_with($news->image, 'http')) {
+                if ($news->image && !str_starts_with($news->image, 'http') && Storage::disk('public')->exists($news->image)) {
                     Storage::disk('public')->delete($news->image);
                 }
                 $data['image'] = \App\Services\CloudinaryService::upload($request->file('image'));

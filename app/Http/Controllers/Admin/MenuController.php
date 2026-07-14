@@ -83,7 +83,7 @@ class MenuController extends Controller
 
         if ($request->hasFile('image')) {
             try {
-                if ($product->image && !str_starts_with($product->image, 'http')) {
+                if ($product->image && !str_starts_with($product->image, 'http') && Storage::disk('public')->exists($product->image)) {
                     Storage::disk('public')->delete($product->image);
                 }
                 $product->image = \App\Services\CloudinaryService::upload($request->file('image'));
@@ -121,7 +121,7 @@ class MenuController extends Controller
     {
         $product = Product::findOrFail($id);
         
-        if ($product->image) {
+        if ($product->image && !str_starts_with($product->image, 'http') && Storage::disk('public')->exists($product->image)) {
             Storage::disk('public')->delete($product->image);
         }
 
