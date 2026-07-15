@@ -257,4 +257,55 @@ class CheckoutController extends Controller
 
         return response()->json(['status' => $order->status]);
     }
+
+    public function webhook(Request $request)
+    {
+        // 1. Obtener ID de pago y tipo de notificación
+        $paymentId = $request->input('data.id') ?? $request->input('id');
+        $type = $request->input('type') ?? $request->input('topic');
+
+        if (!$paymentId || ($type !== 'payment' && $type !== 'payment.created')) {
+            return response()->json(['success' => false, 'message' => 'Notificación ignorada.'], 200);
+        }
+
+        // 2. Consultar el pago en Mercado Pago
+        $response = Http::withToken(env('MERCADOPAGO_ACCESS_TOKEN'))
+            ->get("https://api.mercadopago.com/v1/payments/{$paymentId}");
+
+        if (!$response->successful()) {
+            \Illuminate\Support\Facades\Log::error("Mercado Pago Webhook: Error al consultar pago {$paymentId}", [
+                'status' => $response->status(),
+                'response' => $response->json(),
+            ]);
+            return response()->json(['success' => false, 'message' => 'Error al consultar pago.'], 500);
+        }
+
+        $paymentData = $response->json();
+        $status = $paymentData['status'] ?? null;
+        $orderId = $paymentData['external_reference'] ?? null;
+
+        // 3. Si el pago está aprobado, actualizar la orden
+        if ($status === 'approved' && $orderId) {
+            $order = Order::find($orderId);
+            if ($order && $order->status !== 'paid') {
+                $order->status = 'paid';
+                $order->payment_id = $paymentId;
+                $order->save();
+
+                if ($order->user_id) {
+                    $user = \App\Models\User::find($order->user_id);
+                    if ($user) {
+                        $user->points += floor($order->total / 10);
+                        $user->save();
+
+                        (new \App\Services\AchievementService())->check($user);
+                    }
+                }
+
+                \Illuminate\Support\Facades\Log::info("Mercado Pago Webhook: Orden {$orderId} pagada con éxito (Pago: {$paymentId}).");
+            }
+        }
+
+        return response()->json(['success' => true], 200);
+    }
 }

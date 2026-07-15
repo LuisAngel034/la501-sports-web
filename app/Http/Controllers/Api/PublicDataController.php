@@ -132,12 +132,13 @@ class PublicDataController extends Controller
 
         if (!empty($validated['q'])) {
             $search = trim($validated['q']);
+            $escapedSearch = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
 
-            $query->where(function ($productQuery) use ($search) {
+            $query->where(function ($productQuery) use ($escapedSearch) {
                 $productQuery
-                    ->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('description', 'LIKE', "%{$search}%")
-                    ->orWhere('category', 'LIKE', "%{$search}%");
+                    ->where('name', 'LIKE', "%{$escapedSearch}%")
+                    ->orWhere('description', 'LIKE', "%{$escapedSearch}%")
+                    ->orWhere('category', 'LIKE', "%{$escapedSearch}%");
             });
         }
 
@@ -264,6 +265,7 @@ class PublicDataController extends Controller
         ]);
 
         $search = trim($validated['q']);
+        $escapedSearch = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
         $today = now()->toDateString();
 
         $product = Product::query()
@@ -274,11 +276,11 @@ class PublicDataController extends Controller
                 'category',
                 'available',
             ])
-            ->where(function ($query) use ($search) {
+            ->where(function ($query) use ($escapedSearch) {
                 $query
-                    ->where('name', 'LIKE', "%{$search}%")
-                    ->orWhere('description', 'LIKE', "%{$search}%")
-                    ->orWhere('category', 'LIKE', "%{$search}%");
+                    ->where('name', 'LIKE', "%{$escapedSearch}%")
+                    ->orWhere('description', 'LIKE', "%{$escapedSearch}%")
+                    ->orWhere('category', 'LIKE', "%{$escapedSearch}%");
             })
             ->first();
 

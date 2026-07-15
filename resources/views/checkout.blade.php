@@ -238,21 +238,36 @@
 
     .co-submit-btn {
         display: inline-flex; align-items: center; gap: 8px;
-        padding: 13px 28px;
-        background: var(--gn); color: #fff;
+        padding: 16px 32px;
+        background: linear-gradient(135deg, var(--gn) 0%, var(--gn2) 100%);
+        color: #fff;
         font-family: 'Oswald', sans-serif;
-        font-size: 14px; font-weight: 700;
+        font-size: 16px; font-weight: 800;
         letter-spacing: 2px; text-transform: uppercase;
-        border: none; border-radius: 9px; cursor: pointer;
-        box-shadow: 0 3px 16px rgba(22,163,74,.4);
+        border: none; border-radius: 12px; cursor: pointer;
+        box-shadow: 0 4px 18px rgba(22,163,74,.35);
         transition: background .2s, transform .15s, box-shadow .2s;
+        animation: co-pulse-glow 2s infinite;
     }
     .co-submit-btn:hover {
-        background: var(--gn2); transform: translateY(-1px);
-        box-shadow: 0 5px 24px rgba(34,197,94,.45);
+        background: linear-gradient(135deg, var(--gn2) 0%, #4ade80 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(34,197,94,.5);
     }
-    .co-submit-btn:active { transform: scale(.97); }
+    .co-submit-btn:active { transform: scale(.98) translateY(0); }
     .co-submit-btn svg { width: 16px; height: 16px; }
+
+    @keyframes co-pulse-glow {
+        0% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.6);
+        }
+        70% {
+            box-shadow: 0 0 0 14px rgba(34, 197, 94, 0);
+        }
+        100% {
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        }
+    }
 
     /* back link */
     .co-back {

@@ -69,12 +69,14 @@
 
     /* ── FILTROS STICKY ── */
     .ped-filters-sticky {
-        position: sticky; top: 72px; z-index: 40;
+        position: sticky; top: 88px; z-index: 40;
         background: var(--bg-card);
         border-bottom: 1px solid var(--bdr);
         box-shadow: 0 4px 24px rgba(0,0,0,.14);
         padding: 0 32px;
     }
+    .ped-mobile-price { display: none; }
+    .ped-card-body-footer { display: block; }
     .ped-filters-inner { max-width: 1200px; margin: 0 auto; }
 
     .mf-row {
@@ -234,9 +236,86 @@
         .ped-main { padding: 28px 20px 60px; }
         .ped-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
     }
-    @media (max-width: 420px) {
-        .ped-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
-        .ped-card-img { height: 140px; }
+    @media (max-width: 540px) {
+        .ped-grid {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+        }
+        .ped-card {
+            flex-direction: row !important;
+            align-items: stretch !important;
+            padding: 12px !important;
+            gap: 14px !important;
+            border-radius: 16px !important;
+            min-height: 120px !important;
+        }
+        .ped-card-img {
+            order: 2 !important;
+            width: 90px !important;
+            height: 90px !important;
+            border-radius: 10px !important;
+            flex-shrink: 0 !important;
+            align-self: center !important;
+        }
+        .ped-price-badge {
+            display: none !important;
+        }
+        .ped-card-body {
+            order: 1 !important;
+            padding: 0 !important;
+            flex: 1 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+        }
+        .ped-card-body h3 {
+            font-size: 16px !important;
+            margin-bottom: 4px !important;
+        }
+        .ped-card-body p {
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+            margin-bottom: 8px !important;
+            -webkit-line-clamp: 2 !important;
+        }
+        .ped-mobile-price {
+            display: inline-block !important;
+            font-family: 'Bebas Neue', sans-serif !important;
+            font-size: 19px !important;
+            color: var(--or) !important;
+            letter-spacing: 0.5px !important;
+        }
+        .ped-card-body-footer {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            gap: 10px !important;
+            margin-top: auto !important;
+        }
+        .ped-add-btn {
+            padding: 8px 16px !important;
+            font-size: 11px !important;
+            letter-spacing: 1px !important;
+            width: auto !important;
+            border-radius: 8px !important;
+        }
+        .ped-qty-row {
+            gap: 8px !important;
+            margin-top: 0 !important;
+        }
+        .ped-qty-btn {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 14px !important;
+            border-radius: 6px !important;
+        }
+        .ped-qty-display {
+            font-size: 15px !important;
+            min-width: 20px !important;
+        }
+        .ped-in-cart-label {
+            display: none !important;
+        }
     }
 
     /* ── CUSTOMIZATION MODAL ── */
@@ -457,20 +536,24 @@
                         <h3 x-text="item.name" x-bind:aria-label="item.name"><span class="sr-only">Platillo</span></h3>
                         <p x-text="item.description || 'Delicioso platillo preparado al momento con los mejores ingredientes.'"></p>
 
-                        {{-- Estado 1: No está en carrito --}}
-                        <div x-show="!isInCart(item.id)">
-                            <button type="button" @click="addOrCustomize(item)" class="ped-add-btn">+ Agregar al Pedido</button>
-                        </div>
+                        <div class="ped-card-body-footer">
+                            <span class="ped-mobile-price" x-text="'$' + item.price"></span>
+                            
+                            {{-- Estado 1: No está en carrito --}}
+                            <div x-show="!isInCart(item.id)">
+                                <button type="button" @click="addOrCustomize(item)" class="ped-add-btn">+ Agregar al Pedido</button>
+                            </div>
 
-                        {{-- Estado 2: Ya está en carrito --}}
-                        <div x-show="isInCart(item.id)" x-cloak>
-                            <p class="ped-in-cart-label">✓ En tu pedido</p>
-                            <div class="ped-qty-row">
-                                <button type="button" @click.prevent="updateCartQty(getCartKeyToUpdate(item.id), getCartQty(item.id) - 1)" class="ped-qty-btn minus" :aria-label="'Quitar una unidad de ' + item.name">−</button>
-                                <output class="ped-qty-display" :aria-label="'Cantidad: ' + getCartQty(item.id)">
-                                    <span x-text="getCartQty(item.id)"></span>
-                                </output>
-                                <button type="button" @click="addOrCustomize(item)" class="ped-qty-btn plus" :aria-label="'Agregar una unidad de ' + item.name">+</button>
+                            {{-- Estado 2: Ya está en carrito --}}
+                            <div x-show="isInCart(item.id)" x-cloak>
+                                <p class="ped-in-cart-label">✓ En tu pedido</p>
+                                <div class="ped-qty-row">
+                                    <button type="button" @click.prevent="updateCartQty(getCartKeyToUpdate(item.id), getCartQty(item.id) - 1)" class="ped-qty-btn minus" :aria-label="'Quitar una unidad de ' + item.name">−</button>
+                                    <output class="ped-qty-display" :aria-label="'Cantidad: ' + getCartQty(item.id)">
+                                        <span x-text="getCartQty(item.id)"></span>
+                                    </output>
+                                    <button type="button" @click="addOrCustomize(item)" class="ped-qty-btn plus" :aria-label="'Agregar una unidad de ' + item.name">+</button>
+                                </div>
                             </div>
                         </div>
 
@@ -716,6 +799,7 @@
                 });
             },
             updateGlobalCartBadge(totalItems) {
+                // Actualizar badge del menú superior
                 const badge = document.getElementById('global-cart-badge');
                 if (badge) {
                     if (totalItems > 0) {
@@ -723,6 +807,18 @@
                         badge.style.display = 'flex';
                     } else {
                         badge.style.display = 'none';
+                    }
+                }
+
+                // Actualizar botón flotante global
+                const floatingBtn = document.getElementById('floating-cart-btn');
+                const floatingBadge = document.getElementById('floating-cart-badge');
+                if (floatingBtn && floatingBadge) {
+                    if (totalItems > 0) {
+                        floatingBadge.innerText = totalItems;
+                        floatingBtn.style.display = 'flex';
+                    } else {
+                        floatingBtn.style.display = 'none';
                     }
                 }
             },

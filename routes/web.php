@@ -82,6 +82,7 @@ Route::get('/clear-laravel-cache', function () {
         \Illuminate\Support\Facades\Artisan::call('view:clear');
         \Illuminate\Support\Facades\Artisan::call('cache:clear');
         \Illuminate\Support\Facades\Artisan::call('config:clear');
+        \Illuminate\Support\Facades\Artisan::call('route:clear');
         return 'Caché de Laravel limpia con éxito: ' . \Illuminate\Support\Facades\Artisan::output();
     } catch (\Exception $e) {
         return 'Error al limpiar: ' . $e->getMessage();
@@ -288,5 +289,20 @@ Route::get('/admin/api/category-sales', [App\Http\Controllers\Admin\DashboardCon
 Route::get('/admin/export/ganancias', [DashboardExportController::class, 'exportGanancias'])->name('admin.export.ganancias');
 Route::get('/admin/export/rotacion', [DashboardExportController::class, 'exportRotacion'])->name('admin.export.rotacion');
 Route::get('/admin/export/cortediario', [DashboardExportController::class, 'exportCorteDiario'])->name('admin.export.cortediario');
+
+
+/*
+|------------------------------------------------------
+| 6. RUTAS DE POLÍTICAS Y TÉRMINOS
+|------------------------------------------------------
+*/
+Route::get('/aviso-de-privacidad', function () {
+    return view('aviso-privacidad');
+})->name('aviso-privacidad');
+
+Route::get('/terminos-y-condiciones', function () {
+    return view('terminos-condiciones');
+})->name('terminos-condiciones');
+
 
 

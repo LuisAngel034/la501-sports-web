@@ -22,3 +22,10 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Ignorar volcados de base de datos y scripts de prueba temporales
+*.sql
+test_*.php
+
+# Ignorar carpeta temporal/recursos
+Agregar/

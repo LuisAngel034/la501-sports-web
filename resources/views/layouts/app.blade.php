@@ -193,6 +193,19 @@
         .dark .nav-bottom-border {
             border-bottom: 1px solid rgba(249,115,22,0.12);
         }
+
+        /* ── BOTÓN FLOTANTE DEL CARRITO ── */
+        .btn-floating-cart {
+            box-shadow: 0 10px 30px -5px rgba(249, 115, 22, 0.5);
+            animation: floating-cart-wiggle 4s ease-in-out infinite;
+        }
+        .btn-floating-cart:hover {
+            animation-play-state: paused;
+        }
+        @keyframes floating-cart-wiggle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
     </style>
 </head>
 
@@ -414,7 +427,8 @@
                 <p class="text-xs text-zinc-500 mt-1 tracking-wide">Donde el deporte y la familia se unen</p>
             </div>
             <div class="flex gap-6">
-                <a href="#" class="footer-link text-zinc-500 dark:text-zinc-500">Políticas y Términos</a>
+                <a href="{{ route('aviso-privacidad') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Aviso de Privacidad</a>
+                <a href="{{ route('terminos-condiciones') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Términos y Condiciones</a>
                 <a href="{{ route('nosotros') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Quienes Somos</a>
                 <a href="{{ route('contacto') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Contacto</a>
             </div>
@@ -461,5 +475,18 @@
 
         tailwind.config = { darkMode: 'class' };
     </script>
+
+    <!-- Botón Flotante del Carrito (Fácilmente visible) -->
+    <a href="{{ route('cart.index') }}" 
+       id="floating-cart-btn" 
+       class="btn-floating-cart fixed bottom-6 right-6 z-50 flex items-center justify-center w-16 h-16 bg-gradient-to-tr from-orange-500 to-orange-600 text-white rounded-full transition-all transform hover:-translate-y-2 active:scale-95 no-print"
+       style="display: {{ count((array) session('cart')) > 0 ? 'flex' : 'none' }};">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-7 h-7">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/>
+        </svg>
+        <span id="floating-cart-badge" class="absolute -top-1 -right-1 bg-green-600 text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white shadow-md animate-pulse">
+            {{ count((array) session('cart')) }}
+        </span>
+    </a>
 </body>
 </html>

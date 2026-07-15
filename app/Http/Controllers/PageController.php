@@ -10,7 +10,9 @@ use App\Models\Promotion;
 class PageController extends Controller
 {
     public function index() {
-        $products = \App\Models\Product::with('ingredientes')->where('available', 1)->get();
+        $products = \Illuminate\Support\Facades\Cache::remember('la501_products_active', 3600, function () {
+            return \App\Models\Product::with('ingredientes')->where('available', 1)->get();
+        });
         return response()
             ->view('pedido', compact('products'))
             ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
