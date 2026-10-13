@@ -4,8 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>La 501 Sports</title>
+    <meta name="description" content="Restaurant La 501 Sports: donde el deporte y la familia se unen. Consulta el menú, pide a domicilio, reserva tu mesa y conoce nuestras promociones.">
 
     <link rel="icon" type="image/png" href="{{ asset('images/logo_501_transparente.png') }}?v=2">
+
+    {{-- PWA --}}
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#0f0d0a">
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="La 501">
 
     {{-- Tema antes de pintar --}}
     <script>
@@ -16,19 +24,18 @@
         }
     </script>
 
-    {{-- Tailwind --}}
-    <script>
-        tailwind = { config: { darkMode: 'class' } }
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    {{-- Tailwind compilado (npm run build:css) --}}
+    <link rel="stylesheet" href="{{ asset('css/tailwind.css') }}?v={{ filemtime(public_path('css/tailwind.css')) }}">
 
     {{-- Alpine --}}
-    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <script src="https://unpkg.com/alpinejs@3.17.4/dist/cdn.min.js" defer></script>
 
     {{-- Fuentes de marca --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {{-- Carga no bloqueante: el texto se pinta con la fuente del sistema y cambia al llegar la de marca --}}
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
 
     <style>
         /* ── TOKENS ── */
@@ -473,7 +480,13 @@
             syncIcons();
         });
 
-        tailwind.config = { darkMode: 'class' };
+        // PWA: registrar el Service Worker (requiere HTTPS o localhost)
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js', { scope: '/' })
+                    .catch((error) => console.error('Error al registrar el Service Worker:', error));
+            });
+        }
     </script>
 
     <!-- Botón Flotante del Carrito (Fácilmente visible) -->
