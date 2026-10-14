@@ -393,7 +393,7 @@
                                     <div>
                                         <div class="flex justify-between text-xs font-semibold mb-1">
                                             <span class="text-zinc-700 dark:text-zinc-300 capitalize">
-                                                {{ $metodo === 'mercadopago' ? 'Transferencia' : $metodo }}
+                                                {{ $metodo }}
                                             </span>
                                             <span class="text-zinc-900 dark:text-white font-bold">${{ number_format($monto, 2) }}</span>
                                         </div>

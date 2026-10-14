@@ -10,15 +10,8 @@ use App\Models\Promotion;
 class PageController extends Controller
 {
     public function index() {
-        $products = \Illuminate\Support\Facades\Cache::remember('la501_products_active', 3600, function () {
-            return \App\Models\Product::with('ingredientes')->where('available', 1)->get();
-        });
-        return response()
-            ->view('pedido', compact('products'))
-            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', '0')
-            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
+        $products = \App\Models\Product::with('ingredientes')->where('available', 1)->get();
+        return view('pedido', compact('products'));
     }
 
     public function novedades()
@@ -36,15 +29,10 @@ class PageController extends Controller
             });
 
         $deportes = (clone $baseQuery)->where('category', 'Deportes')->orderBy('created_at', 'desc')->get();
-        $avisos = (clone $baseQuery)->where('category', 'Aviso')->orderBy('created_at', 'desc')->get();
-        $eventos = (clone $baseQuery)->where('category', 'Evento')->orderBy('created_at', 'desc')->get();
+        $avisos = (clone $baseQuery)->where('category', 'Avisos')->orderBy('created_at', 'desc')->get();
+        $eventos = (clone $baseQuery)->where('category', 'Eventos')->orderBy('created_at', 'desc')->get();
 
-        return response()
-            ->view('novedades', compact('deportes', 'avisos', 'eventos'))
-            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', '0')
-            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
+        return view('novedades', compact('deportes', 'avisos', 'eventos'));
     }
 
     public function promociones()
@@ -59,12 +47,7 @@ class PageController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return response()
-            ->view('promociones', compact('promotions'))
-            ->header('Cache-Control', 'no-cache, no-store, must-revalidate')
-            ->header('Pragma', 'no-cache')
-            ->header('Expires', '0')
-            ->header('X-LiteSpeed-Cache-Control', 'no-cache');
+        return view('promociones', compact('promotions'));
     }
 
     public function enviarContacto(Request $request)

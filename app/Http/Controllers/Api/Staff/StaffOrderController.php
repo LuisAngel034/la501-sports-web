@@ -5,17 +5,19 @@ namespace App\Http\Controllers\Api\Staff;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class StaffOrderController extends Controller
 {
+    private const ZONA_HORARIA = 'America/Mexico_City';
 
     private const SIGUIENTE_ESTADO = [
-        'pending' => 'ready',
-        'paid' => 'ready',
-        'preparing' => 'ready',
+        'pending' => 'delivered',
+        'paid' => 'delivered',
+        'preparing' => 'delivered',
         'ready' => 'delivered',
     ];
 
@@ -26,14 +28,30 @@ class StaffOrderController extends Controller
         'ready',
     ];
 
+    private function rangoDeHoy(): array
+    {
+        $inicio = Carbon::now(self::ZONA_HORARIA)->startOfDay();
+        $fin = $inicio->copy()->addDay();
+
+        $tzApp = config('app.timezone', 'UTC');
+
+        return [
+            $inicio->copy()->setTimezone($tzApp),
+            $fin->copy()->setTimezone($tzApp),
+        ];
+    }
+
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'status' => ['nullable', 'string'],
         ]);
 
+        [$inicioHoy, $finHoy] = $this->rangoDeHoy();
+
         $query = Order::query()
             ->with(['items:id,order_id,product_name,quantity,price,subtotal,excluded_ingredients'])
+            ->whereBetween('created_at', [$inicioHoy, $finHoy])
             ->orderBy('created_at', 'asc');
 
         if (!empty($validated['status'])) {
@@ -161,11 +179,14 @@ class StaffOrderController extends Controller
             'customer_name' => $order->customer_name,
             'table_number' => $order->table_number,
             'address' => $order->customer_address,
+            'maps_url' => $order->mapsUrl(),
             'status' => $order->status,
             'total' => (float) $order->total,
             'payment_method' => $order->payment_method,
             'created_at' => optional($order->created_at)->toISOString(),
-            'minutes_waiting' => optional($order->created_at)->diffInMinutes(now()),
+            'minutes_waiting' => $order->created_at
+                ? (int) round(abs($order->created_at->diffInMinutes(now())))
+                : 0,
             'items' => $order->items->map(fn (OrderItem $item) => [
                 'id' => $item->id,
                 'product_name' => $item->product_name,

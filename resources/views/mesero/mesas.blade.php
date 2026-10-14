@@ -10,13 +10,23 @@
             totalActual: 0,
             pagos: [],
             mesas: initialMesas,
-            
-            abrirCobro(mesa, total) {
+            confirmandoPago: false,
+            confirmTimeout: null,
+            modoForzado: false,
+            forcedReason: '',
+            confirmPassword: '',
+
+            abrirCobro(mesa, total, forzado = false) {
                 this.mesaActual = mesa;
                 this.totalActual = total;
                 this.pagos = [
                     { metodo: 'efectivo', monto: Number(total).toFixed(2) }
                 ];
+                this.confirmandoPago = false;
+                this.modoForzado = forzado;
+                this.forcedReason = '';
+                this.confirmPassword = '';
+                clearTimeout(this.confirmTimeout);
                 this.showModal = true;
             },
             agregarPago() {
@@ -25,26 +35,42 @@
                     metodo: 'efectivo',
                     monto: restante > 0 ? Number(restante).toFixed(2) : ''
                 });
+                this.confirmandoPago = false;
+                clearTimeout(this.confirmTimeout);
             },
             eliminarPago(index) {
                 this.pagos.splice(index, 1);
+                this.confirmandoPago = false;
+                clearTimeout(this.confirmTimeout);
+            },
+            intentarConfirmarPago(event) {
+                if (!this.isValido) return;
+                if (!this.confirmandoPago) {
+                    this.confirmandoPago = true;
+                    clearTimeout(this.confirmTimeout);
+                    this.confirmTimeout = setTimeout(() => { this.confirmandoPago = false; }, 6000);
+                    return;
+                }
+                clearTimeout(this.confirmTimeout);
+                event.target.submit();
             },
             get totalIngresado() {
                 return this.pagos.reduce((sum, p) => sum + (parseFloat(p.monto) || 0), 0);
             },
             get isValido() {
-                return this.totalIngresado >= this.totalActual - 0.009;
+                const pagoCubierto = this.totalIngresado >= this.totalActual - 0.009;
+                if (!this.modoForzado) return pagoCubierto;
+                return pagoCubierto && this.forcedReason.trim().length > 0 && this.confirmPassword.length > 0;
             },
             get formattedPaymentMethod() {
                 if (this.pagos.length === 1) {
                     let p = this.pagos[0];
                     if (p.metodo === 'efectivo') return 'Efectivo';
                     if (p.metodo === 'tarjeta') return 'Tarjeta';
-                    if (p.metodo === 'mercadopago') return 'Transferencia';
                     return p.metodo;
                 }
                 let parts = [];
-                let totals = { efectivo: 0, tarjeta: 0, mercadopago: 0 };
+                let totals = { efectivo: 0, tarjeta: 0 };
                 this.pagos.forEach(p => {
                     let m = parseFloat(p.monto) || 0;
                     if (totals[p.metodo] !== undefined) {
@@ -53,7 +79,6 @@
                 });
                 if (totals.efectivo > 0) parts.push('Efectivo: $' + totals.efectivo.toFixed(2));
                 if (totals.tarjeta > 0) parts.push('Tarjeta: $' + totals.tarjeta.toFixed(2));
-                if (totals.mercadopago > 0) parts.push('Transferencia: $' + totals.mercadopago.toFixed(2));
                 return 'Mixto (' + parts.join(', ') + ')';
             },
             async actualizarMesas() {
@@ -65,6 +90,31 @@
                     }
                 } catch (e) {
                     console.log('Error actualizando mesas:', e);
+                }
+            },
+            agregandoMesa: false,
+            async agregarMesa() {
+                if (this.agregandoMesa) return;
+                this.agregandoMesa = true;
+                try {
+                    const response = await fetch('{{ route('mesero.mesas.agregar') }}', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    if (response.ok) {
+                        // Recargamos la página completa: las tarjetas de mesa
+                        // se generan en el servidor, no alcanza con refrescar el arreglo.
+                        window.location.reload();
+                    } else {
+                        alert('No se pudo agregar la mesa.');
+                        this.agregandoMesa = false;
+                    }
+                } catch (e) {
+                    alert('Error de red al agregar la mesa.');
+                    this.agregandoMesa = false;
                 }
             },
             init() {
@@ -87,11 +137,15 @@
 
 <div x-data="mapaMesas({{ json_encode($mesas) }})">
     
-    <div class="mb-6 flex justify-between items-center">
+    <div class="mb-6 flex justify-between items-center gap-4">
         <div>
             <h1 class="text-2xl font-black text-zinc-900 dark:text-white uppercase tracking-wider font-['Oswald']">Mapa de Mesas</h1>
             <p class="text-zinc-500 text-sm">Gestiona los pedidos de los comensales</p>
         </div>
+        <button type="button" @click="agregarMesa()" :disabled="agregandoMesa"
+                class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 border border-zinc-200 dark:border-white/10 rounded-xl text-sm font-bold text-zinc-700 dark:text-zinc-200 transition disabled:opacity-50">
+            <span x-text="agregandoMesa ? 'Agregando…' : '➕ Agregar Mesa'"></span>
+        </button>
     </div>
 
     {{-- Alertas de Éxito --}}
@@ -137,11 +191,17 @@
                             ➕ Agregar Más
                         </a>
                         
-                        <button type="button" disabled x-show="mesas[{{ $index }}].tiene_pendientes" style="display: {{ ($mesa['ocupada'] && $mesa['tiene_pendientes']) ? 'flex' : 'none' }};"
-                                class="w-full bg-zinc-700 text-zinc-400 font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg cursor-not-allowed opacity-60 text-sm flex items-center justify-center gap-2 border border-white/5">
-                            🍳 Cocinando...
-                        </button>
-                        
+                        <div x-show="mesas[{{ $index }}].tiene_pendientes" style="display: {{ ($mesa['ocupada'] && $mesa['tiene_pendientes']) ? 'block' : 'none' }};">
+                            <button type="button" disabled
+                                    class="w-full bg-zinc-700 text-zinc-400 font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg cursor-not-allowed opacity-60 text-sm flex items-center justify-center gap-2 border border-white/5">
+                                🍳 Cocinando...
+                            </button>
+                            <button type="button" @click="abrirCobro(mesas[{{ $index }}].id, mesas[{{ $index }}].total, true)"
+                                    class="w-full mt-1.5 text-[11px] text-zinc-400 hover:text-red-500 font-bold uppercase tracking-wider py-1 flex items-center justify-center gap-1 transition">
+                                🔓 ¿Falla en cocina? Forzar cobro
+                            </button>
+                        </div>
+
                         <button type="button" @click="abrirCobro(mesas[{{ $index }}].id, mesas[{{ $index }}].total)" x-show="!mesas[{{ $index }}].tiene_pendientes" style="display: {{ ($mesa['ocupada'] && !$mesa['tiene_pendientes']) ? 'flex' : 'none' }};"
                                 class="w-full bg-green-600 hover:bg-green-700 text-white font-bold uppercase tracking-wider py-2.5 px-4 rounded-lg shadow-md transition transform hover:-translate-y-0.5 text-sm flex items-center justify-center gap-2">
                             💰 Cobrar Mesa (Listo)
@@ -163,27 +223,54 @@
     <div x-show="showModal" style="display: none;"
          class="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
         
-        <div @click.away="showModal = false"
-             class="bg-white dark:bg-[#111111] border border-zinc-200 dark:border-white/10 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+        <div @click.away="showModal = false; confirmandoPago = false; clearTimeout(confirmTimeout)"
+             class="bg-white dark:bg-[#111111] border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+             :class="modoForzado ? 'border-red-500/40' : 'border-zinc-200 dark:border-white/10'"
              x-transition:enter="transition ease-out duration-200"
              x-transition:enter-start="opacity-0 scale-95"
              x-transition:enter-end="opacity-100 scale-100">
-            
-            <div class="px-6 py-4 border-b border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black flex justify-between items-center">
-                <h3 class="text-lg font-black text-zinc-900 dark:text-white uppercase tracking-wider font-['Oswald']">
-                    Cobrar Mesa <span x-text="mesaActual" class="text-orange-500"></span>
+
+            <div class="px-6 py-4 border-b flex justify-between items-center"
+                 :class="modoForzado ? 'border-red-500/20 bg-red-50 dark:bg-red-950/20' : 'border-zinc-200 dark:border-white/10 bg-zinc-50 dark:bg-black'">
+                <h3 class="text-lg font-black uppercase tracking-wider font-['Oswald']"
+                    :class="modoForzado ? 'text-red-600 dark:text-red-400' : 'text-zinc-900 dark:text-white'">
+                    <span x-show="modoForzado">🔓 Forzar Cobro — Mesa </span>
+                    <span x-show="!modoForzado">Cobrar Mesa </span>
+                    <span x-text="mesaActual" class="text-orange-500"></span>
                 </h3>
-                <button @click="showModal = false" class="text-zinc-400 hover:text-red-500 transition">
+                <button @click="showModal = false; confirmandoPago = false; clearTimeout(confirmTimeout)" class="text-zinc-400 hover:text-red-500 transition">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
 
             {{-- Formulario dinámico que apunta a la ruta de la mesa actual --}}
-            <form :action="'{{ url('mesero/mesas') }}/' + mesaActual + '/cobrar'" method="POST">
+            <form :action="'{{ url('mesero/mesas') }}/' + mesaActual + '/cobrar'" method="POST" @submit.prevent="intentarConfirmarPago($event)">
                 @csrf
                 @method('PUT')
                 
                 <input type="hidden" name="payment_method" :value="formattedPaymentMethod">
+                <input type="hidden" name="forced" :value="modoForzado ? 1 : 0">
+                <input type="hidden" name="forced_reason" :value="forcedReason">
+                <input type="hidden" name="confirm_password" :value="confirmPassword">
+
+                {{-- AVISO Y CAMPOS DE COBRO FORZADO --}}
+                <div x-show="modoForzado" class="mx-6 mt-5 p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900 rounded-xl space-y-3">
+                    <p class="text-xs text-red-700 dark:text-red-400 font-semibold leading-relaxed">
+                        🔒 Esta mesa aún tiene platillos en preparación. Solo usa esto si la cocina no responde o hubo una falla — quedará registrado con tu usuario para revisión del administrador.
+                    </p>
+                    <div>
+                        <label class="block text-[11px] font-black text-red-700 dark:text-red-400 uppercase tracking-widest mb-1">Motivo (obligatorio)</label>
+                        <textarea x-model="forcedReason" rows="2" :required="modoForzado"
+                                  placeholder="Ej: la pantalla de cocina no responde, hay que cobrar de emergencia"
+                                  class="w-full px-3 py-2 bg-white dark:bg-[#1A1A1A] border border-red-300 dark:border-red-800 text-zinc-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition text-sm resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-black text-red-700 dark:text-red-400 uppercase tracking-widest mb-1">Confirma tu contraseña de cuenta</label>
+                        <input type="password" x-model="confirmPassword" :required="modoForzado" autocomplete="current-password"
+                               placeholder="••••••••"
+                               class="w-full px-3 py-2 bg-white dark:bg-[#1A1A1A] border border-red-300 dark:border-red-800 text-zinc-900 dark:text-white rounded-lg outline-none focus:ring-2 focus:ring-red-500 transition text-sm">
+                    </div>
+                </div>
 
                 <div class="p-6 space-y-6">
                     <div class="flex justify-between items-center mb-1">
@@ -205,7 +292,6 @@
                                         class="bg-white dark:bg-[#1A1A1A] border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-white rounded-lg px-2.5 py-2 outline-none focus:ring-2 focus:ring-orange-500 transition text-sm font-bold flex-shrink-0">
                                     <option value="efectivo">💵 Efectivo</option>
                                     <option value="tarjeta">💳 Tarjeta</option>
-                                    <option value="mercadopago">📱 Transf.</option>
                                 </select>
 
                                 {{-- Entrada de Monto --}}
@@ -251,20 +337,30 @@
 
                         {{-- Pago Exacto --}}
                         <div x-show="isValido && Math.abs(totalIngresado - totalActual) < 0.01" class="bg-green-50 dark:bg-green-950/20 text-green-800 dark:text-green-400 text-xs font-bold px-3 py-2.5 rounded-lg border border-green-200 dark:border-green-900 flex items-center justify-center gap-1.5 shadow-sm">
-                            <span>✅ Monto cubierto exactamente</span>
+                            <span>Monto cubierto exactamente</span>
                         </div>
                     </div>
                 </div>
 
+                <div class="px-6 pb-1" x-show="isValido">
+                    <p class="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900 rounded-lg px-3 py-2 font-semibold flex items-start gap-1.5">
+                        <span>⚠️</span>
+                        <span>Confirma solo si el cliente <strong>ya pagó</strong> el total. Esta acción no se puede deshacer.</span>
+                    </p>
+                </div>
+
                 <div class="px-6 py-4 bg-zinc-50 dark:bg-black border-t border-zinc-200 dark:border-white/10 flex justify-end gap-3">
-                    <button type="button" @click="showModal = false" class="px-5 py-2.5 rounded-lg text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition">
+                    <button type="button" @click="showModal = false; confirmandoPago = false; clearTimeout(confirmTimeout)" class="px-5 py-2.5 rounded-lg text-sm font-bold text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-800 transition">
                         Cancelar
                     </button>
                     <button type="submit" :disabled="!isValido"
-                            :class="!isValido ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed opacity-50' : 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/30'"
+                            :class="!isValido
+                                ? 'bg-zinc-700 text-zinc-400 cursor-not-allowed opacity-50'
+                                : (confirmandoPago ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/30 animate-pulse' : (modoForzado ? 'bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/30' : 'bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/30'))"
                             class="px-5 py-2.5 rounded-lg text-sm font-bold transition flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
-                        Confirmar Pago
+                        <svg x-show="!confirmandoPago && !modoForzado" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span x-show="confirmandoPago || modoForzado">⚠️</span>
+                        <span x-text="confirmandoPago ? '¿Seguro? Toca de nuevo' : (modoForzado ? 'Forzar Cobro' : 'Confirmar Pago')"></span>
                     </button>
                 </div>
             </form>

@@ -100,11 +100,6 @@ html:not(.dark) .policy-page {
 
     <div class="policy-content">
         <div class="policy-card">
-            
-            <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300"><strong>TÉRMINOS Y CONDICIONES DE USO</strong></p>
-            <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">Sitio web, pedidos, reservaciones y servicios digitales</p>
-            <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300"><strong>Fecha de última actualización:</strong> 14 de julio de 2026</p>
-            <p class="mb-6 text-xs text-zinc-400 italic">Versión 1.0 · Vigente a partir de su publicación</p>
 
             <h2 class="text-xl font-bold text-orange-500 mt-8 mb-4 font-['Oswald'] border-b border-orange-500/10 pb-2">1. Identidad del proveedor</h2>
             <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">Los presentes Términos y Condiciones regulan el uso del sitio web, los servicios de pedidos y reservaciones en línea, y los demás servicios digitales del restaurante-bar deportivo “La 501 Sports Restaurant”, operado por:</p>

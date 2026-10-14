@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.js"></script>
 <style>
 .am {
     --ac:  #2563EB; --ac2: #1D4ED8;
@@ -9,6 +11,7 @@
     --inp: #F4F4F5; --txt:  #18181B;
     --sub: #71717A; --bdr:  #E4E4E7;
 }
+[x-cloak] { display: none !important; }
 .dark .am {
     --bg:  #0A0A0A; --card: #111111;
     --inp: #1C1C1C; --txt:  #FAFAFA;
@@ -59,7 +62,7 @@
 
 /* ── FILTROS ─────────────────────────────── */
 .am-filters {
-    display:flex; gap:6px; overflow-x:auto; padding-bottom:4px; margin-bottom:14px;
+    display:flex; gap:6px; overflow-x:auto; padding-bottom:4px;
     scrollbar-width:none; -ms-overflow-style:none;
 }
 .am-filters::-webkit-scrollbar { display:none; }
@@ -71,6 +74,28 @@
 }
 .am-fbtn:hover { color:var(--txt); border-color:#C4C4C8; }
 .am-fbtn.on { background:var(--ac); color:#fff; border-color:var(--ac); }
+
+/* flechas de navegación del filtro */
+.am-filters-wrap { position:relative; padding:0 30px; margin-bottom:14px; }
+.am-filters-wrap .am-filters { margin-bottom:0; }
+.am-filters-nav {
+    position:absolute; top:50%; transform:translateY(-50%);
+    width:26px; height:26px; border-radius:50%;
+    border:1.5px solid rgba(37,99,235,.4);
+    background:rgba(37,99,235,.1); color:var(--ac);
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700; line-height:1;
+    cursor:pointer; z-index:5; padding:0;
+    box-shadow:0 2px 8px rgba(0,0,0,.15);
+    transition:background .2s, color .2s, border-color .2s, transform .15s;
+}
+.am-filters-nav:hover  { background:var(--ac); color:#fff; border-color:var(--ac); transform:translateY(-50%) scale(1.08); }
+.am-filters-nav:active { transform:translateY(-50%) scale(.94); }
+.am-filters-nav.left  { left:0; }
+.am-filters-nav.right { right:0; }
+.am-filters-fade { position:absolute; top:0; bottom:4px; width:28px; pointer-events:none; z-index:4; }
+.am-filters-fade.left  { left:0;  background:linear-gradient(to right, var(--bg), transparent); }
+.am-filters-fade.right { right:0; background:linear-gradient(to left,  var(--bg), transparent); }
 
 /* ── TABLE CARD ──────────────────────────── */
 .am-card { background:var(--card); border:1px solid var(--bdr); border-radius:10px; overflow:hidden; }
@@ -118,8 +143,8 @@
     display:flex; align-items:flex-start; justify-content:center;
     padding:40px 16px 60px; overflow-y:auto;
 }
-.am-modal { background:var(--card); border:1px solid var(--bdr); border-radius:12px; width:100%; max-width:600px; box-shadow:0 24px 64px rgba(0,0,0,.24); flex-shrink:0; }
-.am-mhd { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:2; background:var(--card); border-radius:12px 12px 0 0; }
+.am-modal { background:var(--card); border:1px solid var(--bdr); border-radius:12px; width:100%; max-width:600px; box-shadow:0 24px 64px rgba(0,0,0,.24); flex-shrink:0; overflow:hidden; }
+.am-mhd { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--bdr); background:var(--card); }
 .am-mhd h3 { font-size:15px; font-weight:700; color:var(--txt); margin:0 0 2px; }
 .am-mhd p  { font-size:12px; color:var(--sub); margin:0; }
 .am-mclose { width:28px; height:28px; border-radius:7px; background:var(--inp); border:1px solid var(--bdr); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--sub); transition:background .15s; flex-shrink:0; }
@@ -129,15 +154,38 @@
 .am-sec { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--sub); padding-bottom:8px; border-bottom:1px solid var(--bdr); }
 
 /* imagen */
-.am-imgbox { position:relative; border-radius:10px; overflow:hidden; border:2px dashed var(--bdr); background:var(--inp); height:150px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s; }
+.am-imgbox { position:relative; border-radius:10px; overflow:hidden; border:2px dashed var(--bdr); background:var(--inp); width:180px; aspect-ratio:1/1; margin:0 auto; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .2s; }
 .am-imgbox:hover { border-color:var(--ac); }
 .am-imgph { text-align:center; pointer-events:none; }
 .am-imgph svg { width:28px; height:28px; color:var(--sub); margin:0 auto 6px; display:block; }
 .am-imgph p { font-size:12px; color:var(--sub); margin:0; }
 .am-imgprev { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
-.am-imgovl { position:absolute; inset:0; background:rgba(0,0,0,.42); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .2s; pointer-events:none; font-size:12px; color:#fff; font-weight:600; gap:6px; }
+.am-imgovl { position:absolute; inset:0; background:rgba(0,0,0,.42); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity .2s; pointer-events:none; font-size:12px; color:#fff; font-weight:600; gap:6px; text-align:center; padding:0 10px; }
 .am-imgovl svg { width:15px; height:15px; }
 .am-imgbox:hover .am-imgovl { opacity:1; }
+.am-imghelp { font-size:11px; color:var(--sub); text-align:center; margin:8px auto 0; max-width:320px; line-height:1.6; }
+.am-imghelp strong { color:var(--txt); }
+
+/* ── RECORTE DE IMAGEN (Cropper.js) ── */
+.am-crop-overlay {
+    position:fixed; inset:0; z-index:70;
+    background:rgba(0,0,0,.65); backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.am-crop-modal {
+    background:var(--card); border:1px solid var(--bdr); border-radius:12px;
+    width:100%; max-width:460px; box-shadow:0 24px 64px rgba(0,0,0,.35);
+    display:flex; flex-direction:column; overflow:hidden;
+}
+.am-crop-hd { padding:16px 20px; border-bottom:1px solid var(--bdr); }
+.am-crop-hd h3 { font-size:15px; font-weight:700; color:var(--txt); margin:0 0 2px; }
+.am-crop-hd p  { font-size:12px; color:var(--sub); margin:0; }
+.am-crop-body { background:#000; height:360px; }
+.am-crop-body img { display:block; max-width:100%; }
+.am-crop-foot { padding:14px 20px; border-top:1px solid var(--bdr); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.am-crop-hint { font-size:11px; color:var(--sub); }
+.am-crop-actions { display:flex; gap:8px; }
+@media(max-width:480px){ .am-crop-body { height:300px; } .am-crop-foot { flex-direction:column; align-items:stretch; } }
 
 /* grid y campos */
 .am-g2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
@@ -218,6 +266,16 @@
 }
 </style>
 
+@php
+    $categoriasEstandar = [
+        'Hamburguesas','Jochos','Burritos','Tacos','Strombolis','Alitas y Costillas',
+        'Especialidades','Opción Fit','Salsas y Extras',
+        'Algo Dulce','Sin Alcohol',
+        'Cervezas','Coctelería','Destilados',
+    ];
+    $categoriasExtra = $products->pluck('category')->unique()->diff($categoriasEstandar)->sort()->values();
+@endphp
+
 {{-- MENSAJES DE ÉXITO --}}
 @if(session('success'))
     <div style="background: var(--gn); color: white; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-weight: 600; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
@@ -260,19 +318,19 @@
             <div class="am-stat-ico bl">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
             </div>
-            <div><p class="am-stat-v">{{ $products->count() }}</p><p class="am-stat-l">Total</p></div>
+            <div><p class="am-stat-v" id="am-stat-total">{{ $products->count() }}</p><p class="am-stat-l">Total</p></div>
         </div>
         <div class="am-stat">
             <div class="am-stat-ico gn">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
-            <div><p class="am-stat-v">{{ $products->where('available', true)->count() }}</p><p class="am-stat-l">Disponibles</p></div>
+            <div><p class="am-stat-v" id="am-stat-disponibles">{{ $products->where('available', true)->count() }}</p><p class="am-stat-l">Disponibles</p></div>
         </div>
         <div class="am-stat">
             <div class="am-stat-ico gy">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
             </div>
-            <div><p class="am-stat-v">{{ $products->where('available', false)->count() }}</p><p class="am-stat-l">No disponibles</p></div>
+            <div><p class="am-stat-v" id="am-stat-no-disponibles">{{ $products->where('available', false)->count() }}</p><p class="am-stat-l">No disponibles</p></div>
         </div>
         <div class="am-stat">
             <div class="am-stat-ico or">
@@ -283,11 +341,17 @@
     </div>
 
     {{-- FILTROS --}}
-    <div class="am-filters">
-        <button @click="filter='todos'" :class="filter==='todos'?'on':''" class="am-fbtn">Todos</button>
-        <template x-for="cat in categorias" :key="cat">
-            <button @click="filter=cat" :class="filter===cat?'on':''" class="am-fbtn" x-text="cat"></button>
-        </template>
+    <div class="am-filters-wrap">
+        <button type="button" class="am-filters-nav left" @click="scrollFilters($event, -1)" aria-label="Ver categorías anteriores">‹</button>
+        <div class="am-filters-fade left" aria-hidden="true"></div>
+        <div class="am-filters">
+            <button @click="filter='todos'" :class="filter==='todos'?'on':''" class="am-fbtn">Todos</button>
+            <template x-for="cat in categorias" :key="cat">
+                <button @click="filter=cat" :class="filter===cat?'on':''" class="am-fbtn" x-text="cat"></button>
+            </template>
+        </div>
+        <div class="am-filters-fade right" aria-hidden="true"></div>
+        <button type="button" class="am-filters-nav right" @click="scrollFilters($event, 1)" aria-label="Ver más categorías">›</button>
     </div>
 
     {{-- TABLE --}}
@@ -299,7 +363,7 @@
                 </div>
                 <span>Platillos</span>
             </div>
-            <span class="am-badge">{{ $products->count() }} registros</span>
+            <span class="am-badge" id="am-badge-count">{{ $products->count() }} registros</span>
         </div>
 
         @foreach($products as $product)
@@ -397,6 +461,7 @@
                                 Cambiar imagen
                             </div>
                         </div>
+                        <p class="am-imghelp">Recomendado: imagen <strong>cuadrada (1:1)</strong>, mínimo 800×800px.<br>Aceptamos JPG, PNG, WEBP y la mayoría de formatos.</p>
                     </div>
 
                     <div class="am-trow">
@@ -456,6 +521,13 @@
                                         <option value="Coctelería">Coctelería</option>
                                         <option value="Destilados">Destilados</option>
                                     </optgroup>
+                                    @if($categoriasExtra->isNotEmpty())
+                                    <optgroup label="Otras">
+                                        @foreach($categoriasExtra as $catExtra)
+                                            <option value="{{ $catExtra }}">{{ $catExtra }}</option>
+                                        @endforeach
+                                    </optgroup>
+                                    @endif
                                 </select>
                             </div>
 
@@ -540,6 +612,31 @@
             </form>
         </div>
     </div>
+
+    {{-- MODAL DE RECORTE DE IMAGEN (Cropper.js) --}}
+    <div x-show="cropperOpen" x-cloak class="am-crop-overlay" @click.self="cancelCrop()">
+        <div class="am-crop-modal" @click.stop>
+            <div class="am-crop-hd">
+                <h3>Ajustar imagen</h3>
+                <p>Mueve y haz zoom para elegir qué parte se mostrará (siempre en formato cuadrado)</p>
+            </div>
+            <div class="am-crop-body">
+                <template x-if="cropperSrc">
+                    <img x-ref="cropperImg" :src="cropperSrc">
+                </template>
+            </div>
+            <div class="am-crop-foot">
+                <span class="am-crop-hint">Se guardará como imagen cuadrada de 800×800px</span>
+                <div class="am-crop-actions">
+                    <button type="button" @click="cancelCrop()" class="am-btn-cancel">Cancelar</button>
+                    <button type="button" @click="confirmCrop()" class="am-btn-save">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Recortar y usar</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 {{-- MODAL IMPORTAR MENÚ --}}
@@ -579,13 +676,13 @@
             </div>
         </div>
         {{-- NUEVO BOTÓN DE PLANTILLA --}}
-            <div style="text-align: right; margin-bottom: 20px;">
-                <a href="{{ route('admin.menu.template') }}" style="font-size:12px; color:#2563EB; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px; transition: color 0.2s;">
-                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                    Descargar plantilla de ejemplo
-                </a>
-            </div>
-        </div>
+            <div style="text-align: right; margin-bottom: 20px;">
+                <a href="{{ route('admin.menu.template') }}" style="font-size:12px; color:#2563EB; font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:4px; transition: color 0.2s;">
+                    <svg style="width:14px;height:14px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    Descargar plantilla de ejemplo
+                </a>
+            </div>
+        </div>
 
         <form action="{{ route('admin.menu.import') }}" method="POST" enctype="multipart/form-data">
             @csrf
@@ -627,6 +724,7 @@ function cerrarModalImportar() {
 
 // --- Código Original de Alpine.js ---
 const INVENTARIO = @json($inventario);
+const CATEGORIAS_MENU = @json($products->pluck('category')->unique()->sort()->values());
 
 const menuDz = document.getElementById('menu-csv-dropzone');
     if (menuDz) {
@@ -638,16 +736,14 @@ const menuDz = document.getElementById('menu-csv-dropzone');
 function menuAdmin() {
     return {
         filter: 'todos',
-        categorias: [
-            'Hamburguesas','Jochos','Burritos','Tacos','Strombolis',
-            'Alitas y Costillas','Especialidades','Opción Fit',
-            'Algo Dulce','Sin Alcohol','Cervezas','Coctelería',
-            'Destilados','Salsas y Extras',
-        ],
+        categorias: CATEGORIAS_MENU,
         modalOpen:    false,
         isEdit:       false,
         formAction:   '{{ route('admin.menu.store') }}',
         imagePreview: null,
+        cropperOpen:  false,
+        cropperSrc:   null,
+        cropperInstance: null,
         formData: {
             name:'', description:'', price:'',
             category:'Hamburguesas', subcategory:'', available:true,
@@ -660,7 +756,25 @@ function menuAdmin() {
             'Destilados': ['Tequila','Ron','Brandy','Vodka','Whisky','Mezcal','Copeo','6 Shots'],
         },
 
-        init() {},
+        init() {
+            const saved = localStorage.getItem('am_menu_filter');
+            if (saved && (saved === 'todos' || this.categorias.includes(saved))) {
+                this.filter = saved;
+            }
+            this.$watch('filter', (value) => {
+                localStorage.setItem('am_menu_filter', value);
+            });
+            this.$nextTick(() => {
+                const activeBtn = this.$el.querySelector('.am-filters .am-fbtn.on');
+                if (activeBtn) activeBtn.scrollIntoView({ inline: 'center', block: 'nearest' });
+            });
+        },
+
+        scrollFilters(event, dir) {
+            const wrap = event.currentTarget.closest('.am-filters-wrap');
+            const row  = wrap ? wrap.querySelector('.am-filters') : null;
+            if (row) row.scrollBy({ left: dir * 220, behavior: 'smooth' });
+        },
 
         openNew() {
             this.isEdit       = false;
@@ -690,9 +804,57 @@ function menuAdmin() {
         previewImage(e) {
             const file = e.target.files[0];
             if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor selecciona un archivo de imagen válido (JPG, PNG, WEBP, etc.)');
+                e.target.value = '';
+                return;
+            }
             const reader = new FileReader();
-            reader.onload = ev => { this.imagePreview = ev.target.result; };
+            reader.onload = ev => {
+                this.cropperSrc  = ev.target.result;
+                this.cropperOpen = true;
+                this.$nextTick(() => this.initCropper());
+            };
             reader.readAsDataURL(file);
+        },
+
+        initCropper() {
+            if (this.cropperInstance) { this.cropperInstance.destroy(); this.cropperInstance = null; }
+            this.cropperInstance = new Cropper(this.$refs.cropperImg, {
+                aspectRatio: 1,
+                viewMode: 1,
+                autoCropArea: 1,
+                background: false,
+                movable: true,
+                zoomable: true,
+                scalable: false,
+                responsive: true,
+            });
+        },
+
+        confirmCrop() {
+            if (!this.cropperInstance) return;
+            const canvas = this.cropperInstance.getCroppedCanvas({
+                width: 800, height: 800, imageSmoothingQuality: 'high',
+            });
+            canvas.toBlob((blob) => {
+                const croppedFile = new File([blob], 'platillo-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+                const dt = new DataTransfer();
+                dt.items.add(croppedFile);
+                this.$refs.imgFile.files = dt.files;
+                this.imagePreview = canvas.toDataURL('image/jpeg', 0.92);
+                this.cropperOpen = false;
+                this.cropperInstance.destroy();
+                this.cropperInstance = null;
+                this.cropperSrc = null;
+            }, 'image/jpeg', 0.92);
+        },
+
+        cancelCrop() {
+            this.cropperOpen = false;
+            if (this.cropperInstance) { this.cropperInstance.destroy(); this.cropperInstance = null; }
+            this.cropperSrc = null;
+            this.$refs.imgFile.value = '';
         },
 
         removeIngredient(idx) { this.ingredients.splice(idx, 1); },
@@ -730,9 +892,33 @@ function menuAdmin() {
         },
 
         confirmDelete(form) {
-            if (confirm('¿Eliminar este platillo?\nEsta acción no se puede deshacer.')) {
-                form.submit();
-            }
+            if (!confirm('¿Eliminar este platillo?\nEsta acción no se puede deshacer.')) return;
+
+            const row = form.closest('.am-row');
+            const wasAvailable = row ? !!row.querySelector('.am-dot.on') : false;
+
+            fetch(form.action, {
+                method: 'POST', // Laravel toma el _method=DELETE del FormData (method spoofing)
+                headers: { 'Accept': 'application/json' },
+                body: new FormData(form),
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('delete failed');
+                if (row) row.remove();
+                this.adjustStat('am-stat-total', -1);
+                this.adjustStat(wasAvailable ? 'am-stat-disponibles' : 'am-stat-no-disponibles', -1);
+                this.adjustStat('am-badge-count', -1, ' registros');
+            })
+            .catch(() => {
+                alert('No se pudo eliminar el platillo. Intenta de nuevo.');
+            });
+        },
+
+        adjustStat(id, delta, suffix = '') {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const current = parseInt(el.textContent, 10) || 0;
+            el.textContent = (current + delta) + suffix;
         },
     }
 }

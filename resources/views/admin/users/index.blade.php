@@ -323,7 +323,7 @@
 
                         {{-- Rol --}}
                         <td>
-                            <span class="au-role au-role-{{ $user->role }}">{{ $user->role }}</span>
+                            <span class="au-role au-role-{{ $user->role }}">{{ $user->role === 'empleado' ? 'mesero' : $user->role }}</span>
                         </td>
 
                         {{-- Estado --}}

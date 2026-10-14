@@ -17,9 +17,6 @@ class DashboardExportController extends Controller
     private const DATE_FORMAT_DMY  = 'd/m/Y';
     private const NUMBER_FORMAT_MX = '"$"#,##0.00_-';
 
-    /**
-     * Exporta el reporte FINANCIERO (Ganancias y Movimientos)
-     */
     public function exportGanancias(Request $request)
     {
         $startDate = $request->start_date . ' 00:00:00';
@@ -31,7 +28,7 @@ class DashboardExportController extends Controller
                 $q->where('status', 'paid')
                   ->orWhere(function ($sq) {
                       $sq->whereNull('table_number')
-                         ->where('status', 'ready');
+                         ->whereIn('status', ['ready', 'delivering', 'delivered']);
                   });
             })
             ->groupBy('payment_method')
@@ -56,7 +53,7 @@ class DashboardExportController extends Controller
                 $q->where('orders.status', 'paid')
                   ->orWhere(function ($sq) {
                       $sq->whereNull('orders.table_number')
-                         ->where('orders.status', 'ready');
+                         ->whereIn('orders.status', ['ready', 'delivering', 'delivered']);
                   });
             })
             ->whereNotNull('products.category')
@@ -180,7 +177,7 @@ class DashboardExportController extends Controller
                 $q->where('status', 'paid')
                   ->orWhere(function ($sq) {
                       $sq->whereNull('table_number')
-                         ->where('status', 'ready');
+                         ->whereIn('status', ['ready', 'delivering', 'delivered']);
                   });
             })
             ->orderBy('created_at', 'asc')
@@ -271,7 +268,7 @@ class DashboardExportController extends Controller
                 $q->where('status', 'paid')
                   ->orWhere(function ($sq) {
                       $sq->whereNull('table_number')
-                         ->where('status', 'ready');
+                         ->whereIn('status', ['ready', 'delivering', 'delivered']);
                   });
             })
             ->get();
@@ -285,7 +282,6 @@ class DashboardExportController extends Controller
         $detailedPayments = [
             'EFECTIVO' => ['orders' => [], 'total' => 0.0],
             'TARJETA DE CRÉDITO / DÉBITO' => ['orders' => [], 'total' => 0.0],
-            'TRANSFERENCIA / MERCADOPAGO' => ['orders' => [], 'total' => 0.0]
         ];
 
         foreach ($ordersCorte as $order) {
@@ -305,13 +301,6 @@ class DashboardExportController extends Controller
                     'monto' => $parsed['tarjeta']
                 ];
                 $detailedPayments['TARJETA DE CRÉDITO / DÉBITO']['total'] += $parsed['tarjeta'];
-            }
-            if ($parsed['transferencia'] > 0) {
-                $detailedPayments['TRANSFERENCIA / MERCADOPAGO']['orders'][] = [
-                    'id' => $order->id,
-                    'monto' => $parsed['transferencia']
-                ];
-                $detailedPayments['TRANSFERENCIA / MERCADOPAGO']['total'] += $parsed['transferencia'];
             }
         }
 
@@ -381,7 +370,6 @@ class DashboardExportController extends Controller
     {
         $efectivo = 0.0;
         $tarjeta = 0.0;
-        $transferencia = 0.0;
 
         $methodLower = strtolower(trim($method));
 
@@ -392,21 +380,16 @@ class DashboardExportController extends Controller
             if (preg_match('/tarjeta:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
                 $tarjeta = (float) $m[1];
             }
-            if (preg_match('/transferencia:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
-                $transferencia = (float) $m[1];
-            }
         } elseif (str_contains($methodLower, 'efectivo')) {
             $efectivo = $total;
-        } elseif (str_contains($methodLower, 'tarjeta') || str_contains($methodLower, 'terminal')) {
-            $tarjeta = $total;
         } else {
-            $transferencia = $total;
+            // Tarjeta, terminal, o cualquier otro método (ej. registros viejos de Mercado Pago).
+            $tarjeta = $total;
         }
 
         return [
             'efectivo' => $efectivo,
             'tarjeta' => $tarjeta,
-            'transferencia' => $transferencia,
         ];
     }
 

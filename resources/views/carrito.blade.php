@@ -127,6 +127,7 @@
         transition: background .15s;
     }
     .cart-item:last-child { border-bottom: none; }
+    .cart-item.promo { background: rgba(22,163,74,.04); }
 
     /* thumbnail */
     .cart-item-img {
@@ -145,6 +146,17 @@
         font-size: 15px; font-weight: 700; letter-spacing: .3px;
         color: var(--txt); margin: 0 0 3px;
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .cart-item-promo-badge {
+        display: inline-flex; align-items: center; gap: 3px;
+        font-family: 'Oswald', sans-serif;
+        font-size: 9px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase;
+        background: var(--gn); color: #fff;
+        padding: 2px 7px; border-radius: 100px; flex-shrink: 0;
+    }
+    .cart-item-promo-includes {
+        font-size: 11px; color: var(--gn2); margin: 2px 0 4px; font-weight: 500;
     }
     .cart-item-price {
         font-size: 12px; color: var(--txt-sub);
@@ -387,12 +399,14 @@
             {{-- Items --}}
             <div class="cart-items">
                 @foreach(session('cart') as $id => $details)
-                <div class="cart-item">
+                <div class="cart-item {{ !empty($details['is_promotion']) ? 'promo' : '' }}">
 
                     {{-- Imagen --}}
                     <div class="cart-item-img">
-                        @if($details['image'])
+                        @if(!empty($details['image']))
                             <img src="{{ (str_starts_with($details['image'], 'http://') || str_starts_with($details['image'], 'https://')) ? $details['image'] : asset('storage/' . $details['image']) }}" alt="{{ $details['name'] }}">
+                        @elseif(!empty($details['is_promotion']))
+                            🎉
                         @else
                             🍔
                         @endif
@@ -400,12 +414,29 @@
 
                     {{-- Info --}}
                     <div class="cart-item-info">
-                        <p class="cart-item-name">{{ $details['name'] }}</p>
-                        @if(!empty($details['excluded_ingredients']))
+                        <p class="cart-item-name">
+                            {{ $details['name'] }}
+                            @if(!empty($details['is_promotion']))
+                                <span class="cart-item-promo-badge">🎉 Promo</span>
+                            @endif
+                        </p>
+
+                        @if(!empty($details['is_promotion']))
+                            <p class="cart-item-promo-includes">
+                                <strong>Incluye:</strong> {{ $details['promotion_includes'] ?: 'Paquete de promoción' }}
+                            </p>
+                        @elseif(!empty($details['excluded_ingredients']))
                             <p class="cart-item-exclusions" style="font-size: 11px; color: var(--or); margin: 2px 0 4px; font-weight: 500;">
                                 <strong>Sin:</strong> {{ implode(', ', $details['excluded_ingredients']) }}
                             </p>
                         @endif
+
+                        @if(!empty($details['notes']))
+                            <p class="cart-item-notes" style="font-size: 11px; color: #3B82F6; margin: 2px 0 4px; font-weight: 500;">
+                                📝 {{ $details['notes'] }}
+                            </p>
+                        @endif
+
                         <p class="cart-item-price">${{ number_format($details['price'], 2) }} c/u</p>
                     </div>
 
@@ -484,9 +515,186 @@
             </div>
         </div>
 
+        {{-- SECCIÓN DE RECOMENDACIONES ADAPTATIVAS (DESLOGUEADOS VS LOGUEADOS) --}}
+        @if(!empty($recommendations['products']) && count($recommendations['products']) > 0)
+        <div style="margin-top: 24px; background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 14px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    @if(!empty($recommendations['badge']))
+                    <span style="display: inline-block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #F97316; background: rgba(249,115,22,0.12); padding: 3px 10px; border-radius: 6px; border: 1px solid rgba(249,115,22,0.2);">
+                        {{ $recommendations['badge'] }}
+                    </span>
+                    @endif
+                    <h3 style="font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 700; color: var(--txt); margin: 6px 0 0; letter-spacing: 0.5px;">
+                        {{ $recommendations['title'] ?? 'Sugerencias recomendadas' }}
+                    </h3>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
+                @foreach($recommendations['products'] as $recProduct)
+                    <div style="background: var(--bg-card2); border: 1px solid var(--bdr); border-radius: 10px; padding: 10px; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.15s, border-color 0.15s;">
+                        <div>
+                            <div style="width: 100%; height: 85px; border-radius: 7px; overflow: hidden; margin-bottom: 8px; background: var(--bg-card); display: flex; align-items: center; justify-content: center;">
+                                @if($recProduct->image)
+                                    <img src="{{ str_starts_with($recProduct->image, 'http') ? $recProduct->image : asset('storage/' . $recProduct->image) }}" alt="{{ $recProduct->name }}" style="width: 100%; height: 100%; object-fit: cover;">
+                                @else
+                                    <span style="font-size: 28px;">🍔</span>
+                                @endif
+                            </div>
+                            <h4 style="font-family: 'Oswald', sans-serif; font-size: 13px; font-weight: 700; color: var(--txt); margin: 0 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                {{ $recProduct->name }}
+                            </h4>
+                            <p style="font-size: 12px; font-weight: 700; color: #22C55E; margin: 0 0 8px;">
+                                ${{ number_format($recProduct->price, 2) }}
+                            </p>
+                        </div>
+                        <button type="button" onclick="recAbrirPersonalizar({{ $recProduct->id }})" style="width: 100%; padding: 6px; background: #F97316; border: none; border-radius: 6px; color: #ffffff; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; transition: background 0.15s;">
+                            + Agregar
+                        </button>
+                    </div>
+                @endforeach
+            </div>
+        </div>
+
+        {{-- Modal de personalización para las recomendaciones --}}
+        <style>
+            .rec-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; display: none; align-items: center; justify-content: center; padding: 16px; }
+            .rec-overlay.open { display: flex; }
+            .rec-modal { background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 16px; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; }
+            .rec-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; border-bottom: 1px solid var(--bdr); }
+            .rec-modal-header h3 { font-family: 'Oswald', sans-serif; font-size: 17px; font-weight: 700; color: var(--txt); margin: 0; }
+            .rec-modal-close { background: none; border: none; color: var(--txt-sub); font-size: 22px; cursor: pointer; line-height: 1; }
+            .rec-modal-body { padding: 18px 20px; }
+            .rec-ing-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--txt-sub); margin: 0 0 10px; }
+            .rec-ing-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
+            .rec-ing-item { display: flex; align-items: center; gap: 8px; background: var(--bg-card2); border: 1px solid var(--bdr); border-radius: 8px; padding: 9px 10px; font-size: 12px; color: var(--txt); }
+            .rec-textarea { width: 100%; box-sizing: border-box; background: var(--bg-card2); border: 1px solid var(--bdr); border-radius: 8px; padding: 10px 12px; color: var(--txt); font-size: 13px; resize: none; font-family: inherit; }
+            .rec-note-help { font-size: 11px; color: var(--txt-sub); margin: 6px 0 0; }
+            .rec-modal-footer { display: flex; gap: 10px; padding: 16px 20px; border-top: 1px solid var(--bdr); }
+            .rec-btn-cancel, .rec-btn-confirm { flex: 1; padding: 12px; border-radius: 8px; border: none; font-family: 'Oswald', sans-serif; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; }
+            .rec-btn-cancel { background: var(--bg-card2); color: var(--txt); border: 1px solid var(--bdr); }
+            .rec-btn-confirm { background: #16A34A; color: #fff; }
+        </style>
+
+        <div class="rec-overlay" id="rec-overlay">
+            <div class="rec-modal">
+                <div class="rec-modal-header">
+                    <h3 id="rec-modal-title">Personalizar</h3>
+                    <button type="button" class="rec-modal-close" onclick="recCerrarPersonalizar()">&times;</button>
+                </div>
+                <div class="rec-modal-body">
+                    <div id="rec-ing-wrapper">
+                        <p class="rec-ing-title">Ingredientes a incluir:</p>
+                        <div class="rec-ing-list" id="rec-ing-list"></div>
+                    </div>
+                    <p class="rec-ing-title">Comentarios / Extra:</p>
+                    <textarea id="rec-comment" class="rec-textarea" rows="3" maxlength="100" placeholder="Ej: papas extra, salsa extra, más picante, sin sal…"></textarea>
+                    <p class="rec-note-help">Cualquier instrucción especial o algo extra que quieras pedir.</p>
+                </div>
+                <div class="rec-modal-footer">
+                    <button type="button" class="rec-btn-cancel" onclick="recCerrarPersonalizar()">Cancelar</button>
+                    <button type="button" class="rec-btn-confirm" onclick="recConfirmarPersonalizar()">Agregar al Pedido</button>
+                </div>
+            </div>
+        </div>
+
+        <form id="rec-add-form" action="{{ route('cart.add') }}" method="POST" style="display:none;">
+            @csrf
+            <input type="hidden" name="id" id="rec-input-id">
+            <input type="hidden" name="name" id="rec-input-name">
+            <input type="hidden" name="price" id="rec-input-price">
+            <input type="hidden" name="image" id="rec-input-image">
+            <input type="hidden" name="quantity" value="1">
+            <input type="hidden" name="notes" id="rec-input-notes">
+            <div id="rec-excluded-container"></div>
+        </form>
+
+        @php
+            $recProductosParaJs = $recommendations['products']->map(function ($p) {
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'price' => $p->price,
+                    'image' => $p->image,
+                    'ingredientes' => $p->ingredientes->pluck('nombre'),
+                ];
+            });
+        @endphp
+
+        <script>
+            const recProductos = @json($recProductosParaJs);
+
+            let recProductoActual = null;
+
+            function recAbrirPersonalizar(id) {
+                const producto = recProductos.find(p => p.id === id);
+                if (!producto) return;
+                recProductoActual = producto;
+
+                document.getElementById('rec-modal-title').textContent = 'Personalizar ' + producto.name;
+                document.getElementById('rec-comment').value = '';
+
+                const wrapper = document.getElementById('rec-ing-wrapper');
+                const lista = document.getElementById('rec-ing-list');
+                lista.innerHTML = '';
+
+                if (producto.ingredientes && producto.ingredientes.length > 0) {
+                    wrapper.style.display = '';
+                    producto.ingredientes.forEach(nombre => {
+                        const label = document.createElement('label');
+                        label.className = 'rec-ing-item';
+                        label.innerHTML = '<input type="checkbox" checked data-ing="' + nombre.replace(/"/g, '&quot;') + '"> <span>' + nombre + '</span>';
+                        lista.appendChild(label);
+                    });
+                    document.getElementById('rec-overlay').classList.add('open');
+                } else {
+                    // Sin ingredientes que personalizar: se agrega directo, sin abrir el modal.
+                    recSubmit(producto, [], '');
+                }
+            }
+
+            function recCerrarPersonalizar() {
+                document.getElementById('rec-overlay').classList.remove('open');
+                recProductoActual = null;
+            }
+
+            function recConfirmarPersonalizar() {
+                if (!recProductoActual) return;
+
+                const excluidos = [];
+                document.querySelectorAll('#rec-ing-list input[type=checkbox]').forEach(cb => {
+                    if (!cb.checked) excluidos.push(cb.dataset.ing);
+                });
+                const comentario = document.getElementById('rec-comment').value.trim();
+
+                recSubmit(recProductoActual, excluidos, comentario);
+            }
+
+            function recSubmit(producto, excluidos, comentario) {
+                document.getElementById('rec-input-id').value = producto.id;
+                document.getElementById('rec-input-name').value = producto.name;
+                document.getElementById('rec-input-price').value = producto.price;
+                document.getElementById('rec-input-image').value = producto.image || '';
+                document.getElementById('rec-input-notes').value = comentario;
+
+                const container = document.getElementById('rec-excluded-container');
+                container.innerHTML = '';
+                excluidos.forEach(nombre => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'excluded_ingredients[]';
+                    input.value = nombre;
+                    container.appendChild(input);
+                });
+
+                document.getElementById('rec-add-form').submit();
+            }
+        </script>
+        @endif
+
         @else
 
-        {{-- Empty state --}}
         <div class="cart-empty">
             <div class="cart-empty-inner">
                 <div class="cart-empty-icon">🛒</div>

@@ -365,6 +365,14 @@
                                class="co-input">
                     </div>
                 </div>
+                <div style="margin-top: 12px;">
+                    <label class="co-label" for="customer-email">Correo (opcional)</label>
+                    <input type="email" id="customer-email" name="customer_email"
+                           value="{{ Auth::check() ? Auth::user()->email : '' }}"
+                           placeholder="tucorreo@ejemplo.com"
+                           class="co-input">
+                    <p style="font-size: 11px; color: #A8A29E; margin: 4px 0 0;">Te avisamos por aquí cuando tu pedido esté listo y vaya en camino.</p>
+                </div>
             </div>
 
             {{-- Dirección --}}
@@ -383,6 +391,46 @@
                     <textarea id="customer-address" name="customer_address" required rows="3"
                               placeholder="Ej: Av. Principal 123, Col. Centro. Casa blanca con portón negro."
                               class="co-input" style="resize: none;"></textarea>
+
+                    {{-- Ubicación GPS opcional: la dirección escrita sigue siendo obligatoria --}}
+                    <input type="hidden" name="delivery_lat" id="delivery-lat">
+                    <input type="hidden" name="delivery_lng" id="delivery-lng">
+                    <div id="geo-box" style="margin-top:10px; display:none;">
+                        <button type="button" id="geo-btn" class="co-input" style="cursor:pointer; text-align:center; font-weight:600;">
+                            📍 Usar mi ubicación
+                        </button>
+                        <p id="geo-msg" style="margin:6px 0 0; font-size:12px; opacity:.75;">
+                            Opcional. Ayuda al repartidor a encontrar tu domicilio.
+                        </p>
+                    </div>
+                    <script>
+                        (function () {
+                            if (!('geolocation' in navigator)) return;
+                            var box = document.getElementById('geo-box');
+                            var btn = document.getElementById('geo-btn');
+                            var msg = document.getElementById('geo-msg');
+                            var lat = document.getElementById('delivery-lat');
+                            var lng = document.getElementById('delivery-lng');
+                            box.style.display = 'block';
+
+                            btn.addEventListener('click', function () {
+                                btn.disabled = true;
+                                msg.textContent = 'Obteniendo ubicación…';
+                                navigator.geolocation.getCurrentPosition(function (pos) {
+                                    lat.value = pos.coords.latitude.toFixed(7);
+                                    lng.value = pos.coords.longitude.toFixed(7);
+                                    btn.disabled = false;
+                                    btn.textContent = '✅ Ubicación guardada (volver a obtener)';
+                                    msg.textContent = 'Precisión aproximada: ±' + Math.round(pos.coords.accuracy) + ' m. Tu dirección escrita sigue siendo la principal.';
+                                }, function () {
+                                    lat.value = '';
+                                    lng.value = '';
+                                    btn.disabled = false;
+                                    msg.textContent = 'No se pudo obtener tu ubicación. Escribe tu dirección y continúa con tu pedido.';
+                                }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+                            });
+                        })();
+                    </script>
                 </div>
             </div>
 
@@ -422,6 +470,10 @@
                     </label>
                 </div>
             </div>
+
+            <p style="font-size: 12px; color: #A8A29E; text-align: center; margin: 4px 0 12px; line-height: 1.5;">
+                Este total es solo del platillo. El costo del envío lo cobra el repartidor por separado al entregar tu pedido.
+            </p>
 
             {{-- Footer con total y submit --}}
             <div class="co-footer">

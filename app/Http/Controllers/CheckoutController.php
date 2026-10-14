@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
+use App\Models\Promotion;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 
@@ -19,11 +20,17 @@ class CheckoutController extends Controller
             return redirect()->route('pedido')->with('error', 'Tu carrito está vacío.');
         }
 
-        // BARRERA DE SEGURIDAD 2: Justo antes de mostrar la pantalla de cobro
+
         foreach ($cart as $id => $details) {
+            if (!empty($details['is_promotion'])) {
+                $promotion = Promotion::find($details['promotion_id']);
+                if (!$promotion || !$promotion->active || !$promotion->isActiveToday()) {
+                    return redirect()->route('cart.index')->with('error', '¡Ups! Una promoción que ibas a pedir ya no está disponible hoy. Por favor revisa tu pedido.');
+                }
+                continue;
+            }
             $product = Product::find($details['id'] ?? $id);
             if (!$product || $product->available == 0) {
-                // Si algo se agotó en el último segundo, lo mandamos de regreso al carrito
                 return redirect()->route('cart.index')->with('error', '¡Ups! Un platillo que ibas a pedir se acaba de agotar. Por favor revisa tu pedido.');
             }
         }
@@ -42,6 +49,9 @@ class CheckoutController extends Controller
             'customer_name' => 'required|string|max:255',
             'customer_phone' => 'required|string|max:20',
             'customer_address' => 'required|string',
+            'delivery_lat' => 'nullable|required_with:delivery_lng|numeric|between:-90,90',
+            'delivery_lng' => 'nullable|required_with:delivery_lat|numeric|between:-180,180',
+            'customer_email' => 'nullable|email|max:255',
             'payment_method' => 'required|in:efectivo,tarjeta',
         ]);
 
@@ -76,6 +86,13 @@ class CheckoutController extends Controller
         }
 
         foreach ($cart as $id => $details) {
+            if (!empty($details['is_promotion'])) {
+                $promotion = Promotion::find($details['promotion_id']);
+                if (!$promotion || !$promotion->active || !$promotion->isActiveToday()) {
+                    return redirect()->route('cart.index')->with('error', 'La compra no pudo completarse porque una promoción ya no está disponible hoy.');
+                }
+                continue;
+            }
             $product = Product::find($details['id'] ?? $id);
             if (!$product || $product->available == 0) {
                 return redirect()->route('cart.index')->with('error', 'La compra no pudo completarse porque un platillo ya no está disponible en inventario.');
@@ -102,27 +119,44 @@ class CheckoutController extends Controller
             ];
         }
 
-        // Guardar la Orden Principal (Siempre inicia como pending)
-        $order = Order::create([
+        // Guardar la Orden Principal
+        $orderData = [
             'user_id' => Auth::id(), // Auth::id() retorna null automáticamente si no hay sesión
             'customer_name' => $request->customer_name,
             'customer_phone' => $request->customer_phone,
             'customer_address' => $request->customer_address,
+            'customer_email' => $request->customer_email,
             'total' => $total,
             'status' => 'pending',
             'payment_method' => $request->payment_method,
-        ]);
+        ];
 
-        // Guardar los Platillos
+        // La ubicación GPS es opcional; solo se envía si el cliente la compartió
+        if ($request->filled('delivery_lat') && $request->filled('delivery_lng')) {
+            $orderData['delivery_lat'] = round((float) $request->delivery_lat, 7);
+            $orderData['delivery_lng'] = round((float) $request->delivery_lng, 7);
+        }
+
+        $order = Order::create($orderData);
+
+        // Guardar los Platillos (y las promociones, sin cobrarlas por separado)
         foreach ($cart as $id => $details) {
+            $isPromotion = !empty($details['is_promotion']);
+
+            $productName = $details['name'];
+            if ($isPromotion && !empty($details['promotion_includes'])) {
+                $productName .= ' (Promoción — incluye: ' . $details['promotion_includes'] . ')';
+            }
+
             OrderItem::create([
                 'order_id' => $order->id,
-                'product_id' => $details['id'] ?? $id,
-                'product_name' => $details['name'],
+                'product_id' => $isPromotion ? null : ($details['id'] ?? $id),
+                'product_name' => $productName,
                 'quantity' => $details['quantity'],
                 'price' => $details['price'],
                 'subtotal' => $details['price'] * $details['quantity'],
                 'excluded_ingredients' => $details['excluded_ingredients'] ?? [],
+                'notes' => !empty($details['notes']) ? mb_substr($details['notes'], 0, 100) : null,
             ]);
         }
 
@@ -166,15 +200,18 @@ class CheckoutController extends Controller
 
         if ($response->successful()) {
             $datos = $response->json();
-            if (!isset($datos['init_point'])) {
-                dd('Mercado Pago no mandó el link. Esto respondió:', $datos);
+            if (isset($datos['init_point'])) {
+                session()->forget('cart');
+                return redirect()->away($datos['init_point']);
             }
-
-            session()->forget('cart');
-            return redirect()->away($datos['init_point']);
         }
-        
-        dd('Mercado Pago rechazó la conexión. Error:', $response->json());
+
+        \Illuminate\Support\Facades\Log::error('Fallo de Mercado Pago al crear preferencia de pago.', [
+            'order_id' => $order->id,
+            'response' => $response->json(),
+        ]);
+
+        return redirect()->route('cart.index')->with('error', 'No pudimos conectar con el sistema de pago con tarjeta. Intenta de nuevo o elige pago en efectivo.');
     }
 
     // =====================================================================
@@ -234,7 +271,7 @@ class CheckoutController extends Controller
             abort(403, 'No tienes permiso para ver este ticket.');
         }
 
-        return view('pedido_confirmacion', compact('order'));
+        return redirect()->route('order.track', $order->trackingToken());
     }
 
     public function apiStatus($id)
@@ -256,56 +293,5 @@ class CheckoutController extends Controller
         }
 
         return response()->json(['status' => $order->status]);
-    }
-
-    public function webhook(Request $request)
-    {
-        // 1. Obtener ID de pago y tipo de notificación
-        $paymentId = $request->input('data.id') ?? $request->input('id');
-        $type = $request->input('type') ?? $request->input('topic');
-
-        if (!$paymentId || ($type !== 'payment' && $type !== 'payment.created')) {
-            return response()->json(['success' => false, 'message' => 'Notificación ignorada.'], 200);
-        }
-
-        // 2. Consultar el pago en Mercado Pago
-        $response = Http::withToken(env('MERCADOPAGO_ACCESS_TOKEN'))
-            ->get("https://api.mercadopago.com/v1/payments/{$paymentId}");
-
-        if (!$response->successful()) {
-            \Illuminate\Support\Facades\Log::error("Mercado Pago Webhook: Error al consultar pago {$paymentId}", [
-                'status' => $response->status(),
-                'response' => $response->json(),
-            ]);
-            return response()->json(['success' => false, 'message' => 'Error al consultar pago.'], 500);
-        }
-
-        $paymentData = $response->json();
-        $status = $paymentData['status'] ?? null;
-        $orderId = $paymentData['external_reference'] ?? null;
-
-        // 3. Si el pago está aprobado, actualizar la orden
-        if ($status === 'approved' && $orderId) {
-            $order = Order::find($orderId);
-            if ($order && $order->status !== 'paid') {
-                $order->status = 'paid';
-                $order->payment_id = $paymentId;
-                $order->save();
-
-                if ($order->user_id) {
-                    $user = \App\Models\User::find($order->user_id);
-                    if ($user) {
-                        $user->points += floor($order->total / 10);
-                        $user->save();
-
-                        (new \App\Services\AchievementService())->check($user);
-                    }
-                }
-
-                \Illuminate\Support\Facades\Log::info("Mercado Pago Webhook: Orden {$orderId} pagada con éxito (Pago: {$paymentId}).");
-            }
-        }
-
-        return response()->json(['success' => true], 200);
     }
 }

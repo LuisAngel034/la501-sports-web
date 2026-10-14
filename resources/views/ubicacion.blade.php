@@ -17,6 +17,7 @@
         --txt:      #FFFFFF;
         --txt-sub:  #A8A29E;
         --bdr:      rgba(255,255,255,0.07);
+        --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-dark.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-dark.svg')) }}');
     }
     :root:not(.dark) .ubi-page {
         --bg:       #F5F3EF;
@@ -25,13 +26,14 @@
         --txt:      #1A1208;
         --txt-sub:  #6B6560;
         --bdr:      rgba(0,0,0,0.09);
+        --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-light.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-light.svg')) }}');
     }
 
     /* ── HERO ── */
     .ubi-hero {
         position: relative;
         background: var(--bg-card);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23F97316' fill-opacity='0.04'%3E%3Cpath d='M28 66L0 49V16L28 0l28 16v33L28 66zm0-2l26-15V18L28 2 2 18v31l26 15zM56 98L28 81 0 98V81L0 66l28-16 28 16v15L28 98l28-17V98z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        background-image: var(--brand-pattern);
         border-bottom: 3px solid var(--or);
         padding: 80px 40px 70px;
         text-align: center;
@@ -110,7 +112,7 @@
     /* shared card */
     .ubi-card {
         background: var(--bg-card);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23F97316' fill-opacity='0.035'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15z'/%3E%3C/g%3E%3C/svg%3E");
+        background-image: var(--brand-pattern);
         border: 1px solid var(--bdr);
         border-radius: 18px;
         padding: 28px 28px 24px;

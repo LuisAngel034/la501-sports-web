@@ -67,7 +67,7 @@
                     
                     {{-- Barra superior de estado --}}
                     <div class="h-1.5 w-full bg-orange-500" :class="orden.status === 'preparing' ? 'bg-orange-500' : 'bg-yellow-500'"></div>
-                    
+
                     {{-- Encabezado de la comanda --}}
                     <div class="p-5 border-b border-white/5 bg-white/[0.01]">
                         <div class="flex justify-between items-start gap-4">
@@ -102,6 +102,14 @@
                                                 <span class="text-xs text-red-400 font-bold" x-text="item.excluded_ingredients.join(', ')"></span>
                                             </div>
                                         </template>
+
+                                        {{-- Comentarios / Extras --}}
+                                        <template x-if="item.notes">
+                                            <div class="mt-1.5">
+                                                <span class="text-[9px] font-extrabold uppercase bg-yellow-500/20 text-yellow-400 px-1.5 py-0.5 rounded border border-yellow-500/10 inline-block mb-1">NOTA</span>
+                                                <p class="text-xs text-yellow-400 font-bold break-all whitespace-pre-wrap" x-text="item.notes"></p>
+                                            </div>
+                                        </template>
                                     </div>
                                 </div>
                             </div>
@@ -112,7 +120,7 @@
                     <div class="p-4 bg-white/[0.01] border-t border-white/5">
                         <button @click="despachar(orden.id)"
                                 class="w-full py-4 bg-green-600 hover:bg-green-700 active:scale-95 text-white font-bold text-xs uppercase tracking-widest rounded-2xl shadow-lg shadow-green-600/20 transition-all flex items-center justify-center gap-2">
-                            <span>✅</span> MARCAR COMO LISTO
+                            <span></span> MARCAR COMO LISTO
                         </button>
                     </div>
                 </div>

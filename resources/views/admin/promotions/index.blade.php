@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.js"></script>
 
 <style>
     /* ── TOKENS ── */
@@ -182,8 +184,7 @@
         justify-content: space-between;
         padding: 18px 20px;
         border-bottom: 1px solid var(--bdr);
-        position: sticky; top: 0;
-        background: var(--bg-card); z-index: 1;
+        background: var(--bg-card);
     }
     .ap-modal-head h3 {
         font-size: 16px; font-weight: 700;
@@ -225,11 +226,11 @@
     .ap-row-2 { grid-template-columns: 1fr 1fr; }
     .ap-row-3 { grid-template-columns: 1fr 1fr 1fr; }
 
-    /* image upload zone */
+    /* image upload zone (16:9, coincide con la tarjeta pública) */
     .ap-upload-zone {
         border: 1px dashed var(--bdr);
         border-radius: 7px;
-        height: 110px;
+        aspect-ratio: 16 / 9; width: 100%;
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; overflow: hidden; position: relative;
         background: var(--bg-input);
@@ -238,6 +239,7 @@
     .ap-upload-zone:hover { border-color: var(--accent); }
     .ap-upload-placeholder {
         display: flex; flex-direction: column; align-items: center; gap: 6px;
+        position: relative; z-index: 1;
     }
     .ap-upload-placeholder svg { width: 24px; height: 24px; color: var(--txt-sub); }
     .ap-upload-placeholder span {
@@ -251,10 +253,63 @@
         position: absolute; inset: 0;
         background: rgba(0,0,0,.45);
         display: flex; align-items: center; justify-content: center;
-        opacity: 0; transition: opacity .2s;
+        opacity: 0; transition: opacity .2s; z-index: 2;
     }
     .ap-upload-zone:hover .ap-upload-overlay { opacity: 1; }
     .ap-upload-overlay span { font-size: 12px; color: #fff; font-weight: 600; }
+    .ap-imghelp { font-size: 11px; color: var(--txt-sub); margin: 6px 2px 0; line-height: 1.5; }
+    .ap-imghelp strong { color: var(--txt); }
+
+    /* ── PLATILLOS INCLUIDOS (buscador) ── */
+    .ap-prod-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .ap-prod-chip {
+        display: flex; align-items: center; gap: 8px;
+        background: rgba(37,99,235,.07); border: 1px solid rgba(37,99,235,.18);
+        border-radius: 20px; padding: 5px 6px 5px 12px;
+        font-size: 12px; font-weight: 600; color: var(--accent);
+    }
+    .ap-prod-qty { display: flex; align-items: center; gap: 4px; background: var(--bg-card); border-radius: 20px; padding: 2px 4px; }
+    .ap-prod-qty button {
+        width: 18px; height: 18px; border-radius: 50%; border: none; cursor: pointer;
+        background: rgba(37,99,235,.12); color: var(--accent); font-weight: 700; font-size: 12px;
+        display: flex; align-items: center; justify-content: center; line-height: 1; padding: 0;
+    }
+    .ap-prod-qty span { font-size: 12px; min-width: 14px; text-align: center; color: var(--txt); }
+    .ap-prod-remove {
+        width: 18px; height: 18px; border-radius: 50%; border: none; cursor: pointer;
+        background: rgba(37,99,235,.15); color: var(--accent);
+        display: flex; align-items: center; justify-content: center; line-height: 1; padding: 0;
+        transition: background .15s, color .15s;
+    }
+    .ap-prod-remove:hover { background: rgba(239,68,68,.2); color: var(--danger); }
+    .ap-prod-search { position: relative; }
+    .ap-prod-dropdown {
+        position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+        background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 8px;
+        box-shadow: 0 8px 24px rgba(0,0,0,.12); z-index: 60; overflow-y: auto; max-height: 220px;
+    }
+    .ap-prod-dd-item {
+        padding: 8px 12px; font-size: 12px; font-weight: 500; color: var(--txt); cursor: pointer;
+        display: flex; align-items: center; justify-content: space-between; gap: 8px;
+        border-bottom: 1px solid var(--bdr); transition: background .1s;
+    }
+    .ap-prod-dd-item:last-child { border-bottom: none; }
+    .ap-prod-dd-item:hover { background: rgba(37,99,235,.06); color: var(--accent); }
+    .ap-prod-dd-item small { color: var(--txt-sub); font-weight: 600; text-transform: uppercase; font-size: 10px; flex-shrink: 0; }
+    .ap-prod-dd-empty {
+        padding: 14px 12px; font-size: 12px; color: var(--txt-sub); text-align: center; font-style: italic;
+        border: 1px solid var(--bdr); border-radius: 8px; margin-top: 4px;
+    }
+
+    /* ── DÍAS ACTIVOS ── */
+    .ap-days-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+    .ap-day-btn {
+        padding: 7px 12px; border-radius: 7px; font-size: 12px; font-weight: 600;
+        border: 1px solid var(--bdr); background: var(--bg-input); color: var(--txt-sub);
+        cursor: pointer; transition: background .15s, color .15s, border-color .15s;
+    }
+    .ap-day-btn:hover { color: var(--txt); border-color: #C4C4C8; }
+    .ap-day-btn.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 
     /* buttons */
     .ap-btn-cancel {
@@ -273,6 +328,27 @@
     }
     .ap-btn-save:hover { background: var(--accent2); }
     .ap-btn-save:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* ── RECORTE DE IMAGEN (Cropper.js) ── */
+    .ap-crop-overlay {
+        position: fixed; inset: 0; z-index: 70;
+        background: rgba(0,0,0,.65); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .ap-crop-modal {
+        background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 12px;
+        width: 100%; max-width: 560px; box-shadow: 0 24px 64px rgba(0,0,0,.35);
+        display: flex; flex-direction: column; overflow: hidden;
+    }
+    .ap-crop-hd { padding: 16px 18px; border-bottom: 1px solid var(--bdr); }
+    .ap-crop-hd h3 { font-size: 15px; font-weight: 700; color: var(--txt); margin: 0 0 2px; }
+    .ap-crop-hd p  { font-size: 12px; color: var(--txt-sub); margin: 0; }
+    .ap-crop-body { background: #000; height: 320px; }
+    .ap-crop-body img { display: block; max-width: 100%; }
+    .ap-crop-foot { padding: 14px 18px; border-top: 1px solid var(--bdr); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .ap-crop-hint { font-size: 11px; color: var(--txt-sub); }
+    .ap-crop-actions { display: flex; gap: 8px; }
+    @media (max-width: 480px) { .ap-crop-body { height: 260px; } .ap-crop-foot { flex-direction: column; align-items: stretch; } }
 
     @media (max-width: 540px) {
         .ap-row-2, .ap-row-3 { grid-template-columns: 1fr; }
@@ -310,6 +386,9 @@
 
                 @if($item->tag)
                 <div class="ap-card-tag">{{ $item->tag }}</div>
+                @endif
+                @if(!$item->sellable_online)
+                <div class="ap-card-tag" style="right:auto;left:10px;top:auto;bottom:10px;background:rgba(0,0,0,.65);">Solo local</div>
                 @endif
 
                 {{-- Actions --}}
@@ -398,8 +477,9 @@
                                 <span>Subir imagen</span>
                             </div>
                             <input type="file" id="promo-image" name="image" class="hidden" accept="image/*"
-                                   @change="const f=$event.target.files[0];if(f){const r=new FileReader();r.onload=e=>imagePreview=e.target.result;r.readAsDataURL(f)}">
+                                   @change="previewImage($event)">
                         </label>
+                        <p class="ap-imghelp">Recomendado: imagen <strong>panorámica (16:9)</strong>, mínimo 800×450px.<br>Aceptamos JPG, PNG, WEBP.</p>
                     </div>
 
                     {{-- Título + Etiqueta --}}
@@ -420,7 +500,7 @@
                         </div>
                     </div>
 
-                    {{-- Ícono + Precio + Caducidad --}}
+                    {{-- Ícono + Texto de precio + Caducidad --}}
                     <div class="ap-row ap-row-3">
                         <div>
                             {{-- FIX L422: label for="promo-icon" + id en el input --}}
@@ -430,7 +510,7 @@
                         </div>
                         <div>
                             {{-- FIX L427: label for="promo-price" + id en el input --}}
-                            <label class="ap-label" for="promo-price">Precio *</label>
+                            <label class="ap-label" for="promo-price">Texto de precio (lo que ve el cliente) *</label>
                             <input type="text" id="promo-price" name="price_text" x-model="promoData.price_text"
                                    required placeholder="Ej: 2x$150"
                                    class="ap-input">
@@ -441,6 +521,97 @@
                             <input type="date" id="promo-end-date" name="end_date" x-model="promoData.end_date"
                                    class="ap-input">
                         </div>
+                    </div>
+
+                    {{-- Precio real (numérico, lo que se cobra en el carrito) --}}
+                    <div>
+                        <label class="ap-label" for="promo-price-real">Precio real a cobrar (numérico) *</label>
+                        <input type="number" id="promo-price-real" name="price" x-model="promoData.price"
+                               required min="0" step="0.01" placeholder="Ej: 150.00"
+                               class="ap-input">
+                        <p class="ap-imghelp">Esto es lo que se cobra de verdad en el carrito. El texto de arriba ("2x$150") es solo lo que ve el cliente en la tarjeta — aquí va el número real, ej. <strong>150.00</strong>.</p>
+                    </div>
+
+                    {{-- Se puede vender en línea --}}
+                    <div>
+                        <label class="ap-label">¿Se puede pedir en línea?</label>
+                        <div class="ap-days-grid">
+                            <button type="button" class="ap-day-btn"
+                                    :class="promoData.sellable_online ? 'on' : ''"
+                                    @click="promoData.sellable_online = true">Sí, en línea</button>
+                            <button type="button" class="ap-day-btn"
+                                    :class="!promoData.sellable_online ? 'on' : ''"
+                                    @click="promoData.sellable_online = false">Solo en el local</button>
+                        </div>
+                        <input type="hidden" name="sellable_online" :value="promoData.sellable_online ? 1 : 0">
+                        <p class="ap-imghelp">Elige <strong>"Solo en el local"</strong> para promociones que no se pueden vender por internet — ej. el postre de cumpleaños, que requiere mostrar una identificación y solo aplica en el restaurante. El botón "Aprovechar" no aparecerá para el cliente en línea; solo se podrá dar en el local.</p>
+                    </div>
+
+                    {{-- Días activos --}}
+                    <div>
+                        <label class="ap-label">Días activos (opcional)</label>
+                        <div class="ap-days-grid">
+                            <template x-for="d in dayOptions" :key="d.key">
+                                <button type="button" class="ap-day-btn"
+                                        :class="promoData.days_active.includes(d.key) ? 'on' : ''"
+                                        @click="toggleDay(d.key)" x-text="d.label"></button>
+                            </template>
+                        </div>
+                        <template x-for="d in promoData.days_active" :key="'day-'+d">
+                            <input type="hidden" name="days_active[]" :value="d">
+                        </template>
+                        <p class="ap-imghelp">Si no eliges ningún día, la promoción está disponible <strong>todos los días</strong> (hasta que caduque, si tiene fecha). Si eliges días específicos — ej. solo Jueves — el botón "Aprovechar" solo funcionará esos días.</p>
+                    </div>
+
+                    {{-- Platillos incluidos --}}
+                    <div>
+                        <label class="ap-label">Platillos incluidos en esta promoción</label>
+
+                        <div class="ap-prod-chips" x-show="selectedProducts.length > 0">
+                            <template x-for="(sp, idx) in selectedProducts" :key="sp.id">
+                                <div class="ap-prod-chip">
+                                    <span x-text="sp.name"></span>
+                                    <div class="ap-prod-qty">
+                                        <button type="button" @click="decrementProductQty(idx)">−</button>
+                                        <span x-text="sp.quantity"></span>
+                                        <button type="button" @click="incrementProductQty(idx)">+</button>
+                                    </div>
+                                    <button type="button" class="ap-prod-remove" @click="removeProduct(idx)" title="Quitar">
+                                        <svg width="9" height="9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                        <p x-show="selectedProducts.length === 0" class="ap-imghelp" style="margin-top:0;">
+                            Ningún platillo agregado aún — opcional, pero recomendado para que "Aprovechar" ponga los platillos correctos en el carrito.
+                        </p>
+
+                        <div class="ap-prod-search">
+                            <input type="text" class="ap-input" placeholder="Buscar platillo... ej: alitas, hamburguesa, bebidas"
+                                   x-model="productQuery" @focus="productOpen=true" @input="productOpen=true"
+                                   @keydown.escape="productOpen=false" autocomplete="off">
+
+                            <div class="ap-prod-dropdown" x-show="productOpen && productsFiltered().length > 0"
+                                 x-transition:enter="transition ease-out duration-100"
+                                 x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+                                <template x-for="p in productsFiltered()" :key="p.id">
+                                    <div class="ap-prod-dd-item" @mousedown.prevent="selectProduct(p)">
+                                        <span x-text="p.name"></span>
+                                        <small x-text="p.category"></small>
+                                    </div>
+                                </template>
+                            </div>
+                            <div x-show="productOpen && productQuery.trim() && productsFiltered().length === 0" class="ap-prod-dd-empty">
+                                Sin coincidencias en el menú
+                            </div>
+                        </div>
+
+                        <template x-for="(sp, idx) in selectedProducts" :key="'hidden-'+sp.id">
+                            <span>
+                                <input type="hidden" :name="'products['+idx+'][id]'" :value="sp.id">
+                                <input type="hidden" :name="'products['+idx+'][quantity]'" :value="sp.quantity">
+                            </span>
+                        </template>
                     </div>
 
                     {{-- Color --}}
@@ -476,6 +647,28 @@
         </div>
     </div>
 
+    {{-- MODAL DE RECORTE DE IMAGEN (Cropper.js) --}}
+    <div x-show="cropperOpen" x-cloak class="ap-crop-overlay" @click.self="cancelCrop()">
+        <div class="ap-crop-modal" @click.stop>
+            <div class="ap-crop-hd">
+                <h3>Ajustar imagen</h3>
+                <p>Mueve y haz zoom para elegir qué parte se mostrará (formato 16:9)</p>
+            </div>
+            <div class="ap-crop-body">
+                <template x-if="cropperSrc">
+                    <img x-ref="promoCropperImg" :src="cropperSrc">
+                </template>
+            </div>
+            <div class="ap-crop-foot">
+                <span class="ap-crop-hint">Se guardará como imagen 800×450px</span>
+                <div class="ap-crop-actions">
+                    <button type="button" @click="cancelCrop()" class="ap-btn-cancel" style="width:auto;flex:none;padding:8px 16px;">Cancelar</button>
+                    <button type="button" @click="confirmCrop()" class="ap-btn-save" style="width:auto;flex:none;padding:8px 16px;">Recortar y usar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -486,37 +679,166 @@
             isSubmitting: false,
             actionUrl: '',
             imagePreview: null,
+
+            cropperOpen: false,
+            cropperSrc: null,
+            cropperInstance: null,
+            cropperInputEl: null,
+
             promoData: {
                 title: '', description: '', tag: '',
-                price_text: '', icon: '🔥',
+                price_text: '', price: '', icon: '🔥',
                 color_gradient: 'from-green-600 to-green-900',
-                end_date: ''
+                end_date: '', days_active: [], sellable_online: true
             },
+
+            dayOptions: [
+                { key: 'domingo',   label: 'Dom' },
+                { key: 'lunes',     label: 'Lun' },
+                { key: 'martes',    label: 'Mar' },
+                { key: 'miercoles', label: 'Mié' },
+                { key: 'jueves',    label: 'Jue' },
+                { key: 'viernes',   label: 'Vie' },
+                { key: 'sabado',    label: 'Sáb' },
+            ],
+
+            toggleDay(key) {
+                const idx = this.promoData.days_active.indexOf(key);
+                if (idx === -1) this.promoData.days_active.push(key);
+                else this.promoData.days_active.splice(idx, 1);
+            },
+
+            allProducts: @json($products ?? []),
+            selectedProducts: [],
+            productQuery: '',
+            productOpen: false,
 
             openCreate() {
                 this.isEdit = false;
                 this.actionUrl = '{{ route("admin.promotions.store") }}';
                 this.imagePreview = null;
-                this.promoData = { title:'', description:'', tag:'', price_text:'', icon:'🔥', color_gradient:'from-green-600 to-green-900', end_date:'' };
+                this.promoData = { title:'', description:'', tag:'', price_text:'', price:'', icon:'🔥', color_gradient:'from-green-600 to-green-900', end_date:'', days_active:[], sellable_online:true };
+                this.selectedProducts = [];
+                this.productQuery = '';
+                this.productOpen = false;
                 this.isSubmitting = false;
                 this.openModal = true;
             },
 
             openEdit(item) {
                 this.isEdit = true;
-                this.actionUrl = '{{ route("admin.promotions.update", ":id") }}'.replace(':id', item.id);
+                this.actionUrl = '{{ route("admin.promotions.store") }}' + '/' + item.id;
                 this.imagePreview = item.image ? (item.image.startsWith('http') ? item.image : `/storage/${item.image}`) : null;
                 this.promoData = {
                     title: item.title,
                     description: item.description,
                     tag: item.tag || '',
                     price_text: item.price_text,
+                    price: item.price ?? '',
                     icon: item.icon || '🔥',
                     color_gradient: item.color_gradient || 'from-green-600 to-green-900',
-                    end_date: item.end_date || ''
+                    end_date: item.end_date || '',
+                    days_active: item.days_active ? item.days_active.split(',').map(d => d.trim()).filter(Boolean) : [],
+                    sellable_online: item.sellable_online === undefined ? true : !!item.sellable_online,
                 };
+                this.selectedProducts = (item.products || []).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    quantity: (p.pivot && p.pivot.quantity) ? p.pivot.quantity : 1,
+                }));
+                this.productQuery = '';
+                this.productOpen = false;
                 this.isSubmitting = false;
                 this.openModal = true;
+            },
+
+            productsFiltered() {
+                const q = this.productQuery.trim().toLowerCase();
+                let list = this.allProducts;
+                if (q) {
+                    list = list.filter(p =>
+                        p.name.toLowerCase().includes(q) ||
+                        (p.category && p.category.toLowerCase().includes(q)) ||
+                        (p.subcategory && p.subcategory.toLowerCase().includes(q))
+                    );
+                }
+                const selectedIds = this.selectedProducts.map(sp => sp.id);
+                return list.filter(p => !selectedIds.includes(p.id)).slice(0, 30);
+            },
+
+            selectProduct(p) {
+                this.selectedProducts.push({ id: p.id, name: p.name, quantity: 1 });
+                this.productQuery = '';
+                this.productOpen = false;
+            },
+
+            removeProduct(idx) {
+                this.selectedProducts.splice(idx, 1);
+            },
+
+            incrementProductQty(idx) {
+                this.selectedProducts[idx].quantity++;
+            },
+
+            decrementProductQty(idx) {
+                if (this.selectedProducts[idx].quantity > 1) this.selectedProducts[idx].quantity--;
+            },
+
+            previewImage(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    alert('Por favor selecciona un archivo de imagen válido (JPG, PNG, WEBP, etc.)');
+                    e.target.value = '';
+                    return;
+                }
+                this.cropperInputEl = e.target;
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    this.cropperSrc  = ev.target.result;
+                    this.cropperOpen = true;
+                    this.$nextTick(() => this.initCropper());
+                };
+                reader.readAsDataURL(file);
+            },
+
+            initCropper() {
+                if (this.cropperInstance) { this.cropperInstance.destroy(); this.cropperInstance = null; }
+                this.cropperInstance = new Cropper(this.$refs.promoCropperImg, {
+                    aspectRatio: 16 / 9,
+                    viewMode: 1,
+                    autoCropArea: 1,
+                    background: false,
+                    movable: true,
+                    zoomable: true,
+                    scalable: false,
+                    responsive: true,
+                });
+            },
+
+            confirmCrop() {
+                if (!this.cropperInstance) return;
+                const canvas = this.cropperInstance.getCroppedCanvas({
+                    width: 800, height: 450, imageSmoothingQuality: 'high',
+                });
+                canvas.toBlob((blob) => {
+                    const file = new File([blob], 'promo-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+                    const dt = new DataTransfer();
+                    dt.items.add(file);
+                    this.cropperInputEl.files = dt.files;
+                    this.imagePreview = canvas.toDataURL('image/jpeg', 0.9);
+                    this.cropperOpen = false;
+                    this.cropperInstance.destroy();
+                    this.cropperInstance = null;
+                    this.cropperSrc = null;
+                }, 'image/jpeg', 0.9);
+            },
+
+            cancelCrop() {
+                this.cropperOpen = false;
+                if (this.cropperInstance) { this.cropperInstance.destroy(); this.cropperInstance = null; }
+                this.cropperSrc = null;
+                if (this.cropperInputEl) this.cropperInputEl.value = '';
             }
         }
     }

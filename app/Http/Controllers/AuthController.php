@@ -167,19 +167,22 @@ class AuthController extends Controller
         $user->telefono = $request->telefono;
 
         if ($request->hasFile('avatar')) {
-            try {
-                if ($user->avatar && !str_starts_with($user->avatar, 'http')) {
-                    $oldPath = public_path($user->avatar);
-                    if (file_exists($oldPath)) {
-                        @unlink($oldPath);
-                    }
+            // Borrar avatar anterior
+            if ($user->avatar) {
+                $oldPath = public_path($user->avatar);
+                if (file_exists($oldPath)) {
+                    @unlink($oldPath);
                 }
-
-                $url = \App\Services\CloudinaryService::upload($request->file('avatar'));
-                $user->avatar = $url;
-            } catch (\Exception $e) {
-                return back()->with('error', 'Error al subir el avatar a Cloudinary: ' . $e->getMessage());
             }
+
+            $file      = $request->file('avatar');
+            $extension = $file->getClientOriginalExtension();
+            $filename  = 'av_' . time() . '_' . Auth::id() . '.' . $extension;
+
+            // Usar putFileAs con disco local apuntando a public/avatars
+            \Storage::disk('public_avatars')->putFileAs('', $file, $filename);
+
+            $user->avatar = 'avatars/' . $filename;
         }
 
         $user->save();

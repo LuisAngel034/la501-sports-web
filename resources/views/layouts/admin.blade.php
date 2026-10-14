@@ -362,6 +362,16 @@
                     Mensajes
                 </a>
 
+                <a href="{{ route('admin.waiters.performance') }}" class="aside-link {{ request()->routeIs('admin.waiters.performance') ? 'active' : '' }}">
+                    <svg class="aside-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                    Meseros
+                </a>
+
+                <a href="{{ route('admin.ml.index') }}" class="aside-link {{ request()->routeIs('admin.ml.*') ? 'active' : '' }}">
+                    <svg class="aside-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Predicciones
+                </a>
+
                 <a href="{{ route('admin.settings.index') }}" class="aside-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                     <svg class="aside-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     Información
@@ -375,6 +385,10 @@
                 <a href="{{ route('mesero.mesas') }}" class="aside-link {{ request()->routeIs('mesero.mesas') ? 'active' : '' }}">
                     <svg class="aside-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18M10 3v18M14 3v18"/></svg>
                     Mesas / Pedidos
+                </a>
+                <a href="{{ route('mesero.domicilios') }}" class="aside-link {{ request()->routeIs('mesero.domicilios*') ? 'active' : '' }}">
+                    <svg class="aside-icon w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10m10 0H3m10 0h1m6 0h1v-5l-3-4h-4v9m-6 0a2 2 0 11-4 0m10 0a2 2 0 11-4 0"/></svg>
+                    Domicilios
                 </a>
             @endif
 
@@ -520,10 +534,13 @@
                 <a href="{{ route('admin.news') }}" class="adm-mobile-link {{ request()->routeIs('admin.news') ? 'active' : '' }}">Novedades</a>
                 <a href="{{ route('admin.reservations.index') }}" class="adm-mobile-link {{ request()->routeIs('admin.reservations.index') ? 'active' : '' }}">Reservaciones</a>
                 <a href="{{ route('admin.mensajes') }}" class="adm-mobile-link {{ request()->routeIs('admin.mensajes') ? 'active' : '' }}">Mensajes</a>
+                <a href="{{ route('admin.waiters.performance') }}" class="adm-mobile-link {{ request()->routeIs('admin.waiters.performance') ? 'active' : '' }}">Meseros</a>
+                <a href="{{ route('admin.ml.index') }}" class="adm-mobile-link {{ request()->routeIs('admin.ml.*') ? 'active' : '' }}">Predicciones</a>
                 <a href="{{ route('admin.settings.index') }}" class="adm-mobile-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">Información</a>
             @endif
-            @if(in_array(auth()->user()->role, ['admin', 'mesero', 'empleado']))
+            @if(in_array(auth()->user()->role, ['mesero', 'empleado']))
                 <a href="{{ route('mesero.mesas') }}" class="adm-mobile-link {{ request()->routeIs('mesero.mesas') ? 'active' : '' }}">Mesas / Pedidos</a>
+                <a href="{{ route('mesero.domicilios') }}" class="adm-mobile-link {{ request()->routeIs('mesero.domicilios*') ? 'active' : '' }}">Domicilios</a>
             @endif
         </div>
     </nav>

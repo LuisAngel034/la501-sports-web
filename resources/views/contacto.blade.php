@@ -14,14 +14,14 @@
     --sub:     #A1A1AA;
     --bdr:     rgba(255,255,255,.07);
     --glow:    rgba(249,115,22,.18);
-    --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23ffffff' fill-opacity='0.025'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25z'/%3E%3C/g%3E%3C/svg%3E");
+    --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-dark.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-dark.svg')) }}');
 }
 html:not(.dark) .ct-page {
     --bg:   #F5F3EF; --card: #FFFFFF;
     --inp:  #F4F4F5; --txt:  #18181B;
     --sub:  #71717A; --bdr:  rgba(0,0,0,.09);
     --glow: rgba(249,115,22,.10);
-    --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23000000' fill-opacity='0.025'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25z'/%3E%3C/g%3E%3C/svg%3E");
+    --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-light.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-light.svg')) }}');
 }
 
 .ct-page {
@@ -35,7 +35,7 @@ html:not(.dark) .ct-page {
 .ct-hero {
     position: relative;
     background: var(--card);
-    background-image: var(--hex);
+    background-image: var(--brand-pattern);
     border-bottom: 3px solid var(--or);
     padding: 64px 32px 56px;
     text-align: center;
@@ -85,7 +85,7 @@ html:not(.dark) .ct-page {
 
 .ct-card {
     background: var(--card);
-    background-image: var(--hex);
+    background-image: var(--brand-pattern);
     border: 1px solid var(--bdr);
     border-radius: 16px;
     overflow: hidden;
@@ -177,7 +177,7 @@ html:not(.dark) .ct-page {
 .ct-sidebar { display:flex; flex-direction:column; gap:14px; }
 
 .ct-info-card {
-    background:var(--card); background-image:var(--hex);
+    background:var(--card); background-image:var(--brand-pattern);
     border:1px solid var(--bdr); border-radius:12px;
     padding:20px; transition:background .3s,border-color .3s;
 }
@@ -228,7 +228,6 @@ html:not(.dark) .ct-page {
                     {{-- Nombre + Email --}}
                     <div class="ct-g2">
                         <div>
-                            {{-- FIX L279: label for="ct-name" + id en el input --}}
                             <label class="ct-lbl" for="ct-name">Nombre <span class="req" aria-hidden="true">*</span></label>
                             <input type="text" id="ct-name" name="name" class="ct-inp"
                                    placeholder="Tu nombre"
@@ -236,7 +235,6 @@ html:not(.dark) .ct-page {
                                    aria-required="true">
                         </div>
                         <div>
-                            {{-- FIX L285: label for="ct-email" + id en el input --}}
                             <label class="ct-lbl" for="ct-email">Correo electrónico <span class="req" aria-hidden="true">*</span></label>
                             <input type="email" id="ct-email" name="email" class="ct-inp"
                                    placeholder="correo@ejemplo.com"
@@ -246,8 +244,6 @@ html:not(.dark) .ct-page {
                     </div>
 
                     {{-- Tipo de mensaje --}}
-                    {{-- FIX Web:S6819 + Web:S6807: reemplazado div[role=group] por fieldset
-                         y div[role=radio] por input[type=radio] nativos --}}
                     <fieldset style="border:none;padding:0;margin:0;">
                         <legend class="ct-lbl">Tipo de mensaje <span class="req" aria-hidden="true">*</span></legend>
                         <div class="ct-type-grid">
@@ -284,7 +280,6 @@ html:not(.dark) .ct-page {
 
                     {{-- Asunto --}}
                     <div>
-                        {{-- FIX L317: label for="ct-subject" + id en el input --}}
                         <label class="ct-lbl" for="ct-subject">Asunto <span class="req" aria-hidden="true">*</span></label>
                         <input type="text" id="ct-subject" name="subject" class="ct-inp"
                                placeholder="Motivo de tu mensaje"
@@ -294,7 +289,6 @@ html:not(.dark) .ct-page {
 
                     {{-- Mensaje --}}
                     <div>
-                        {{-- FIX L325: label for="ct-message" + id en el textarea --}}
                         <label class="ct-lbl" for="ct-message">Mensaje <span class="req" aria-hidden="true">*</span></label>
                         <textarea id="ct-message" name="message" class="ct-ta"
                                   placeholder="Escribe tu mensaje aquí..."

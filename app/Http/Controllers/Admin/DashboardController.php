@@ -16,20 +16,8 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
-        $totalVentas  = Order::where(function ($q) {
-            $q->where('status', 'paid')
-              ->orWhere(function ($sq) {
-                  $sq->whereNull('table_number')
-                     ->where('status', 'ready');
-              });
-        })->sum('total');
-        $totalPedidos = Order::where(function ($q) {
-            $q->where('status', 'paid')
-              ->orWhere(function ($sq) {
-                  $sq->whereNull('table_number')
-                     ->where('status', 'ready');
-              });
-        })->count();
+        $totalVentas  = Order::vendidas()->sum('total');
+        $totalPedidos = Order::vendidas()->count();
         $ticketPromedio = $totalPedidos > 0 ? ($totalVentas / $totalPedidos) : 0;
         $pedidosHoy   = Order::whereDate('created_at', Carbon::today())->count();
         $enProceso    = Order::where(function ($query) {
@@ -88,7 +76,7 @@ class DashboardController extends Controller
                 $q->where('orders.status', 'paid')
                   ->orWhere(function ($sq) {
                       $sq->whereNull('orders.table_number')
-                         ->where('orders.status', 'ready');
+                         ->whereIn('orders.status', ['ready', 'delivering', 'delivered']);
                   });
             })
             ->whereBetween('orders.created_at', [$inicioMes, $finMes])
@@ -109,7 +97,7 @@ class DashboardController extends Controller
                 $q->where('orders.status', 'paid')
                   ->orWhere(function ($sq) {
                       $sq->whereNull('orders.table_number')
-                         ->where('orders.status', 'ready');
+                         ->whereIn('orders.status', ['ready', 'delivering', 'delivered']);
                   });
             })
             ->whereBetween('orders.created_at', [$inicioMes, $finMes])
@@ -127,13 +115,7 @@ class DashboardController extends Controller
         
         $diffDays = $startCarbon->diffInDays($endCarbon) + 1;
 
-        $ordersQuery = Order::where(function ($q) {
-                $q->where('status', 'paid')
-                  ->orWhere(function ($sq) {
-                      $sq->whereNull('table_number')
-                         ->where('status', 'ready');
-                  });
-            })
+        $ordersQuery = Order::vendidas()
             ->whereBetween('created_at', [$startCarbon, $endCarbon])
             ->orderBy('created_at', 'asc')
             ->get();
@@ -223,13 +205,7 @@ class DashboardController extends Controller
         $corteDate = $request->input('corte_date', date('Y-m-d'));
         
         $ordersCorte = Order::whereDate('created_at', $corteDate)
-            ->where(function ($q) {
-                $q->where('status', 'paid')
-                  ->orWhere(function ($sq) {
-                      $sq->whereNull('table_number')
-                         ->where('status', 'ready');
-                  });
-            })
+            ->vendidas()
             ->get();
 
         $corteTotal = $ordersCorte->sum('total');
@@ -256,7 +232,7 @@ class DashboardController extends Controller
                 $q->where('orders.status', 'paid')
                   ->orWhere(function ($sq) {
                       $sq->whereNull('orders.table_number')
-                         ->where('orders.status', 'ready');
+                         ->whereIn('orders.status', ['ready', 'delivering', 'delivered']);
                   });
             })
             ->select('order_items.product_name as name', DB::raw('SUM(order_items.quantity) as total_vendido'), DB::raw('SUM(order_items.subtotal) as ingresos'))
@@ -266,20 +242,18 @@ class DashboardController extends Controller
             ->get();
 
         // Formas de pago más utilizadas del día
-        $totalsCorte = ['efectivo' => 0.0, 'tarjeta' => 0.0, 'transferencia' => 0.0];
+        $totalsCorte = ['efectivo' => 0.0, 'tarjeta' => 0.0];
         $detailedPayments = [
             'Efectivo' => ['orders' => [], 'total' => 0.0],
             'Tarjeta' => ['orders' => [], 'total' => 0.0],
-            'Transferencia' => ['orders' => [], 'total' => 0.0]
         ];
 
         foreach ($ordersCorte as $order) {
             $method = $order->payment_method ?: 'Efectivo';
             $parsed = self::parsePaymentMethodAmounts($method, (float) $order->total);
-            
+
             $totalsCorte['efectivo'] += $parsed['efectivo'];
             $totalsCorte['tarjeta'] += $parsed['tarjeta'];
-            $totalsCorte['transferencia'] += $parsed['transferencia'];
 
             if ($parsed['efectivo'] > 0) {
                 $detailedPayments['Efectivo']['orders'][] = [
@@ -298,15 +272,6 @@ class DashboardController extends Controller
                     'created_at' => $order->created_at->format('h:i A')
                 ];
                 $detailedPayments['Tarjeta']['total'] += $parsed['tarjeta'];
-            }
-            if ($parsed['transferencia'] > 0) {
-                $detailedPayments['Transferencia']['orders'][] = [
-                    'id' => $order->id,
-                    'monto' => $parsed['transferencia'],
-                    'customer_name' => $order->customer_name ?: ('Mesa ' . $order->table_number),
-                    'created_at' => $order->created_at->format('h:i A')
-                ];
-                $detailedPayments['Transferencia']['total'] += $parsed['transferencia'];
             }
         }
 
@@ -335,7 +300,6 @@ class DashboardController extends Controller
     {
         $efectivo = 0.0;
         $tarjeta = 0.0;
-        $transferencia = 0.0;
 
         $methodLower = strtolower(trim($method));
 
@@ -346,33 +310,22 @@ class DashboardController extends Controller
             if (preg_match('/tarjeta:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
                 $tarjeta = (float) $m[1];
             }
-            if (preg_match('/transferencia:\s*\$?\s*([\d\.]+)/i', $method, $m)) {
-                $transferencia = (float) $m[1];
-            }
         } elseif (str_contains($methodLower, 'efectivo')) {
             $efectivo = $total;
-        } elseif (str_contains($methodLower, 'tarjeta') || str_contains($methodLower, 'terminal')) {
-            $tarjeta = $total;
         } else {
-            $transferencia = $total;
+            // Tarjeta, terminal, o cualquier otro método (ej. registros viejos de Mercado Pago).
+            $tarjeta = $total;
         }
 
         return [
             'efectivo' => $efectivo,
             'tarjeta' => $tarjeta,
-            'transferencia' => $transferencia,
         ];
     }
 
     public function apiStats()
     {
-        $totalVentas = Order::where(function ($q) {
-            $q->where('status', 'paid')
-              ->orWhere(function ($sq) {
-                  $sq->whereNull('table_number')
-                     ->where('status', 'ready');
-              });
-        })->sum('total');
+        $totalVentas = Order::vendidas()->sum('total');
         $pedidosHoy  = Order::whereDate('created_at', Carbon::today())->count();
         $enProceso   = Order::where(function ($query) {
             $query->whereNotNull('table_number')
@@ -392,13 +345,7 @@ class DashboardController extends Controller
     public function apiSales(Request $request)
     {
         $period = $request->get('period', 'day');
-        $query  = Order::where(function ($q) {
-            $q->where('status', 'paid')
-              ->orWhere(function ($sq) {
-                  $sq->whereNull('table_number')
-                     ->where('status', 'ready');
-              });
-        });
+        $query  = Order::vendidas();
 
         $result = match ($period) {
             'month' => $this->buildMonthlyData($query),
@@ -486,7 +433,7 @@ class DashboardController extends Controller
                 $q->where('orders.status', 'paid')
                   ->orWhere(function ($sq) {
                       $sq->whereNull('orders.table_number')
-                         ->where('orders.status', 'ready');
+                         ->whereIn('orders.status', ['ready', 'delivering', 'delivered']);
                   });
             })
             ->whereBetween('orders.created_at', [$inicioMes, $finMes]);

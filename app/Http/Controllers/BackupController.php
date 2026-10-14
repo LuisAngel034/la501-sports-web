@@ -213,7 +213,7 @@ class BackupController extends Controller
         Storage::disk(self::BACKUP_DISK)->put(self::BACKUP_DIR . '/' . $fileName, $this->generarSQLCompleto());
         $this->eliminarBackupsAntiguos($ahora);
 
-        return response("✅ BACKUP GENERADO ({$frecuencia}).", 200)->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        return response("BACKUP GENERADO ({$frecuencia}).", 200)->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
     }
 
     // =========================================================================

@@ -15,7 +15,7 @@
     --sub:     #A1A1AA; --bdr:   rgba(255,255,255,.07);
     --glow:    rgba(249,115,22,.15);
     --glow-g:  rgba(22,163,74,.14);
-    --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23ffffff' fill-opacity='0.025'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25z'/%3E%3C/g%3E%3C/svg%3E");
+    --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-dark.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-dark.svg')) }}');
 }
 html:not(.dark) .rv-page {
     --bg:   #F5F3EF; --card:  #FFFFFF;
@@ -23,14 +23,14 @@ html:not(.dark) .rv-page {
     --sub:  #71717A; --bdr:   rgba(0,0,0,.09);
     --glow: rgba(249,115,22,.09);
     --glow-g: rgba(22,163,74,.09);
-    --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23000000' fill-opacity='0.025'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25z'/%3E%3C/g%3E%3C/svg%3E");
+    --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-light.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-light.svg')) }}');
 }
 
 .rv-page { background:var(--bg); color:var(--txt); font-family:'Inter',sans-serif; min-height:100vh; transition:background .3s,color .3s; }
 
 /* ── HERO ── */
 .rv-hero {
-    position:relative; background:var(--card); background-image:var(--hex);
+    position:relative; background:var(--card); background-image:var(--brand-pattern);
     border-bottom:3px solid var(--or); padding:64px 32px 52px;
     text-align:center; overflow:hidden; transition:background .3s;
 }
@@ -82,7 +82,7 @@ html:not(.dark) .rv-page {
 
 /* ── FORM CARD ── */
 .rv-card {
-    background:var(--card); background-image:var(--hex);
+    background:var(--card); background-image:var(--brand-pattern);
     border:1px solid var(--bdr); border-radius:12px;
     overflow:hidden; transition:background .3s,border-color .3s;
 }
@@ -167,7 +167,7 @@ html:not(.dark) .rv-page {
 /* ── SIDEBAR ── */
 .rv-side { display:flex; flex-direction:column; gap:12px; }
 .rv-info-card {
-    background:var(--card); background-image:var(--hex);
+    background:var(--card); background-image:var(--brand-pattern);
     border:1px solid var(--bdr); border-radius:10px;
     padding:16px; transition:background .3s,border-color .3s;
 }

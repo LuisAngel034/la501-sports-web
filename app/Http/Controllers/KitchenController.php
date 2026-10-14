@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Order;
+use App\Services\OrderNotificationService;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 
 class KitchenController extends Controller
 {
@@ -20,43 +20,29 @@ class KitchenController extends Controller
             return abort(403);
         }
 
-        $orders = Order::with('items')
-            ->where(function ($query) {
-                $query->whereNotNull('table_number')
-                      ->whereIn('status', ['pending', 'preparing']);
-            })
-            ->orWhere(function ($query) {
-                $query->whereNull('table_number')
-                      ->whereIn('status', ['paid', 'preparing']);
-            })
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $orders = $this->activeOrdersQuery()->get();
 
         return view('cocina.index', compact('orders'));
     }
 
-    public function markAsReady(Request $request, $id)
+    public function markAsReady(Request $request, $id, OrderNotificationService $notifier)
     {
         if (!$this->checkAccess()) {
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
         $order = Order::findOrFail($id);
-        $order->status = 'ready';
-        $order->save();
 
-        // Enviar correo de notificación si el cliente está registrado
-        if ($order->user_id) {
-            $user = \App\Models\User::find($order->user_id);
-            if ($user && $user->email) {
-                try {
-                    Mail::send('emails.order_status', ['order' => $order, 'user' => $user], function ($message) use ($user) {
-                        $message->to($user->email)->subject('¡Tu pedido está listo! 🍳 - La 501 Sports');
-                    });
-                } catch (\Exception $e) {
-                    // Ignorar errores de envío de correo para no interrumpir el flujo
-                }
-            }
+        if ($order->esADomicilio()) {
+            // A domicilio queda "listo" esperando al mandadito; el correo "va en camino"
+            // sale cuando el empleado lo entrega (WaiterController::entregarAlMandadito).
+            $order->status = 'ready';
+            $order->save();
+        } else {
+            $order->status = 'ready';
+            $order->save();
+
+            $notifier->notificarEstado($order, 'ready');
         }
 
         if ($request->wantsJson()) {
@@ -72,7 +58,12 @@ class KitchenController extends Controller
             return response()->json(['error' => 'No autorizado'], 403);
         }
 
-        $orders = Order::with('items')
+        return response()->json($this->activeOrdersQuery()->get());
+    }
+
+    private function activeOrdersQuery()
+    {
+        return Order::with('items')
             ->where(function ($query) {
                 $query->whereNotNull('table_number')
                       ->whereIn('status', ['pending', 'preparing']);
@@ -81,9 +72,6 @@ class KitchenController extends Controller
                 $query->whereNull('table_number')
                       ->whereIn('status', ['paid', 'preparing']);
             })
-            ->orderBy('created_at', 'asc')
-            ->get();
-
-        return response()->json($orders);
+            ->orderBy('created_at', 'asc');
     }
 }

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>¡Tu pedido está listo! — La 501</title>
+<title>{{ ($stage ?? 'ready') === 'delivering' ? '¡Tu pedido va en camino!' : '¡Tu pedido está listo!' }} — La 501</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F5F3EF;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
 
@@ -16,7 +16,7 @@
         <div style="background-color:#0f0d0a;padding:28px 32px;text-align:center;position:relative;">
             {{-- Franja naranja→verde arriba --}}
             <div style="height:4px;background:linear-gradient(90deg,#F97316,#16A34A);margin:-28px -32px 24px;"></div>
-            <span style="display:inline-block;background:linear-gradient(135deg,#F97316,#EA580C);width:48px;height:48px;border-radius:10px;line-height:48px;text-align:center;font-size:22px;box-shadow:0 4px 12px rgba(249,115,22,.4);margin-bottom:12px;">🍳</span>
+            <span style="display:inline-block;background:linear-gradient(135deg,#F97316,#EA580C);width:48px;height:48px;border-radius:10px;line-height:48px;text-align:center;font-size:22px;box-shadow:0 4px 12px rgba(249,115,22,.4);margin-bottom:12px;">{{ ($stage ?? 'ready') === 'delivering' ? '🛵' : '🍳' }}</span>
             <h1 style="color:#FFFFFF;font-size:24px;font-weight:900;margin:0 0 4px;letter-spacing:1.5px;font-family:'Trebuchet MS',sans-serif;">
                 LA 501 <span style="color:#F97316;">SPORTS</span>
             </h1>
@@ -28,12 +28,21 @@
         {{-- CUERPO --}}
         <div style="background-color:#FFFFFF;padding:36px 36px 28px;text-align:left;">
 
-            <h2 style="color:#18181B;font-size:20px;font-weight:800;margin:0 0 12px;text-align:center;">
-                ¡Tu comida está lista!
-            </h2>
-            <p style="color:#52525B;font-size:14px;line-height:1.6;margin:0 0 20px;text-align:center;">
-                Hola <strong>{{ $user->name }}</strong>, te informamos que tu pedido ya ha sido preparado en cocina y se encuentra listo para entrega.
-            </p>
+            @if(($stage ?? 'ready') === 'delivering')
+                <h2 style="color:#18181B;font-size:20px;font-weight:800;margin:0 0 12px;text-align:center;">
+                    ¡Tu pedido va en camino!
+                </h2>
+                <p style="color:#52525B;font-size:14px;line-height:1.6;margin:0 0 20px;text-align:center;">
+                    Hola <strong>{{ $nombreDestinatario }}</strong>, tu pedido ya salió y va en camino a tu domicilio. Cuando lo recibas, confírmalo desde el enlace de abajo.
+                </p>
+            @else
+                <h2 style="color:#18181B;font-size:20px;font-weight:800;margin:0 0 12px;text-align:center;">
+                    ¡Tu comida está lista!
+                </h2>
+                <p style="color:#52525B;font-size:14px;line-height:1.6;margin:0 0 20px;text-align:center;">
+                    Hola <strong>{{ $nombreDestinatario }}</strong>, te informamos que tu pedido ya ha sido preparado en cocina{{ $order->esADomicilio() ? ' y se encuentra listo para salir a entrega.' : '.' }}
+                </p>
+            @endif
 
             {{-- Caja de Detalles del Pedido --}}
             <div style="background:#F5F3EF;border:1px solid #E4E4E7;border-radius:10px;padding:16px 20px;margin-bottom:28px;">
@@ -56,7 +65,7 @@
 
             {{-- Botón de Acción --}}
             <div style="text-align:center;margin-bottom:20px;">
-                <a href="{{ route('payment.confirmation', $order->id) }}"
+                <a href="{{ route('order.track', $order->trackingToken()) }}"
                    style="display:inline-block;background-color:#EA580C;color:#FFFFFF;font-size:13px;font-weight:bold;text-transform:uppercase;text-decoration:none;padding:14px 28px;border-radius:8px;box-shadow:0 4px 12px rgba(234,88,12,.3);transition:background-color .2s;">
                     Seguir mi pedido / Ver Ticket
                 </a>

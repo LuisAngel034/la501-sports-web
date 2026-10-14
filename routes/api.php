@@ -61,7 +61,3 @@ Route::prefix('v1/staff')
                 ->name('api.staff.dashboard.history');
         });
     });
-
-// Webhook asíncrono de Mercado Pago (IPN/Webhooks)
-Route::post('/mercadopago/webhook', [App\Http\Controllers\CheckoutController::class, 'webhook'])
-    ->name('api.mercadopago.webhook');

@@ -24,7 +24,7 @@
         --border:   rgba(255,255,255,0.07);
         --glow-o:   rgba(249,115,22,0.22);
         --glow-g:   rgba(22,163,74,0.18);
-        --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69V15zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E");
+        --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-dark.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-dark.svg')) }}');
     }
 
     /* ── LIGHT MODE — cuando html NO tiene clase .dark ── */
@@ -37,7 +37,7 @@
         --border:   rgba(0,0,0,0.09);
         --glow-o:   rgba(249,115,22,0.10);
         --glow-g:   rgba(22,163,74,0.09);
-        --hex: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23000000' fill-opacity='0.025'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15L13.99 9.25zM3 17.9v12.7l10.99 6.34 11-6.35V17.9l-11-6.34L3 17.9zM0 15l12.98-7.5V0h-2v6.35L0 12.69V15zm0 18.5L12.98 41v8h-2v-6.85L0 35.81v-2.3zM15 0v7.5L27.99 15H28v-2.31h-.01L17 6.35V0h-2zm0 49v-8l12.99-7.5H28v2.31h-.01L17 42.15V49h-2z'/%3E%3C/g%3E%3C/svg%3E");
+        --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-light.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-light.svg')) }}');
     }
 
     /* ─── BASE ─── */
@@ -54,7 +54,7 @@
     .s501-hero {
         position: relative;
         background-color: var(--bg-card);
-        background-image: var(--hex);
+        background-image: var(--brand-pattern);
         border-bottom: 3px solid var(--orange);
         padding: 80px 40px 70px;
         text-align: center;
@@ -85,13 +85,15 @@
     }
     .s501-hero h1 {
         font-family: 'Bebas Neue', sans-serif;
-        font-size: clamp(60px, 12vw, 110px);
+        font-size: clamp(42px, 12vw, 110px);
         line-height: 0.95;
         letter-spacing: 6px;
         color: var(--txt);
         margin: 0 0 20px;
         position: relative; z-index: 1;
         transition: color .3s;
+        overflow-wrap: break-word;
+        max-width: 100%;
     }
     .s501-hero h1 span { color: var(--orange); }
     .s501-hero p {
@@ -102,6 +104,17 @@
         line-height: 1.75;
         position: relative; z-index: 1;
         transition: color .3s;
+    }
+    .s501-hero-eslogan {
+        display: block;
+        font-family: 'Oswald', sans-serif;
+        font-size: 13px;
+        font-weight: 700;
+        letter-spacing: 3px;
+        text-transform: uppercase;
+        color: var(--orange);
+        margin-top: 18px !important;
+        position: relative; z-index: 1;
     }
 
     /* ─── MAIN SECTION ─── */
@@ -115,7 +128,7 @@
     .s501-banner {
         position: relative;
         background: var(--bg-card);
-        background-image: var(--hex);
+        background-image: var(--brand-pattern);
         border: 1px solid var(--border);
         border-left: 5px solid var(--orange);
         border-radius: 20px;
@@ -193,6 +206,40 @@
         opacity: 0.35;
     }
 
+    /* ─── MISIÓN Y VISIÓN ─── */
+    .s501-mv {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-bottom: 80px;
+    }
+    .s501-mv-card {
+        background: var(--bg-card);
+        background-image: var(--brand-pattern);
+        border: 1px solid var(--border);
+        border-top: 3px solid var(--orange);
+        border-radius: 18px;
+        padding: 36px 32px;
+        transition: background-color .3s, border-color .3s;
+    }
+    .s501-mv-card:nth-child(2) { border-top-color: var(--green-light); }
+    .s501-mv-card h3 {
+        font-family: 'Oswald', sans-serif;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 2px;
+        text-transform: uppercase;
+        color: var(--orange);
+        margin: 0 0 14px;
+    }
+    .s501-mv-card:nth-child(2) h3 { color: var(--green-light); }
+    .s501-mv-card p {
+        font-size: 15px;
+        color: var(--txt-sub);
+        line-height: 1.75;
+        margin: 0;
+    }
+
     /* ─── VALORES ─── */
     .s501-valores {
         display: grid;
@@ -202,7 +249,7 @@
     }
     .s501-card {
         background: var(--bg-card);
-        background-image: var(--hex);
+        background-image: var(--brand-pattern);
         border: 1px solid var(--border);
         border-radius: 18px;
         padding: 40px 28px;
@@ -390,6 +437,16 @@
         .s501-banner-deco { display: none; }
         .s501-section  { padding: 48px 20px; }
         .s501-hero     { padding: 60px 24px 50px; }
+        .s501-hero h1  { letter-spacing: 3px; }
+        .s501-hero p   { font-size: 15px; }
+    }
+
+    @media (max-width: 480px) {
+        .s501-hero        { padding: 48px 18px 40px; }
+        .s501-hero-badge  { font-size: 10px; padding: 5px 14px; margin-bottom: 18px; }
+        .s501-hero h1     { font-size: clamp(34px, 15vw, 56px); letter-spacing: 1.5px; margin-bottom: 14px; }
+        .s501-hero p      { font-size: 14px; line-height: 1.6; }
+        .s501-hero-eslogan{ font-size: 11px; letter-spacing: 2px; }
     }
 </style>
 
@@ -420,6 +477,11 @@
                 ]
             ]);
         }
+
+        // Años de servicio bajo el concepto "La 501 Sports Restaurant"
+        // Fecha confirmada por el cliente en el levantamiento de información: 26/10/2023
+        $fechaConceptoActual = \Carbon\Carbon::createFromDate(2023, 10, 26);
+        $aniosServicio = (int) floor($fechaConceptoActual->diffInYears(\Carbon\Carbon::now()));
     @endphp
 
     <div x-data="{ 
@@ -427,13 +489,21 @@
             slides: @js($carouselSlides).map(s => ({ ...s, isWide: true })),
             next() { this.activeSlide = (this.activeSlide + 1) % this.slides.length },
             prev() { this.activeSlide = (this.activeSlide - 1 + this.slides.length) % this.slides.length },
+            // Devuelve la URL de la imagen; si viene de Cloudinary la pide redimensionada y en formato moderno (WebP/AVIF)
+            imgSrc(slide, width) {
+                const src = slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path;
+                if (src.includes('res.cloudinary.com') && src.includes('/image/upload/')) {
+                    return src.replace('/image/upload/', `/image/upload/f_auto,q_auto,c_limit,w_${width}/`);
+                }
+                return src;
+            },
             init() {
                 this.slides.forEach(slide => {
                     const img = new Image();
                     img.onload = () => {
                         slide.isWide = (img.width / img.height) > 1.25 && img.width >= 1000;
                     };
-                    img.src = slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path;
+                    img.src = this.imgSrc(slide, 1600);
                 });
 
                 if(this.slides.length > 1) {
@@ -441,7 +511,7 @@
                 }
             }
          }" 
-         class="relative w-full h-[70vh] md:h-[80vh] overflow-hidden bg-black select-none border-b-2 border-orange-500">
+         class="relative w-full h-[42vh] sm:h-[55vh] md:h-[80vh] overflow-hidden bg-black select-none border-b-2 border-orange-500">
         
         <!-- Slides -->
         <template x-for="(slide, index) in slides" :key="index">
@@ -453,16 +523,16 @@
                  x-transition:leave-start="opacity-100 translate-x-0"
                  x-transition:leave-end="opacity-0 -translate-x-full"
                  class="absolute inset-0 w-full h-full flex items-center justify-center bg-black">
-                <!-- Fondo difuminado para rellenar los bordes en caso de imágenes cuadradas o verticales (solo si no es panorámica) -->
-                <div class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none" x-show="slide.isWide === false" x-cloak>
-                    <img :src="slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path" class="w-full h-full object-cover blur-2xl scale-110 opacity-45" aria-hidden="true" alt="">
+                <!-- Fondo difuminado para rellenar los bordes: siempre presente, se nota en móvil (donde la imagen usa object-contain) o con imágenes cuadradas/verticales -->
+                <div class="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+                    <img :src="imgSrc(slide, 400)" class="w-full h-full object-cover blur-2xl scale-110 opacity-45" aria-hidden="true" alt="">
                 </div>
                 <!-- Imagen con filtro oscuro para legibilidad del texto (solo si hay texto) -->
                 <div class="absolute inset-0 bg-black/35 z-10" x-show="(slide.title && slide.title.trim() !== '') || (slide.subtitle && slide.subtitle.trim() !== '') || (slide.description && slide.description.trim() !== '')"></div>
-                <!-- Imagen real -->
-                <img :src="slide.image_path.startsWith('storage/') ? '/' + slide.image_path : slide.image_path" 
-                     class="z-1" 
-                     :class="slide.isWide === false ? 'relative max-w-full max-h-full object-contain' : 'absolute inset-0 w-full h-full object-cover'"
+                <!-- Imagen real: en móvil siempre se ve completa (object-contain) para no cortar texto de la imagen; en pantallas medianas+ las panorámicas cubren todo el banner -->
+                <img :src="imgSrc(slide, 1600)"
+                     class="z-1 absolute inset-0 w-full h-full"
+                     :class="slide.isWide === false ? 'object-contain' : 'object-contain md:object-cover'"
                      alt="Banner de carrusel">
                 
                 <!-- Contenido del Slide (solo si hay textos) -->
@@ -480,12 +550,12 @@
         </template>
 
         <!-- Botón Izquierdo -->
-        <button @click="prev()" type="button" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-full flex items-center justify-center border border-white/10 transition active:scale-90 hover:border-orange-500">
+        <button @click="prev()" type="button" aria-label="Diapositiva anterior" class="absolute left-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-full flex items-center justify-center border border-white/10 transition active:scale-90 hover:border-orange-500">
             &larr;
         </button>
 
         <!-- Botón Derecho -->
-        <button @click="next()" type="button" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-full flex items-center justify-center border border-white/10 transition active:scale-90 hover:border-orange-500">
+        <button @click="next()" type="button" aria-label="Diapositiva siguiente" class="absolute right-4 top-1/2 -translate-y-1/2 z-30 w-11 h-11 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white font-bold rounded-full flex items-center justify-center border border-white/10 transition active:scale-90 hover:border-orange-500">
             &rarr;
         </button>
 
@@ -494,6 +564,8 @@
             <template x-for="(slide, index) in slides" :key="index">
                 <button @click="activeSlide = index" 
                         type="button" 
+                        :aria-label="'Ir a la diapositiva ' + (index + 1)"
+                        :aria-current="activeSlide === index ? 'true' : 'false'" 
                         class="w-8 h-1.5 rounded-full transition-all duration-300"
                         :class="activeSlide === index ? 'bg-orange-500 w-12' : 'bg-white/40 hover:bg-white/60'"></button>
             </template>
@@ -502,9 +574,10 @@
 
     {{-- HERO --}}
     <div class="s501-hero">
-        <div class="s501-hero-badge">La 501 Sports Restaurant alan gome</div>
-        <h1>Quienes<br><span>Somos</span></h1>
-        <p>Bienvenidos a Restaurant La 501 Sports, donde la pasión por el deporte y la buena comida se unen para crear momentos inolvidables en familia.</p>
+        <div class="s501-hero-badge">La 501 Sports Restaurant</div>
+        <h1>¿Quienes<br><span>Somos?</span></h1>
+        <p>Bienvenidos a La 501 Sports Restaurant, donde la pasión por el deporte y la buena comida se unen para vivir la mejor experiencia junto a toda la afición.</p>
+        <span class="s501-hero-eslogan">#Aquíestalochido</span>
     </div>
 
     <div class="s501-section">
@@ -514,7 +587,21 @@
             <div class="s501-banner-deco">501</div>
             <div class="s501-banner-inner">
                 <h2>Más que un restaurante,<br>somos tu <em>segundo hogar</em></h2>
-                <p>Desde 20XX, hemos sido el lugar favorito de familias y amigos para disfrutar de los mejores partidos mientras saborean nuestra deliciosa comida. Nuestro ambiente combina la emoción del deporte con la calidez de un hogar.</p>
+                <p>Bajo el concepto La 501 Sports Restaurant desde el 26 de octubre de 2023, somos el lugar favorito de la afición en Huejutla para disfrutar alitas, boneless, hamburguesas y bebidas refrescantes mientras vivimos las mejores transmisiones deportivas en vivo, en un espacio pensado para reunir a toda la afición.</p>
+            </div>
+        </div>
+
+        {{-- MISIÓN Y VISIÓN --}}
+        <div class="s501-divider"><span>Misión y Visión</span></div>
+
+        <div class="s501-mv">
+            <div class="s501-mv-card">
+                <h3>Nuestra Misión</h3>
+                <p>Ofrecer al cliente una experiencia diferente en el municipio, con gran sabor y diversión, de la mano de productos de calidad y de un espacio recreativo diseñado para que el comensal pueda disfrutar de las mejores transmisiones deportivas, siendo atendido por personal joven, entusiasta y capacitado en el servicio al cliente.</p>
+            </div>
+            <div class="s501-mv-card">
+                <h3>Nuestra Visión</h3>
+                <p>Posicionar la marca a nivel nacional, con capacidad de brindar una gran experiencia y competir con las cadenas actuales con presencia en el mercado de nuestro país.</p>
             </div>
         </div>
 
@@ -524,10 +611,10 @@
         <div class="s501-valores">
             @php
                 $valores = [
-                    ['titulo' => 'Amor Familiar',    'icon' => '❤️', 'desc' => 'Creamos un ambiente acogedor donde las familias pueden disfrutar juntas.'],
-                    ['titulo' => 'Pasión Deportiva', 'icon' => '🏆', 'desc' => 'Pantallas HD para que no te pierdas ningún momento de tus equipos favoritos.'],
-                    ['titulo' => 'Sabor Casero',     'icon' => '🍴', 'desc' => 'Recetas tradicionales preparadas con ingredientes frescos y mucho cariño.'],
-                    ['titulo' => 'Comunidad',        'icon' => '👥', 'desc' => 'Un lugar donde vecinos y amigos se reúnen para celebrar juntos.'],
+                    ['titulo' => 'Responsabilidad', 'icon' => '🛡️', 'desc' => 'Cumplimos lo que prometemos, cuidando cada detalle del servicio y la experiencia del cliente.'],
+                    ['titulo' => 'Profesionalismo', 'icon' => '🎯', 'desc' => 'Personal joven, capacitado y comprometido para brindarte siempre la mejor atención.'],
+                    ['titulo' => 'Honestidad',      'icon' => '🤝', 'desc' => 'Transparencia en cada platillo, cada cuenta y cada trato con nuestros clientes.'],
+                    ['titulo' => 'Calidad',         'icon' => '⭐', 'desc' => 'Ingredientes frescos y procesos cuidados en cada preparación que sale de nuestra cocina.'],
                 ];
             @endphp
 
@@ -546,19 +633,19 @@
                 <div class="s501-historia-label">
                     <h2>Nuestra <span>Historia</span></h2>
                 </div>
-                <p>Historia...</p>
-                <p>Historia...</p>
-                <p>Historia...</p>
+                <p>La 501 nació en 2020 en Huejutla, Hidalgo, de la mano de Andrés Rivera, bajo el nombre de "La Papa 501". En sus inicios se dedicaba únicamente a la venta de conos de papas con toppings y, con la llegada de la pandemia, el negocio operaba mediante venta directa desde el automóvil.</p>
+                <p>El nombre "501" es un homenaje a la histórica locomotora 501, símbolo de tradición en el norte del país y ligada a la hazaña de Jesús García, el maquinista que dio la vida por salvar al pueblo de Nacozari, Sonora, convirtiéndose en héroe reconocido a nivel nacional.</p>
+                <p>Con el paso del tiempo, el negocio formó parte de distintos food parks, hasta que el 26 de octubre de 2023 dio el gran salto: contó con un establecimiento fijo y cambió por completo su imagen para convertirse en La 501 Sports Restaurant, con un concepto renovado, un menú más extenso y el ambiente deportivo que hoy nos caracteriza.</p>
             </div>
 
             <div class="s501-img-wrap">
                 <div class="s501-img-glow"></div>
                 <div class="s501-img-inner">
-                    <img src="{{ asset('images/NH.jpg') }}" alt="Nuestra Historia">
+                    <img src="{{ asset('images/NH.jpg') }}" alt="Nuestra Historia" loading="lazy" decoding="async">
                     <div class="s501-img-badge">
                         <span class="b-icon">🍴</span>
-                        <span class="b-years">XX Años</span>
-                        <span class="b-label">Sirviendo a nuestra comunidad</span>
+                        <span class="b-years">{{ $aniosServicio }} Años</span>
+                        <span class="b-label">Como La 501 Sports Restaurant</span>
                     </div>
                 </div>
             </div>

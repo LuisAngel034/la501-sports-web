@@ -103,14 +103,15 @@
             text-transform: uppercase;
             text-decoration: none;
             color: #fff;
-            background: var(--or);
+            /* naranja más oscuro (#C2410C) para contraste AA con texto blanco de 12px */
+            background: #C2410C;
             padding: 8px 20px;
             clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
             box-shadow: 0 3px 18px rgba(249,115,22,0.4);
             transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
         }
         .nav-cta-btn:hover {
-            background: var(--or2);
+            background: #9A3412;
             box-shadow: 0 5px 26px rgba(249,115,22,0.55);
             transform: translateY(-1px);
         }
@@ -257,8 +258,12 @@
                             $logoSrc = asset('storage/' . $logoSetting->value);
                         }
                     }
+                    // Cloudinary: pedir el logo al tamaño en que se muestra (56px, x2 para pantallas retina) y en formato moderno
+                    if (str_contains($logoSrc, 'res.cloudinary.com') && str_contains($logoSrc, '/image/upload/')) {
+                        $logoSrc = str_replace('/image/upload/', '/image/upload/f_auto,q_auto,h_112/', $logoSrc);
+                    }
                 @endphp
-                <img src="{{ $logoSrc }}" alt="Logo La 501" class="h-14 w-auto nav-logo-img">
+                <img src="{{ $logoSrc }}" alt="Logo La 501" width="100" height="56" fetchpriority="high" class="h-14 w-auto nav-logo-img">
             </a>
 
             {{-- Links Escritorio --}}
@@ -275,11 +280,11 @@
             <div class="flex gap-3 items-center flex-shrink-0 z-10">
 
                 <a href="{{ route('pedido') }}" class="hidden lg:inline-flex nav-cta-btn">
-                    🛵 Pedir Ahora
+                    Pedir Ahora
                 </a>
 
                 {{-- Theme toggle --}}
-                <button id="theme-toggle" class="theme-toggle-btn bg-zinc-100 dark:bg-zinc-800">
+                <button id="theme-toggle" type="button" aria-label="Cambiar tema claro/oscuro" class="theme-toggle-btn bg-zinc-100 dark:bg-zinc-800">
                     <svg id="theme-toggle-light-icon" class="hidden w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"/></svg>
                     <svg id="theme-toggle-dark-icon" class="hidden w-5 h-5 text-zinc-500" fill="currentColor" viewBox="0 0 20 20"><path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/></svg>
                 </button>
@@ -300,7 +305,7 @@
                             @endif
                             <div class="hidden sm:block text-left">
                                 <p class="text-xs font-bold leading-none text-zinc-800 dark:text-white">{{ Auth::user()->name }}</p>
-                                <p class="text-[10px] text-zinc-500 uppercase">{{ Auth::user()->role }}</p>
+                                <p class="text-[10px] text-zinc-500 uppercase">{{ Auth::user()->role === 'empleado' ? 'mesero' : Auth::user()->role }}</p>
                             </div>
                             <svg class="w-4 h-4 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 9l-7 7-7-7"/></svg>
                         </button>
@@ -329,10 +334,12 @@
     </a>
 @endif
 
+                                @if(auth()->user()->role === 'cliente')
                                 <a href="{{ route('perfil') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition">
                                     👤 Mi Perfil
                                 </a>
-                                <a href="#" class="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition">
+                                @endif
+                                <a href="{{ route('configuracion') }}" class="flex items-center gap-2 px-4 py-2 text-sm text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/5 transition">
                                     ⚙️ Configuración
                                 </a>
                             </div>
@@ -348,6 +355,9 @@
                         </div>
                     </div>
                 @else
+                    <a href="{{ route('order.lookup') }}" class="hidden sm:flex items-center gap-1.5 text-sm text-zinc-500 dark:text-zinc-400 hover:text-orange-500 transition font-medium">
+                        <span>Mis Pedidos</span>
+                    </a>
                     <a href="{{ route('login') }}" class="hidden sm:flex items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 hover:text-orange-500 transition font-medium">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
@@ -365,6 +375,9 @@
 
                 {{-- Hamburguesa --}}
                 <button @click="mobileMenuOpen = !mobileMenuOpen"
+                        type="button"
+                        aria-label="Abrir menú de navegación"
+                        :aria-expanded="mobileMenuOpen.toString()"
                         class="lg:hidden w-9 h-9 flex items-center justify-center rounded-10 bg-zinc-100 dark:bg-zinc-800 border border-transparent hover:border-orange-500 transition-all">
                     <svg x-show="!mobileMenuOpen" class="w-5 h-5 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
                     <svg x-show="mobileMenuOpen" class="w-5 h-5 text-zinc-600 dark:text-zinc-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display:none;"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -397,6 +410,7 @@
                 @endauth
 
                 <a href="{{ route('pedido') }}"       class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">A Domicilio</a>
+                <a href="{{ route('order.lookup') }}" class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">Mis Pedidos</a>
                 <a href="{{ route('menu') }}"         class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">Menú</a>
                 <a href="{{ route('nosotros') }}"     class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">Quienes Somos</a>
                 <a href="{{ route('contacto') }}"     class="mobile-nav-link text-zinc-600 dark:text-zinc-300 hover:text-orange-500 dark:hover:text-orange-400 bg-zinc-50 dark:bg-white/5">Contacto</a>
@@ -431,15 +445,15 @@
             <div>
                 <div class="footer-or-bar"></div>
                 <p class="footer-brand-name text-zinc-900 dark:text-white">Restaurant La 501 Sports</p>
-                <p class="text-xs text-zinc-500 mt-1 tracking-wide">Donde el deporte y la familia se unen</p>
+                <p class="text-xs text-zinc-600 dark:text-zinc-400 mt-1 tracking-wide">Donde el deporte y la familia se unen</p>
             </div>
             <div class="flex gap-6">
-                <a href="{{ route('aviso-privacidad') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Aviso de Privacidad</a>
-                <a href="{{ route('terminos-condiciones') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Términos y Condiciones</a>
-                <a href="{{ route('nosotros') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Quienes Somos</a>
-                <a href="{{ route('contacto') }}" class="footer-link text-zinc-500 dark:text-zinc-500">Contacto</a>
+                <a href="{{ route('aviso-privacidad') }}" class="footer-link text-zinc-600 dark:text-zinc-400">Aviso de Privacidad</a>
+                <a href="{{ route('terminos-condiciones') }}" class="footer-link text-zinc-600 dark:text-zinc-400">Términos y Condiciones</a>
+                <a href="{{ route('nosotros') }}" class="footer-link text-zinc-600 dark:text-zinc-400">Quienes Somos</a>
+                <a href="{{ route('contacto') }}" class="footer-link text-zinc-600 dark:text-zinc-400">Contacto</a>
             </div>
-            <p class="text-xs text-zinc-400 dark:text-zinc-600 tracking-wide">
+            <p class="text-xs text-zinc-600 dark:text-zinc-400 tracking-wide">
                 © {{ date('Y') }} La 501 Sports.<br class="md:hidden"> Todos los derechos reservados.
             </p>
         </div>

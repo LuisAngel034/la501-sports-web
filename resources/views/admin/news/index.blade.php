@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.js"></script>
 
 <style>
     .an {
@@ -188,7 +190,7 @@
     /* upload */
     .an-upload {
         border: 1px dashed var(--bdr); border-radius: 7px;
-        height: 100px; cursor: pointer; overflow: hidden;
+        aspect-ratio: 16 / 9; width: 100%; cursor: pointer; overflow: hidden;
         position: relative; background: var(--bg-input);
         display: flex; align-items: center; justify-content: center;
         transition: border-color .15s;
@@ -205,6 +207,29 @@
     }
     .an-upload:hover .an-upload-ov { opacity: 1; }
     .an-upload-ov span { font-size: 12px; color: #fff; font-weight: 600; }
+    .an-imghelp { font-size: 11px; color: var(--txt-sub); margin: 6px 2px 0; line-height: 1.5; }
+    .an-imghelp strong { color: var(--txt); }
+
+    /* ── RECORTE DE IMAGEN (Cropper.js) ── */
+    .an-crop-overlay {
+        position: fixed; inset: 0; z-index: 70;
+        background: rgba(0,0,0,.65); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .an-crop-modal {
+        background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 12px;
+        width: 100%; max-width: 520px; box-shadow: 0 24px 64px rgba(0,0,0,.35);
+        display: flex; flex-direction: column; overflow: hidden;
+    }
+    .an-crop-hd { padding: 16px 18px; border-bottom: 1px solid var(--bdr); }
+    .an-crop-hd h3 { font-size: 15px; font-weight: 700; color: var(--txt); margin: 0 0 2px; }
+    .an-crop-hd p  { font-size: 12px; color: var(--txt-sub); margin: 0; }
+    .an-crop-body { background: #000; height: 340px; }
+    .an-crop-body img { display: block; max-width: 100%; }
+    .an-crop-foot { padding: 14px 18px; border-top: 1px solid var(--bdr); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .an-crop-hint { font-size: 11px; color: var(--txt-sub); }
+    .an-crop-actions { display: flex; gap: 8px; }
+    @media (max-width: 480px) { .an-crop-body { height: 260px; } .an-crop-foot { flex-direction: column; align-items: stretch; } }
 
     /* modal buttons */
     .an-btn-cancel {
@@ -224,6 +249,13 @@
     .an-btn-save:hover { background: var(--accent2); }
     .an-btn-save:disabled { opacity: .6; cursor: not-allowed; }
 
+    /* word counter */
+    .an-wordcount {
+        font-size: 11px; color: var(--txt-sub);
+        text-align: right; margin: 4px 2px 0;
+    }
+    .an-wordcount.over { color: var(--danger); font-weight: 600; }
+
     @media (max-width: 540px) {
         .an-row-2 { grid-template-columns: 1fr; }
         .an-thumb { width: 44px; height: 44px; }
@@ -231,6 +263,27 @@
 </style>
 
 <div class="an" x-data="newsManager()">
+
+    @if(session('success'))
+    <div style="background: rgba(22,163,74,.1); border: 1px solid rgba(34,197,94,.3); color: #15803D; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-weight: 600; font-size: 13px;">
+        {{ session('success') }}
+    </div>
+    @endif
+    @if(session('error'))
+    <div style="background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #B91C1C; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-weight: 600; font-size: 13px;">
+        {{ session('error') }}
+    </div>
+    @endif
+    @if($errors->any())
+    <div style="background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.3); color: #B91C1C; padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; font-size: 13px;">
+        <strong>Revisa lo siguiente:</strong>
+        <ul style="margin: 4px 0 0 18px; padding: 0;">
+            @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+    @endif
 
     {{-- HEADER --}}
     <div class="an-header">
@@ -347,8 +400,10 @@
                                 <span>Subir imagen</span>
                             </div>
                             <input type="file" id="news-image" name="image" class="hidden" accept="image/*"
-                                   @change="const f=$event.target.files[0];if(f){const r=new FileReader();r.onload=e=>imagePreview=e.target.result;r.readAsDataURL(f)}">
+                                   x-ref="newsImgFile"
+                                   @change="previewImage($event)">
                         </label>
+                        <p class="an-imghelp">Recomendado: imagen <strong>rectangular (16:9)</strong>, mínimo 1000×563px.<br>Aceptamos JPG, PNG, WEBP y la mayoría de formatos.</p>
                     </div>
 
                     {{-- Título --}}
@@ -379,9 +434,13 @@
                     <div>
                         <label for="news-content" class="an-label">Contenido *</label>
                         <textarea id="news-content" name="content" x-model="newsData.content"
-                                  rows="4" required
+                                  rows="4" required maxlength="2200"
                                   placeholder="Describe la novedad..."
+                                  @input="enforceWordLimit($event)"
                                   class="an-input resize-none"></textarea>
+                        <p class="an-wordcount" :class="wordCount(newsData.content) >= 300 ? 'over' : ''">
+                            <span x-text="wordCount(newsData.content)"></span> / 300 palabras
+                        </p>
                     </div>
 
                 </div>
@@ -396,6 +455,28 @@
         </div>
     </div>
 
+    {{-- MODAL DE RECORTE DE IMAGEN (Cropper.js) --}}
+    <div x-show="cropperOpen" x-cloak class="an-crop-overlay" @click.self="cancelCrop()">
+        <div class="an-crop-modal" @click.stop>
+            <div class="an-crop-hd">
+                <h3>Ajustar imagen</h3>
+                <p>Mueve y haz zoom para elegir qué parte se mostrará (formato 16:9)</p>
+            </div>
+            <div class="an-crop-body">
+                <template x-if="cropperSrc">
+                    <img x-ref="newsCropperImg" :src="cropperSrc">
+                </template>
+            </div>
+            <div class="an-crop-foot">
+                <span class="an-crop-hint">Se guardará como imagen 1000×563px</span>
+                <div class="an-crop-actions">
+                    <button type="button" @click="cancelCrop()" class="an-btn-cancel">Cancelar</button>
+                    <button type="button" @click="confirmCrop()" class="an-btn-save">Recortar y usar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -405,7 +486,11 @@
             isEdit: false,
             isSubmitting: false,
             actionUrl: '',
+            newsBaseUrl: '{{ route("admin.news") }}',
             imagePreview: null,
+            cropperOpen: false,
+            cropperSrc: null,
+            cropperInstance: null,
             newsData: { title: '', category: 'Deportes', end_date: '', content: '' },
 
             openCreate() {
@@ -419,7 +504,7 @@
 
             openEdit(item) {
                 this.isEdit = true;
-                this.actionUrl = '{{ route("admin.news.update", ":id") }}'.replace(':id', item.id);
+                this.actionUrl = this.newsBaseUrl + '/' + item.id;
                 this.imagePreview = item.image ? (item.image.startsWith('http') ? item.image : `/storage/${item.image}`) : null;
                 this.newsData = {
                     title: item.title,
@@ -429,6 +514,76 @@
                 };
                 this.isSubmitting = false;
                 this.openModal = true;
+            },
+
+            wordCount(text) {
+                if (!text) return 0;
+                return text.trim().split(/\s+/).filter(Boolean).length;
+            },
+
+            enforceWordLimit(e) {
+                const words = e.target.value.trim().split(/\s+/).filter(Boolean);
+                if (words.length > 300) {
+                    const trimmed = words.slice(0, 300).join(' ');
+                    this.newsData.content = trimmed;
+                    e.target.value = trimmed;
+                }
+            },
+
+            previewImage(e) {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (!file.type.startsWith('image/')) {
+                    alert('Por favor selecciona un archivo de imagen válido (JPG, PNG, WEBP, etc.)');
+                    e.target.value = '';
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    this.cropperSrc  = ev.target.result;
+                    this.cropperOpen = true;
+                    this.$nextTick(() => this.initCropper());
+                };
+                reader.readAsDataURL(file);
+            },
+
+            initCropper() {
+                if (this.cropperInstance) { this.cropperInstance.destroy(); this.cropperInstance = null; }
+                this.cropperInstance = new Cropper(this.$refs.newsCropperImg, {
+                    aspectRatio: 16 / 9,
+                    viewMode: 1,
+                    autoCropArea: 1,
+                    background: false,
+                    movable: true,
+                    zoomable: true,
+                    scalable: false,
+                    responsive: true,
+                });
+            },
+
+            confirmCrop() {
+                if (!this.cropperInstance) return;
+                const canvas = this.cropperInstance.getCroppedCanvas({
+                    width: 1000, height: 563, imageSmoothingQuality: 'high',
+                });
+                canvas.toBlob((blob) => {
+                    const croppedFile = new File([blob], 'novedad-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+                    const dt = new DataTransfer();
+                    dt.items.add(croppedFile);
+                    this.$refs.newsImgFile.files = dt.files;
+                    this.imagePreview = canvas.toDataURL('image/jpeg', 0.92);
+                    this.cropperOpen = false;
+                    this.cropperInstance.destroy();
+                    this.cropperInstance = null;
+                    this.cropperSrc = null;
+                }, 'image/jpeg', 0.92);
+            },
+
+            cancelCrop() {
+                this.cropperOpen = false;
+                if (this.cropperInstance) { this.cropperInstance.destroy(); this.cropperInstance = null; }
+                this.cropperSrc = null;
+                this.$refs.newsImgFile.value = '';
             }
         }
     }

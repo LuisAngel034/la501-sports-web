@@ -10,8 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class StaffDashboardController extends Controller
 {
-    private const ESTADOS_VENTA = ['paid', 'delivered'];
-
     public function today(): JsonResponse
     {
         $hoy = now()->toDateString();
@@ -19,8 +17,7 @@ class StaffDashboardController extends Controller
         $pedidosHoy = Order::query()
             ->whereDate('created_at', $hoy);
 
-        $ventasHoy = (clone $pedidosHoy)
-            ->whereIn('status', self::ESTADOS_VENTA);
+        $ventasHoy = (clone $pedidosHoy)->vendidas();
 
         $totalIngresos = (float) (clone $ventasHoy)->sum('total');
         $totalPedidosVendidos = (clone $ventasHoy)->count();
@@ -32,7 +29,13 @@ class StaffDashboardController extends Controller
         $topPlatillos = DB::table('order_items')
             ->join('orders', 'orders.id', '=', 'order_items.order_id')
             ->whereDate('orders.created_at', $hoy)
-            ->whereIn('orders.status', self::ESTADOS_VENTA)
+            ->where(function ($q) {
+                $q->where('orders.status', 'paid')
+                  ->orWhere(function ($sq) {
+                      $sq->whereNull('orders.table_number')
+                         ->whereIn('orders.status', ['ready', 'delivering', 'delivered']);
+                  });
+            })
             ->select('order_items.product_name')
             ->selectRaw('SUM(order_items.quantity) as unidades')
             ->selectRaw('SUM(order_items.subtotal) as ingresos')
@@ -60,12 +63,7 @@ class StaffDashboardController extends Controller
         ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
-    /**
-     * Historial diario de los últimos N días, usando la vista
-     * `v_ventas_diarias` que ya existe en la base de datos.
-     *
-     * GET /v1/staff/dashboard/history?days=7
-     */
+    // Historial diario, usando la vista `v_ventas_diarias`
     public function history(Request $request): JsonResponse
     {
         $validated = $request->validate([

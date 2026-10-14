@@ -54,6 +54,9 @@ Route::get('/novedades', [PageController::class, 'novedades'])->name('novedades'
 Route::get("/{$promoPrefix}", [PageController::class, 'promociones'])->name('promociones')->middleware('non-client');
 Route::post('/contacto/enviar', [PageController::class, 'enviarContacto'])->name('contacto.enviar');
 
+Route::post('/newsletter/suscribirse', [App\Http\Controllers\NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+Route::get('/newsletter/baja/{token}', [App\Http\Controllers\NewsletterController::class, 'unsubscribe'])->name('newsletter.unsubscribe');
+
 Route::get('/menu', [MenuController::class, 'index'])->name('menu')->middleware('non-client');
 Route::get('/api/menu/products', function() {
     return response()->json(\App\Models\Product::where('available', 1)->get());
@@ -63,6 +66,7 @@ Route::get('/api/menu/products', function() {
 Route::controller(CartController::class)->group(function () {
     Route::get('/carrito', 'index')->name('cart.index')->middleware('non-client');
     Route::post('/carrito/agregar', 'add')->name('cart.add');
+    Route::post('/carrito/agregar-promocion', 'addPromotion')->name('cart.addPromotion');
     Route::post('/carrito/actualizar', 'update')->name('cart.update');
     Route::delete('/carrito/eliminar', 'remove')->name('cart.remove');
     Route::post('/carrito/vaciar', 'clear')->name('cart.clear');
@@ -75,6 +79,15 @@ Route::get('/pago/exitoso', [CheckoutController::class, 'success'])->name('payme
 Route::get('/pago/fallido', [CheckoutController::class, 'failure'])->name('payment.failure');
 Route::get('/pedido/confirmacion/{id}', [CheckoutController::class, 'confirmation'])->name('payment.confirmation');
 Route::get('/api/pedido/{id}/status', [CheckoutController::class, 'apiStatus'])->name('api.order.status');
+
+Route::get('/pedido/seguir/{token}', [App\Http\Controllers\OrderTrackingController::class, 'show'])->name('order.track');
+Route::get('/api/pedido/seguir/{token}/status', [App\Http\Controllers\OrderTrackingController::class, 'apiStatus'])->name('order.track.status');
+Route::post('/pedido/seguir/{token}/recibido', [App\Http\Controllers\OrderTrackingController::class, 'confirmarRecibido'])->name('order.track.receive');
+Route::get('/pedido/mis-pedidos', [App\Http\Controllers\OrderTrackingController::class, 'lookup'])->name('order.lookup');
+Route::post('/pedido/mis-pedidos/enviar-pin', [App\Http\Controllers\OrderTrackingController::class, 'requestOtp'])->middleware('throttle:5,10')->name('order.lookup.request-otp');
+Route::get('/pedido/mis-pedidos/verificar', [App\Http\Controllers\OrderTrackingController::class, 'showVerify'])->name('order.lookup.verify');
+Route::post('/pedido/mis-pedidos/verificar', [App\Http\Controllers\OrderTrackingController::class, 'verifyOtp'])->middleware('throttle:10,10')->name('order.lookup.verify.post');
+Route::get('/pedido/mis-pedidos/resultados', [App\Http\Controllers\OrderTrackingController::class, 'results'])->name('order.lookup.results');
 
 // Final de rutas públicas
 Route::get('/clear-laravel-cache', function () {
@@ -123,6 +136,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/perfil', [AuthController::class, 'showPerfil'])->name('perfil');
     Route::post('/perfil', [AuthController::class, 'updatePerfil'])->name('perfil.update');
 
+    // Configuración de cuenta (todos los roles)
+    Route::get('/configuracion', [App\Http\Controllers\AccountSettingsController::class, 'index'])->name('configuracion');
+    Route::post('/configuracion/password', [App\Http\Controllers\AccountSettingsController::class, 'updatePassword'])->name('configuracion.password');
+    Route::post('/configuracion/promociones', [App\Http\Controllers\AccountSettingsController::class, 'togglePromoEmail'])->name('configuracion.promo');
+
     // Meseros
     Route::prefix('mesero')->group(function () {
         Route::get('/mesas', [WaiterController::class, 'index'])->name('mesero.mesas');
@@ -130,6 +148,14 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/mesas/{id}/cobrar', [WaiterController::class, 'cobrar'])->name('mesero.cobrar');
         Route::post('/mesas/{id}/pedido', [WaiterController::class, 'guardarPedido'])->name('mesero.guardar_pedido');
         Route::get('/api/mesas', [WaiterController::class, 'apiGetMesas'])->name('mesero.api_mesas');
+        Route::post('/mesas/agregar', [WaiterController::class, 'addTable'])->name('mesero.mesas.agregar');
+
+        // Domicilios: entrega al mandadito, ticket e historial en camino
+        Route::get('/domicilios', [WaiterController::class, 'domicilios'])->name('mesero.domicilios');
+        Route::get('/api/domicilios', [WaiterController::class, 'apiDomicilios'])->name('mesero.api_domicilios');
+        Route::post('/domicilios/{id}/mandadito', [WaiterController::class, 'entregarAlMandadito'])->name('mesero.domicilios.mandadito');
+        Route::post('/domicilios/{id}/entregado', [WaiterController::class, 'marcarEntregado'])->name('mesero.domicilios.entregado');
+        Route::get('/domicilios/{id}/ticket', [WaiterController::class, 'ticketMandadito'])->name('mesero.domicilios.ticket');
     });
 
     // Cocina
@@ -171,11 +197,6 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
     
     // Rutas de AdminController
     Route::get('/ventas', [AdminController::class, 'ventas'])->name('admin.ventas');
-    Route::get('/api/sales-data', [AdminController::class, 'getSalesData']);
-    Route::get('/api/orders/latest', function() {
-        return \App\Models\Order::with('items')->latest()->take(10)->get();
-    })->name('admin.api.orders');
-    
 
     // Gestión de Mensajes (CRM)
     Route::get('/mensajes', [AdminController::class, 'mensajes'])->name('admin.mensajes');
@@ -196,6 +217,9 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
     Route::put('/usuarios/{id}', [UserController::class, 'update'])->name('admin.users.update');
     Route::delete('/usuarios/{id}', [UserController::class, 'destroy'])->name('admin.users.destroy');
     Route::put('/usuarios/{id}/toggle', [UserController::class, 'toggleStatus'])->name('admin.users.toggle');
+
+    // Desempeño de Meseros / Empleados (ventas por mesero + auditoría de cobros forzados)
+    Route::get('/meseros/desempeno', [App\Http\Controllers\Admin\WaiterPerformanceController::class, 'index'])->name('admin.waiters.performance');
 
     // Gestión de Novedades
     Route::get('/novedades', [NewsController::class, 'index'])->name('admin.news');
@@ -222,6 +246,10 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
 
     // Gestión de Finanzas
     Route::resource('finanzas', FinanceController::class)->only(['index', 'store', 'destroy'])->names('admin.finances');
+
+    // Centro de Inteligencia Artificial y Minería de Datos (ML)
+    Route::get('/ia', [\App\Http\Controllers\Admin\MlController::class, 'index'])->name('admin.ml.index');
+    Route::post('/ia/cupon', [\App\Http\Controllers\Admin\MlController::class, 'sendPromotionCoupon'])->name('admin.ml.coupon');
 
     // Gestión de Inventario
     Route::get('/inventario/exportar', [InventoryController::class, 'exportCSV'])->name('admin.inventory.export');
@@ -261,6 +289,11 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () use ($p
 
 
 Route::get('/run-auto-backup', [BackupController::class, 'runAutoBackup']);
+
+Route::get('/run-delivery-reminders', function () {
+    \Illuminate\Support\Facades\Artisan::call('orders:send-delivery-reminders');
+    return \Illuminate\Support\Facades\Artisan::output();
+});
 
 /*
 |------------------------------------------------------
@@ -303,6 +336,3 @@ Route::get('/aviso-de-privacidad', function () {
 Route::get('/terminos-y-condiciones', function () {
     return view('terminos-condiciones');
 })->name('terminos-condiciones');
-
-
-

@@ -299,7 +299,8 @@
     }
 </style>
 
-<div class="conf-page min-h-screen bg-[#0f0d0a] py-8" x-data="tracker({{ $order->id }}, '{{ $order->status }}')">
+<div class="conf-page min-h-screen bg-[#0f0d0a] py-8"
+     x-data="tracker('{{ $order->status }}', {{ $order->esADomicilio() ? 'true' : 'false' }}, '{{ route('order.track.status', $order->trackingToken()) }}')">
     <div class="conf-container">
 
         {{-- Alerta flotante interna --}}
@@ -335,9 +336,18 @@
                             <span x-show="isStepCompleted('preparing')">✓</span>
                             <span x-show="!isStepCompleted('preparing')">2</span>
                         </div>
-                        <span class="step-lbl">Cocina</span>
+                        <span class="step-lbl">Cocinado</span>
                     </div>
 
+                    @if($order->esADomicilio())
+                    <div class="status-step" :class="isStepCompleted('delivering') ? 'completed' : (isStepActive('delivering') ? 'active' : '')">
+                        <div class="step-dot">
+                            <span x-show="isStepCompleted('delivering')">✓</span>
+                            <span x-show="!isStepCompleted('delivering')">3</span>
+                        </div>
+                        <span class="step-lbl">Entregado al repartidor</span>
+                    </div>
+                    @else
                     <div class="status-step" :class="isStepCompleted('ready') ? 'completed' : (isStepActive('ready') ? 'active' : '')">
                         <div class="step-dot">
                             <span x-show="isStepCompleted('ready')">✓</span>
@@ -345,8 +355,10 @@
                         </div>
                         <span class="step-lbl">Listo</span>
                     </div>
+                    @endif
                 </div>
             </div>
+
 
             {{-- DETALLES GENERALES --}}
             <div class="ticket-details">
@@ -390,6 +402,11 @@
                                     Sin: {{ implode(', ', $item->excluded_ingredients) }}
                                 </div>
                             @endif
+                            @if(!empty($item->notes))
+                                <div class="ticket-item-excl">
+                                    📝 {{ $item->notes }}
+                                </div>
+                            @endif
                         </div>
                         <div class="ticket-item-price">
                             ${{ number_format($item->subtotal, 2) }}
@@ -404,6 +421,20 @@
                 <span class="total-val">${{ number_format($order->total, 2) }}</span>
             </div>
 
+            {{-- QR DE UBICACIÓN (solo a domicilio con GPS) --}}
+            @if ($order->esADomicilio() && $order->hasLocation() && ($qrSvg = $order->mapsQrSvg(200)))
+                <div style="text-align:center; padding:14px 0 6px; margin-top:12px; border-top:1px dashed currentColor;">
+                    <div style="display:inline-block; background:#fff; padding:6px; line-height:0;">{!! $qrSvg !!}</div>
+                    <p style="margin:6px 0 0; font-size:12px;">Escanea para abrir la ubicación en Maps</p>
+                </div>
+            @endif
+
+            @if($order->esADomicilio())
+            <p class="no-print" style="font-size:12px; color:var(--txt-sub); text-align:center; margin:10px 0 0;">
+                Este total es solo del platillo. El envío lo cobra el repartidor por separado al entregarte tu pedido.
+            </p>
+            @endif
+
             {{-- ACCIONES --}}
             <div class="actions-grid no-print">
                 <button @click="window.print()" class="action-btn btn-print">
@@ -414,14 +445,22 @@
                 </a>
             </div>
 
+            <div class="no-print" style="text-align:center; margin-top:16px;">
+                <a href="{{ route('order.lookup') }}?telefono={{ urlencode($order->customer_phone) }}"
+                   style="color: var(--txt-sub); font-size: 12px; text-decoration: underline;">
+                    📜 Ver mis pedidos anteriores
+                </a>
+            </div>
+
         </div>
     </div>
 </div>
 
 <script>
-    function tracker(orderId, initialStatus) {
+    function tracker(initialStatus, esADomicilio, statusUrl) {
         return {
             status: initialStatus,
+            esADomicilio: esADomicilio,
             alerta: false,
             alertaMsg: '',
             permissionRequested: false,
@@ -432,6 +471,9 @@
                     Notification.requestPermission();
                 }
 
+                // No hace falta seguir preguntando una vez que ya se confirmó la entrega
+                if (this.status === 'delivered') return;
+
                 // Iniciar consulta de estado cada 8 segundos
                 setInterval(() => {
                     this.checkStatus();
@@ -440,7 +482,7 @@
 
             async checkStatus() {
                 try {
-                    const response = await fetch(`/api/pedido/${orderId}/status`);
+                    const response = await fetch(statusUrl);
                     if (response.ok) {
                         const data = await response.json();
                         if (data.status && data.status !== this.status) {
@@ -455,29 +497,46 @@
             },
 
             getProgressPercent() {
+                if (this.esADomicilio) {
+                    if (this.status === 'delivering' || this.status === 'delivered') return 100;
+                    if (this.status === 'preparing' || this.status === 'ready') return 50;
+                    return 0; // paid / pending
+                }
                 if (this.status === 'ready') return 100;
                 if (this.status === 'preparing') return 50;
-                return 0; // paid / pending
+                return 0;
             },
 
+            // Recibido: se cumple en cuanto el cliente hace el pedido.
+            // Cocinado: cocina lo marcó listo.
+            // Entregado al repartidor: el empleado lo entregó al mandadito.
             isStepCompleted(step) {
                 if (step === 'received') {
-                    return this.status === 'preparing' || this.status === 'ready';
+                    return true;
                 }
                 if (step === 'preparing') {
-                    return this.status === 'ready';
+                    return ['ready', 'delivering', 'delivered'].includes(this.status);
+                }
+                if (step === 'ready') {
+                    return false; // último paso para mesa, no hay nada después
+                }
+                if (step === 'delivering') {
+                    return ['delivering', 'delivered'].includes(this.status);
                 }
                 return false;
             },
 
             isStepActive(step) {
                 if (step === 'received') {
-                    return this.status === 'paid' || this.status === 'pending';
+                    return false;
                 }
                 if (step === 'preparing') {
-                    return this.status === 'preparing';
+                    return ['paid', 'pending', 'preparing'].includes(this.status);
                 }
                 if (step === 'ready') {
+                    return this.status === 'ready';
+                }
+                if (step === 'delivering') {
                     return this.status === 'ready';
                 }
                 return false;
@@ -513,7 +572,9 @@
                 if (newStatus === 'preparing') {
                     msg = '🍳 ¡Tu pedido ha comenzado a prepararse en cocina!';
                 } else if (newStatus === 'ready') {
-                    msg = '🎉 ¡Tu pedido está listo y empaquetado!';
+                    msg = '🎉 ¡Tu pedido está listo!';
+                } else if (newStatus === 'delivering') {
+                    msg = '🛵 ¡Tu pedido fue entregado al repartidor y va en camino!';
                 }
 
                 if (msg) {

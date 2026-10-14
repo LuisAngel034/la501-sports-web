@@ -23,5 +23,9 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)
                 ->by($request->ip());
         });
+
+        RateLimiter::for('staff-api', function (Request $request) {
+        return Limit::perMinute(60)->by($request->ip());
+        });
     }
 }

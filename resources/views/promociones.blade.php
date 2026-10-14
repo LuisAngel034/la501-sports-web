@@ -18,6 +18,7 @@
         --txt:      #FFFFFF;
         --txt-sub:  #A8A29E;
         --bdr:      rgba(255,255,255,0.07);
+        --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-dark.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-dark.svg')) }}');
     }
 
     :root:not(.dark) .promo-page {
@@ -27,13 +28,14 @@
         --txt:      #1A1208;
         --txt-sub:  #6B6560;
         --bdr:      rgba(0,0,0,0.09);
+        --brand-pattern: url('{{ asset('images/patterns/logo-501-pattern-light.svg') }}?v={{ @filemtime(public_path('images/patterns/logo-501-pattern-light.svg')) }}');
     }
 
     /* ── HERO ── */
     .promo-hero {
         position: relative;
         background: var(--bg-card);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23F97316' fill-opacity='0.04'%3E%3Cpath d='M28 66L0 49V16L28 0l28 16v33L28 66zm0-2l26-15V18L28 2 2 18v31l26 15zM56 98L28 81 0 98V81L0 66l28-16 28 16v15L28 98l28-17V98z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        background-image: var(--brand-pattern);
         border-bottom: 3px solid var(--or);
         padding: 80px 40px 70px;
         text-align: center;
@@ -217,12 +219,22 @@
         transform: translateY(-2px);
         box-shadow: 0 6px 24px rgba(249,115,22,.5);
     }
+    .promo-btn-disabled {
+        font-family: 'Oswald', sans-serif;
+        font-size: 10px; font-weight: 700;
+        letter-spacing: 1px; text-transform: uppercase;
+        color: var(--txt-sub); background: var(--bg-card2);
+        border: 1px dashed var(--bdr);
+        padding: 10px 16px; border-radius: 8px;
+        text-align: right; line-height: 1.4;
+    }
+    .promo-btn-disabled strong { display: block; color: var(--or); font-size: 11px; }
 
     /* ── EMPTY STATE ── */
     .promo-empty {
         grid-column: 1 / -1;
         background: var(--bg-card);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23F97316' fill-opacity='0.04'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15z'/%3E%3C/g%3E%3C/svg%3E");
+        background-image: var(--brand-pattern);
         border: 1px solid var(--bdr);
         border-left: 5px solid var(--or);
         border-radius: 20px;
@@ -241,7 +253,7 @@
     .promo-cta-banner {
         position: relative;
         background: var(--bg-card);
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='49'%3E%3Cg fill='%23F97316' fill-opacity='0.04'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15z'/%3E%3C/g%3E%3C/svg%3E");
+        background-image: var(--brand-pattern);
         border: 1px solid var(--bdr);
         border-top: 4px solid var(--gn);
         border-radius: 20px;
@@ -360,7 +372,21 @@
 
                     <div class="promo-card-footer">
                         <span class="promo-price">{{ $promo->price_text }}</span>
-                        <button class="promo-btn">Aprovechar</button>
+                        @if(!$promo->sellable_online)
+                        <span class="promo-btn-disabled">
+                            Solo en el local<strong>Pide con tu mesero</strong>
+                        </span>
+                        @elseif($promo->isActiveToday())
+                        <form action="{{ route('cart.addPromotion') }}" method="POST">
+                            @csrf
+                            <input type="hidden" name="promotion_id" value="{{ $promo->id }}">
+                            <button type="submit" class="promo-btn">Aprovechar</button>
+                        </form>
+                        @else
+                        <span class="promo-btn-disabled">
+                            Disponible<strong>{{ $promo->activeDaysLabel() }}</strong>
+                        </span>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -381,12 +407,17 @@
             <div class="promo-cta-deco">501</div>
             <div class="promo-cta-text">
                 <h2>¿No quieres perderte<br><span>ninguna oferta?</span></h2>
-                <p>Suscríbete para recibir nuestras ofertas flash<br>directamente en tu correo.</p>
+                @if(session('success'))
+                    <p style="color:#4ADE80; font-weight:700;">{{ session('success') }}</p>
+                @else
+                    <p>Suscríbete para recibir nuestras ofertas flash<br>directamente en tu correo.</p>
+                @endif
             </div>
-            <div class="promo-cta-form">
-                <input type="email" placeholder="tu@correo.com" class="promo-cta-input">
-                <button class="promo-cta-submit">Unirme →</button>
-            </div>
+            <form action="{{ route('newsletter.subscribe') }}" method="POST" class="promo-cta-form">
+                @csrf
+                <input type="email" name="email" required placeholder="tu@correo.com" class="promo-cta-input">
+                <button type="submit" class="promo-cta-submit">Unirme →</button>
+            </form>
         </div>
         @endguest
 

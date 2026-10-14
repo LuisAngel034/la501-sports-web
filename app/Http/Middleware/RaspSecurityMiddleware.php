@@ -10,6 +10,11 @@ class RaspSecurityMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
+
+        if (!$request->isMethod('post') && !$request->isMethod('put') && !$request->isMethod('patch') && !$request->isMethod('delete')) {
+            return $next($request);
+        }
+
         $input = $request->all();
         $patterns = ['/select/i', '/union/i', '/<script>/i', '/\.\.\//', '/--/'];
 

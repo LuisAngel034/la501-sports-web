@@ -9,6 +9,7 @@ use App\Models\Promotion;
 use App\Models\Setting;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class PublicDataController extends Controller
 {
@@ -43,6 +44,25 @@ class PublicDataController extends Controller
         'schedule_sabado' => 'sábado',
         'schedule_domingo' => 'domingo',
     ];
+
+    /**
+     * Convierte lo que haya guardado en la columna `image` (puede ser
+     * una URL absoluta de Cloudinary/Unsplash o una ruta relativa del
+     * disco "public", p. ej. "news/archivo.jpg") en una URL absoluta
+     * lista para usarse en la skill de Alexa o en el frontend.
+     */
+    private function resolveImageUrl(?string $path): ?string
+    {
+        if (blank($path)) {
+            return null;
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return Storage::disk('public')->url($path);
+    }
 
     public function info(): JsonResponse
     {
@@ -112,6 +132,25 @@ class PublicDataController extends Controller
         ], 200, [], JSON_UNESCAPED_UNICODE);
     }
 
+    public function categories(): JsonResponse
+    {
+        $categories = Product::query()
+            ->where('available', true)
+            ->whereNotNull('category')
+            ->where('category', '<>', '')
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category')
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'total' => $categories->count(),
+            'data' => $categories,
+        ], 200, [], JSON_UNESCAPED_UNICODE);
+    }
+
     public function products(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -125,6 +164,7 @@ class PublicDataController extends Controller
             ->select([
                 'name',
                 'description',
+                'image',
                 'price',
                 'category',
                 'available',
@@ -132,13 +172,12 @@ class PublicDataController extends Controller
 
         if (!empty($validated['q'])) {
             $search = trim($validated['q']);
-            $escapedSearch = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
 
-            $query->where(function ($productQuery) use ($escapedSearch) {
+            $query->where(function ($productQuery) use ($search) {
                 $productQuery
-                    ->where('name', 'LIKE', "%{$escapedSearch}%")
-                    ->orWhere('description', 'LIKE', "%{$escapedSearch}%")
-                    ->orWhere('category', 'LIKE', "%{$escapedSearch}%");
+                    ->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('description', 'LIKE', "%{$search}%")
+                    ->orWhere('category', 'LIKE', "%{$search}%");
             });
         }
 
@@ -167,6 +206,7 @@ class PublicDataController extends Controller
                 return [
                     'name' => $product->name,
                     'description' => $product->description,
+                    'image' => $this->resolveImageUrl($product->image),
                     'price' => (float) $product->price,
                     'currency' => 'MXN',
                     'category' => $product->category,
@@ -196,6 +236,7 @@ class PublicDataController extends Controller
             ->select([
                 'title',
                 'description',
+                'image',
                 'active',
                 'end_date',
             ])
@@ -205,6 +246,7 @@ class PublicDataController extends Controller
                 return [
                     'title' => $promotion->title,
                     'description' => $promotion->description,
+                    'image' => $this->resolveImageUrl($promotion->image),
                     'active' => (bool) $promotion->active,
                     'end_date' => $promotion->end_date
                         ? (string) $promotion->end_date
@@ -239,6 +281,7 @@ class PublicDataController extends Controller
             ->select([
                 'title',
                 'content',
+                'image',
             ])
             ->latest()
             ->limit(20)
@@ -247,6 +290,7 @@ class PublicDataController extends Controller
                 return [
                     'title' => $newsItem->title,
                     'content' => $newsItem->content,
+                    'image' => $this->resolveImageUrl($newsItem->image),
                 ];
             })
             ->values();
@@ -265,22 +309,22 @@ class PublicDataController extends Controller
         ]);
 
         $search = trim($validated['q']);
-        $escapedSearch = str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $search);
         $today = now()->toDateString();
 
         $product = Product::query()
             ->select([
                 'name',
                 'description',
+                'image',
                 'price',
                 'category',
                 'available',
             ])
-            ->where(function ($query) use ($escapedSearch) {
+            ->where(function ($query) use ($search) {
                 $query
-                    ->where('name', 'LIKE', "%{$escapedSearch}%")
-                    ->orWhere('description', 'LIKE', "%{$escapedSearch}%")
-                    ->orWhere('category', 'LIKE', "%{$escapedSearch}%");
+                    ->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('description', 'LIKE', "%{$search}%")
+                    ->orWhere('category', 'LIKE', "%{$search}%");
             })
             ->first();
 
@@ -297,6 +341,7 @@ class PublicDataController extends Controller
                 'data' => [
                     'name' => $product->name,
                     'description' => $product->description,
+                    'image' => $this->resolveImageUrl($product->image),
                     'price' => (float) $product->price,
                     'currency' => 'MXN',
                     'category' => $product->category,
@@ -328,6 +373,7 @@ class PublicDataController extends Controller
             ->select([
                 'title',
                 'description',
+                'image',
                 'active',
                 'end_date',
             ])
@@ -342,6 +388,7 @@ class PublicDataController extends Controller
                 'data' => [
                     'title' => $promotion->title,
                     'description' => $promotion->description,
+                    'image' => $this->resolveImageUrl($promotion->image),
                     'active' => true,
                     'end_date' => $promotion->end_date
                         ? (string) $promotion->end_date
@@ -374,6 +421,7 @@ class PublicDataController extends Controller
             ->select([
                 'title',
                 'content',
+                'image',
             ])
             ->first();
 
@@ -386,6 +434,7 @@ class PublicDataController extends Controller
                 'data' => [
                     'title' => $newsItem->title,
                     'content' => $newsItem->content,
+                    'image' => $this->resolveImageUrl($newsItem->image),
                 ],
 
                 'speech' => $newsItem->title

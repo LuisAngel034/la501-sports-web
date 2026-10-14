@@ -100,13 +100,6 @@ html:not(.dark) .policy-page {
 
     <div class="policy-content">
         <div class="policy-card">
-            
-            <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300"><strong>AVISO DE PRIVACIDAD INTEGRAL</strong></p>
-            <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">Sitio web, aplicación móvil, aplicación de escritorio y canales de voz / inteligencia artificial</p>
-            <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300"><strong>Fecha de última actualización:</strong> 14 de julio de 2026</p>
-            <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300"><strong>Versión 1.0</strong> · Vigente a partir de su publicación</p>
-            <p class="mb-6 text-xs text-zinc-400 italic">Elaborado conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (DOF 20-mar-2025)</p>
-
             <h2 class="text-xl font-bold text-orange-500 mt-8 mb-4 font-['Oswald'] border-b border-orange-500/10 pb-2">Introducción</h2>
             <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">Andrés Rivera Jiménez, que opera el restaurante-bar deportivo bajo el nombre comercial “La 501 Sports Restaurant”, es responsable del tratamiento de los datos personales que usted nos proporciona como cliente, visitante, usuario registrado o persona interesada en nuestros servicios.</p>
             <p class="mb-4 text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">Este Aviso de Privacidad Integral se pone a su disposición en cumplimiento de la Ley Federal de Protección de Datos Personales en Posesión de los Particulares, publicada en el Diario Oficial de la Federación el 20 de marzo de 2025 y vigente desde el 21 de marzo de 2025, la cual abrogó la ley homónima de 2010, así como en las demás disposiciones reglamentarias y lineamientos que resulten aplicables.</p>

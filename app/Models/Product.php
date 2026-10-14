@@ -1,13 +1,9 @@
 <?php
-
 namespace App\Models;
-
 use Illuminate\Database\Eloquent\Model;
-
 class Product extends Model
 {
     protected $fillable = ['name', 'description', 'price', 'category','subcategory', 'image', 'available'];
-
     protected static function booted()
     {
         static::saved(function () {
@@ -17,7 +13,6 @@ class Product extends Model
             \Illuminate\Support\Facades\Cache::forget('la501_products_active');
         });
     }
-
     public function getImageAttribute($value)
     {
         if (empty($value)) {
@@ -30,9 +25,15 @@ class Product extends Model
         }
         return $value;
     }
-
     public function ingredientes()
     {
         return $this->hasMany(Ingrediente::class, 'product_id');
+    }
+
+    public function promotions()
+    {
+        return $this->belongsToMany(Promotion::class, 'promotion_product')
+            ->withPivot('quantity')
+            ->withTimestamps();
     }
 }

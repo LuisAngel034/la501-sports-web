@@ -66,6 +66,10 @@
     transition:background .15s,color .15s,border-color .15s;
 }
 .msg-filter-btn:hover { color:var(--txt); }
+.msg-filter-btn.pend-txt  { color:var(--ac); }
+.msg-filter-btn.resp-txt  { color:var(--gn); }
+.msg-filter-btn.queja-txt { color:var(--rd); }
+.msg-filter-btn.sug-txt   { color:var(--am); }
 .msg-filter-btn.on { background:var(--ac); color:#fff; border-color:var(--ac); }
 .msg-filter-btn.rd-on { background:var(--rd); color:#fff; border-color:var(--rd); }
 .msg-filter-btn.am-on { background:var(--am); color:#fff; border-color:var(--am); }
@@ -257,13 +261,11 @@
             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
             <input type="text" x-model="search" placeholder="Buscar por nombre, asunto o correo...">
         </div>
-        <button @click="fStatus='todos'"    :class="fStatus==='todos'?'on':''"         class="msg-filter-btn">Todos</button>
-        <button @click="fStatus='pendiente'" :class="fStatus==='pendiente'?'bl-on':''"  class="msg-filter-btn" style="color:var(--ac)">Pendientes</button>
-        <button @click="fStatus='respondido'" :class="fStatus==='respondido'?'gn-on':''" class="msg-filter-btn" style="color:var(--gn)">Atendidos</button>
-        <button @click="fType='queja';fStatus='todos'"     :class="fType==='queja'?'rd-on':''"      class="msg-filter-btn" style="color:var(--rd)">⚠ Quejas</button>
-        <button @click="fType='sugerencia';fStatus='todos'" :class="fType==='sugerencia'?'am-on':''" class="msg-filter-btn" style="color:var(--am)">💡 Sugerencias</button>
-        <button @click="resetFilters()" x-show="fStatus!=='todos'||fType!=='todos'||search"
-                class="msg-filter-btn" style="color:var(--rd);border-color:var(--rd)">✕ Limpiar</button>
+        <button @click="activeFilter='todos'"       :class="activeFilter==='todos'?'on':''"        class="msg-filter-btn">Todos</button>
+        <button @click="activeFilter='pendiente'"   :class="activeFilter==='pendiente'?'bl-on':''"  class="msg-filter-btn pend-txt">Pendientes</button>
+        <button @click="activeFilter='respondido'"  :class="activeFilter==='respondido'?'gn-on':''" class="msg-filter-btn resp-txt">Atendidos</button>
+        <button @click="activeFilter='queja'"       :class="activeFilter==='queja'?'rd-on':''"      class="msg-filter-btn queja-txt">⚠ Quejas</button>
+        <button @click="activeFilter='sugerencia'"  :class="activeFilter==='sugerencia'?'am-on':''" class="msg-filter-btn sug-txt">💡 Sugerencias</button>
     </div>
 
     {{-- TABLA --}}
@@ -421,8 +423,7 @@
 function mensajesAdmin() {
     return {
         search:  '',
-        fStatus: 'todos',
-        fType:   'todos',
+        activeFilter: 'todos', // 'todos' | 'pendiente' | 'respondido' | 'queja' | 'sugerencia'
 
         rowVisible(name, email, subject, status, type) {
             const q = this.search.toLowerCase();
@@ -430,19 +431,19 @@ function mensajesAdmin() {
                 name.toLowerCase().includes(q)    ||
                 email.toLowerCase().includes(q)   ||
                 subject.toLowerCase().includes(q);
-            const matchStatus = this.fStatus === 'todos' || status === this.fStatus;
-            const matchType   = this.fType   === 'todos' || type   === this.fType;
-            return matchSearch && matchStatus && matchType;
+
+            let matchFilter = true;
+            if (this.activeFilter === 'pendiente' || this.activeFilter === 'respondido') {
+                matchFilter = status === this.activeFilter;
+            } else if (this.activeFilter === 'queja' || this.activeFilter === 'sugerencia') {
+                matchFilter = type === this.activeFilter;
+            }
+
+            return matchSearch && matchFilter;
         },
 
         visibleCount() {
             return document.querySelectorAll('.msg-table tbody tr[style=""],.msg-table tbody tr:not([style])').length;
-        },
-
-        resetFilters() {
-            this.search  = '';
-            this.fStatus = 'todos';
-            this.fType   = 'todos';
         },
     }
 }

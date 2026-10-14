@@ -1,6 +1,8 @@
 @extends('layouts.admin')
 
 @section('content')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.css">
+<script src="https://cdn.jsdelivr.net/npm/cropperjs@1/dist/cropper.min.js"></script>
 
 <style>
     .as {
@@ -155,14 +157,129 @@
         cursor: pointer; transition: background .15s;
         box-shadow: 0 1px 3px rgba(37,99,235,.3);
         display: flex; align-items: center; justify-content: center; gap: 6px;
+        text-decoration: none;
     }
     .as-btn:hover { background: var(--accent2); }
     .as-btn:disabled { opacity: .6; cursor: not-allowed; }
     .as-btn svg { width: 14px; height: 14px; animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── CARRUSEL ─────────────────────────────── */
+    .as-car-head { justify-content: space-between; }
+    .as-car-head-left { display: flex; align-items: center; gap: 10px; }
+    .as-car-addbtn {
+        width: auto; padding: 7px 16px;
+        background: #16A34A; box-shadow: 0 1px 3px rgba(22,163,74,.3);
+    }
+    .as-car-addbtn:hover { background: #15803D; }
+
+    .as-alert { border-radius: 7px; padding: 10px 12px; font-size: 12px; font-weight: 600; border: 1px solid; }
+    .as-alert.ok  { background: rgba(22,163,74,.06); border-color: rgba(22,163,74,.25); color: #16A34A; }
+    .as-alert.err { background: rgba(220,38,38,.06); border-color: rgba(220,38,38,.25); color: #EF4444; }
+
+    .as-car-form {
+        background: var(--bg-input); border: 1px solid var(--bdr);
+        border-radius: 8px; padding: 18px;
+        display: flex; flex-direction: column; gap: 12px;
+    }
+    .as-car-form h3 { font-size: 13px; font-weight: 700; color: var(--txt); margin: 0; }
+    .as-car-form-grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .as-car-form-foot { display: flex; justify-content: flex-end; }
+    .as-car-form-foot .as-btn { width: auto; padding: 8px 20px; }
+
+    /* upload box (banner 21:9) */
+    .as-car-upload {
+        display: flex; position: relative;
+        aspect-ratio: 21 / 9; width: 100%; border-radius: 7px;
+        border: 1px dashed var(--bdr); background: var(--bg-card);
+        cursor: pointer; overflow: hidden;
+        align-items: center; justify-content: center;
+        transition: border-color .15s;
+    }
+    .as-car-upload:hover { border-color: var(--accent); }
+    .as-car-upload img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .as-car-upload-ph { display: flex; flex-direction: column; align-items: center; gap: 5px; position: relative; z-index: 1; }
+    .as-car-upload-ph svg { width: 20px; height: 20px; color: var(--txt-sub); }
+    .as-car-upload-ph span { font-size: 12px; color: var(--txt-sub); font-weight: 500; }
+    .as-car-upload-ov {
+        position: absolute; inset: 0; background: rgba(0,0,0,.45);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; transition: opacity .2s; z-index: 2;
+    }
+    .as-car-upload:hover .as-car-upload-ov { opacity: 1; }
+    .as-car-upload-ov span { font-size: 12px; color: #fff; font-weight: 600; }
+    .as-imghelp { font-size: 11px; color: var(--txt-sub); margin: 6px 2px 0; line-height: 1.5; }
+    .as-imghelp strong { color: var(--txt); }
+
+    .as-car-empty { text-align: center; padding: 32px 0; color: var(--txt-sub); }
+    .as-car-empty .ico { font-size: 26px; margin-bottom: 6px; display: block; }
+    .as-car-empty .ttl { font-size: 13px; font-weight: 600; }
+    .as-car-empty .sub { font-size: 11px; margin-top: 2px; }
+
+    .as-car-list { display: flex; flex-direction: column; gap: 10px; }
+    .as-car-item {
+        background: var(--bg-input); border: 1px solid var(--bdr);
+        border-radius: 8px; padding: 12px; display: flex; align-items: center;
+        gap: 16px; flex-wrap: wrap;
+    }
+    .as-car-thumb {
+        width: 130px; aspect-ratio: 21/9; border-radius: 6px; overflow: hidden;
+        flex-shrink: 0; background: #000; border: 1px solid var(--bdr);
+    }
+    .as-car-thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .as-car-info { flex: 1; min-width: 200px; }
+    .as-car-badges { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+    .as-car-badge {
+        font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px;
+        background: #F97316; color: #fff;
+    }
+    .as-car-badge.off { background: #EF4444; }
+    .as-car-title { font-size: 13px; font-weight: 700; color: var(--txt); margin: 0; }
+    .as-car-title small { font-weight: 500; color: var(--txt-sub); }
+    .as-car-desc { font-size: 11px; color: var(--txt-sub); margin: 2px 0 0; }
+    .as-car-item-actions { display: flex; gap: 8px; }
+    .as-car-item-actions .as-btn { font-size: 11px; padding: 6px 12px; }
+    .as-car-item-actions .as-btn.edit { background: #2563EB; }
+    .as-car-item-actions .as-btn.del  { background: #EF4444; }
+
+    .as-car-edit {
+        background: var(--bg-card); border: 1px solid var(--bdr);
+        border-radius: 8px; padding: 16px; margin-top: -4px;
+        display: flex; flex-direction: column; gap: 10px;
+    }
+    .as-car-edit h4 { font-size: 12px; font-weight: 700; color: var(--txt); margin: 0; }
+    .as-car-active-row { display: flex; align-items: center; gap: 8px; }
+    .as-car-active-row label { font-size: 11px; font-weight: 600; color: var(--txt-sub); text-transform: uppercase; }
+    .as-car-edit-foot { display: flex; justify-content: flex-end; gap: 8px; }
+    .as-car-edit-foot .as-btn { width: auto; padding: 6px 16px; }
+    .as-car-edit-foot .as-btn.cancel { background: #6B7280; }
+
+    /* ── RECORTE DE IMAGEN (Cropper.js) ── */
+    .as-crop-overlay {
+        position: fixed; inset: 0; z-index: 70;
+        background: rgba(0,0,0,.65); backdrop-filter: blur(4px);
+        display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .as-crop-modal {
+        background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 12px;
+        width: 100%; max-width: 640px; box-shadow: 0 24px 64px rgba(0,0,0,.35);
+        display: flex; flex-direction: column; overflow: hidden;
+    }
+    .as-crop-hd { padding: 16px 18px; border-bottom: 1px solid var(--bdr); }
+    .as-crop-hd h3 { font-size: 15px; font-weight: 700; color: var(--txt); margin: 0 0 2px; }
+    .as-crop-hd p  { font-size: 12px; color: var(--txt-sub); margin: 0; }
+    .as-crop-body { background: #000; height: 320px; }
+    .as-crop-body img { display: block; max-width: 100%; }
+    .as-crop-foot { padding: 14px 18px; border-top: 1px solid var(--bdr); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .as-crop-hint { font-size: 11px; color: var(--txt-sub); }
+    .as-crop-actions { display: flex; gap: 8px; }
+    @media (max-width: 480px) { .as-crop-body { height: 240px; } .as-crop-foot { flex-direction: column; align-items: stretch; } }
+
     @media (max-width: 768px) {
         .as-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+        .as-car-form-grid3 { grid-template-columns: 1fr; }
     }
 </style>
 
@@ -413,9 +530,9 @@
     </div>
 
     {{-- ── GESTIÓN DEL CARRUSEL DE IMÁGENES ── --}}
-    <div class="as-card" style="margin-top: 24px;" x-data="{ editingSlide: null, showAddForm: false }">
-        <div class="as-card-head" style="justify-content: space-between;">
-            <div style="display: flex; align-items: center; gap: 10px;">
+    <div class="as-card" style="margin-top: 24px;" x-data="carouselManager()">
+        <div class="as-card-head as-car-head">
+            <div class="as-car-head-left">
                 <div class="as-card-head-icon" style="background: rgba(249,115,22,.08); border-color: rgba(249,115,22,.15);">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" style="color: #F97316;">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -423,41 +540,53 @@
                 </div>
                 <h2>Imágenes del Carrusel de Inicio</h2>
             </div>
-            <button type="button" @click="showAddForm = !showAddForm" class="as-btn" style="width: auto; padding: 6px 14px; background: #16A34A; box-shadow: 0 1px 3px rgba(22,163,74,.3);" onmouseover="this.style.background='#15803D'" onmouseout="this.style.background='#16A34A'">
+            <button type="button" @click="showAddForm = !showAddForm; if(!showAddForm) newImagePreview = null" class="as-btn as-car-addbtn">
                 <span x-text="showAddForm ? 'Cancelar' : '➕ Agregar Diapositiva'"></span>
             </button>
         </div>
 
         <div class="as-card-body">
-            
+
             {{-- Mensajes de estado --}}
             @if(session('status'))
-                <div class="as-info" style="border-color: rgba(22,163,74,.3); background: rgba(22,163,74,.05); color: #16A34A; font-weight: 600; margin-bottom: 12px;">
-                    ✅ {{ session('status') }}
-                </div>
+                <div class="as-alert ok">{{ session('status') }}</div>
             @endif
             @if(session('error'))
-                <div class="as-info" style="border-color: rgba(220,38,38,.3); background: rgba(220,38,38,.05); color: #EF4444; font-weight: 600; margin-bottom: 12px;">
-                    ❌ {{ session('error') }}
-                </div>
+                <div class="as-alert err">{{ session('error') }}</div>
             @endif
 
             {{-- Formulario para Agregar --}}
-            <div x-show="showAddForm" x-cloak style="background: var(--bg-input); border: 1px solid var(--bdr); border-radius: 8px; padding: 18px; margin-bottom: 18px;">
-                <h3 style="font-size:13px; font-weight:700; margin-bottom:12px; color:var(--txt);">Nueva Diapositiva (Subida Directa a Cloudinary)</h3>
+            <div x-show="showAddForm" x-cloak class="as-car-form">
+                <h3>Nueva Diapositiva (Subida Directa a Cloudinary)</h3>
                 <form action="{{ route('admin.carousel.store') }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 12px;">
                     @csrf
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                        <div>
-                            <label class="as-label">Subir Imagen Local (Se mandará a Cloudinary)</label>
-                            <input type="file" name="image" accept="image/*" class="as-input" style="padding: 5px 10px;">
-                        </div>
-                        <div>
-                            <label class="as-label">O Enlace URL Externo existente</label>
-                            <input type="url" name="image_url" placeholder="https://res.cloudinary.com/..." class="as-input">
-                        </div>
+
+                    <div>
+                        <label class="as-label">Imagen del Banner</label>
+                        <label class="as-car-upload">
+                            <template x-if="newImagePreview">
+                                <img :src="newImagePreview" alt="Vista previa del banner">
+                            </template>
+                            <template x-if="newImagePreview">
+                                <div class="as-car-upload-ov"><span>Cambiar imagen</span></div>
+                            </template>
+                            <div x-show="!newImagePreview" class="as-car-upload-ph">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <span>Subir imagen</span>
+                            </div>
+                            <input type="file" name="image" accept="image/*" class="hidden" @change="previewSlideImage($event, 'new')">
+                        </label>
+                        <p class="as-imghelp">Recomendado: banner panorámico <strong>21:9</strong>, mínimo 1600×686px.<br>Aceptamos JPG, PNG, WEBP.</p>
                     </div>
-                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+
+                    <div>
+                        <label class="as-label">O Enlace URL Externo existente</label>
+                        <input type="url" name="image_url" placeholder="https://res.cloudinary.com/..." class="as-input">
+                    </div>
+
+                    <div class="as-car-form-grid3">
                         <div>
                             <label class="as-label">Subtítulo</label>
                             <input type="text" name="subtitle" placeholder="Ej: Gourmet & Grill" class="as-input">
@@ -475,53 +604,53 @@
                         <label class="as-label">Descripción</label>
                         <textarea name="description" rows="2" placeholder="Descripción breve..." class="as-input" style="resize: none;"></textarea>
                     </div>
-                    <div style="display: flex; justify-content: flex-end;">
-                        <button type="submit" class="as-btn" style="width: auto; padding: 8px 20px;">Subir y Guardar</button>
+                    <div class="as-car-form-foot">
+                        <button type="submit" class="as-btn">Subir y Guardar</button>
                     </div>
                 </form>
             </div>
 
             {{-- Listado de Diapositivas --}}
             @if($carouselSlides->isEmpty())
-                <div style="text-align: center; padding: 24px 0; color: var(--txt-sub);">
-                    <p style="font-size: 24px; margin-bottom: 6px;">🎠</p>
-                    <p style="font-size: 13px; font-weight: 600;">No hay diapositivas configuradas</p>
-                    <p style="font-size: 11px;">Usa el botón de arriba para agregar tu primera diapositiva al carrusel.</p>
+                <div class="as-car-empty">
+                    <span class="ico">🎠</span>
+                    <p class="ttl">No hay diapositivas configuradas</p>
+                    <p class="sub">Usa el botón de arriba para agregar tu primera diapositiva al carrusel.</p>
                 </div>
             @else
-                <div style="display: flex; flex-direction: column; gap: 12px;">
+                <div class="as-car-list">
                     @foreach($carouselSlides as $slide)
-                        <div style="background: var(--bg-input); border: 1px solid var(--bdr); border-radius: 8px; padding: 12px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
-                            
+                        <div class="as-car-item">
+
                             {{-- Vista previa --}}
-                            <div style="width: 100px; height: 65px; border-radius: 6px; overflow: hidden; flex-shrink: 0; background: #000; border: 1px solid var(--bdr);">
-                                <img src="{{ $slide->image_path }}" alt="Slide" style="width: 100%; height: 100%; object-fit: cover;">
+                            <div class="as-car-thumb">
+                                <img src="{{ $slide->image_path }}" alt="Slide">
                             </div>
 
                             {{-- Info --}}
-                            <div style="flex: 1; min-width: 200px;">
-                                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-                                    <span style="font-size: 10px; font-weight: 700; background: #F97316; color: #fff; padding: 2px 6px; border-radius: 4px;">Orden #{{ $slide->order }}</span>
+                            <div class="as-car-info">
+                                <div class="as-car-badges">
+                                    <span class="as-car-badge">Orden #{{ $slide->order }}</span>
                                     @if(!$slide->is_active)
-                                        <span style="font-size: 10px; font-weight: 700; background: #EF4444; color: #fff; padding: 2px 6px; border-radius: 4px;">Inactivo</span>
+                                        <span class="as-car-badge off">Inactivo</span>
                                     @endif
                                 </div>
-                                <h3 style="font-size: 13px; font-weight: 700; margin: 0; color: var(--txt);">
-                                    {{ $slide->title ?? 'Sin Título' }} 
-                                    <span style="font-size: 11px; font-weight: 500; color: var(--txt-sub);">({{ $slide->subtitle ?? 'Sin Subtítulo' }})</span>
+                                <h3 class="as-car-title">
+                                    {{ $slide->title ?? 'Sin Título' }}
+                                    <small>({{ $slide->subtitle ?? 'Sin Subtítulo' }})</small>
                                 </h3>
-                                <p style="font-size: 11px; color: var(--txt-sub); margin: 2px 0 0;">{{ $slide->description ?? 'Sin descripción.' }}</p>
+                                <p class="as-car-desc">{{ $slide->description ?? 'Sin descripción.' }}</p>
                             </div>
 
                             {{-- Acciones --}}
-                            <div style="display: flex; gap: 8px;">
-                                <button type="button" @click="editingSlide = (editingSlide === {{ $slide->id }} ? null : {{ $slide->id }})" class="as-btn" style="width: auto; background: #2563EB; font-size: 11px; padding: 6px 12px;">
+                            <div class="as-car-item-actions">
+                                <button type="button" @click="editingSlide = (editingSlide === {{ $slide->id }} ? null : {{ $slide->id }}); editImagePreview = null" class="as-btn edit">
                                     Editar
                                 </button>
                                 <form action="{{ route('admin.carousel.destroy', $slide->id) }}" method="POST" onsubmit="return confirm('¿Estás seguro de eliminar esta diapositiva?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="as-btn" style="width: auto; background: #EF4444; font-size: 11px; padding: 6px 12px;">
+                                    <button type="submit" class="as-btn del">
                                         Eliminar
                                     </button>
                                 </form>
@@ -529,22 +658,33 @@
                         </div>
 
                         {{-- Edición Form --}}
-                        <div x-show="editingSlide === {{ $slide->id }}" x-cloak style="background: var(--bg-card); border: 1px solid var(--bdr); border-radius: 8px; padding: 16px; margin-top: -8px;">
-                            <h4 style="font-size:12px; font-weight:700; margin-bottom:10px; color:var(--txt);">Editar Diapositiva #{{ $slide->order }}</h4>
+                        <div x-show="editingSlide === {{ $slide->id }}" x-cloak class="as-car-edit">
+                            <h4>Editar Diapositiva #{{ $slide->order }}</h4>
                             <form action="{{ route('admin.carousel.update', $slide->id) }}" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
                                 @csrf
                                 @method('PUT')
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                                    <div>
-                                        <label class="as-label">Reemplazar Imagen (Se subirá a Cloudinary)</label>
-                                        <input type="file" name="image" accept="image/*" class="as-input" style="padding: 5px 10px;">
-                                    </div>
-                                    <div>
-                                        <label class="as-label">O Reemplazar URL externa</label>
-                                        <input type="url" name="image_url" value="{{ !str_contains($slide->image_path, 'cloudinary.com') ? $slide->image_path : '' }}" placeholder="https://res.cloudinary.com/..." class="as-input">
-                                    </div>
+
+                                <div>
+                                    <label class="as-label">Reemplazar Imagen del Banner</label>
+                                    <label class="as-car-upload">
+                                        <template x-if="editingSlide === {{ $slide->id }} && editImagePreview">
+                                            <img :src="editImagePreview" alt="Vista previa del banner">
+                                        </template>
+                                        <template x-if="!(editingSlide === {{ $slide->id }} && editImagePreview)">
+                                            <img src="{{ $slide->image_path }}" alt="Imagen actual">
+                                        </template>
+                                        <div class="as-car-upload-ov"><span>Cambiar imagen</span></div>
+                                        <input type="file" name="image" accept="image/*" class="hidden" @change="previewSlideImage($event, 'edit')">
+                                    </label>
+                                    <p class="as-imghelp">Recomendado: banner panorámico <strong>21:9</strong>, mínimo 1600×686px.</p>
                                 </div>
-                                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+
+                                <div>
+                                    <label class="as-label">O Reemplazar con URL externa</label>
+                                    <input type="url" name="image_url" value="{{ !str_contains($slide->image_path, 'cloudinary.com') ? $slide->image_path : '' }}" placeholder="https://res.cloudinary.com/..." class="as-input">
+                                </div>
+
+                                <div class="as-car-form-grid3">
                                     <div>
                                         <label class="as-label">Subtítulo</label>
                                         <input type="text" name="subtitle" value="{{ $slide->subtitle }}" class="as-input">
@@ -562,13 +702,13 @@
                                     <label class="as-label">Descripción</label>
                                     <textarea name="description" rows="2" class="as-input" style="resize: none;">{{ $slide->description }}</textarea>
                                 </div>
-                                <div style="display: flex; align-items: center; gap: 8px;">
+                                <div class="as-car-active-row">
                                     <input type="checkbox" id="edit_active_{{ $slide->id }}" name="is_active" value="1" {{ $slide->is_active ? 'checked' : '' }} style="width: 14px; height: 14px;">
-                                    <label for="edit_active_{{ $slide->id }}" style="font-size: 11px; font-weight: 600; color: var(--txt-sub); text-transform: uppercase;">Mostrar diapositiva en el carrusel (Activo)</label>
+                                    <label for="edit_active_{{ $slide->id }}">Mostrar diapositiva en el carrusel (Activo)</label>
                                 </div>
-                                <div style="display: flex; justify-content: flex-end; gap: 8px;">
-                                    <button type="button" @click="editingSlide = null" class="as-btn" style="width: auto; background: #6B7280; padding: 6px 14px;">Cancelar</button>
-                                    <button type="submit" class="as-btn" style="width: auto; padding: 6px 18px;">Guardar Cambios</button>
+                                <div class="as-car-edit-foot">
+                                    <button type="button" @click="editingSlide = null" class="as-btn cancel">Cancelar</button>
+                                    <button type="submit" class="as-btn">Guardar Cambios</button>
                                 </div>
                             </form>
                         </div>
@@ -577,8 +717,112 @@
             @endif
 
         </div>
+
+        {{-- MODAL DE RECORTE DE BANNER (Cropper.js, compartido) --}}
+        <div x-show="cropperOpen" x-cloak class="as-crop-overlay" @click.self="cancelSlideCrop()">
+            <div class="as-crop-modal" @click.stop>
+                <div class="as-crop-hd">
+                    <h3>Ajustar banner</h3>
+                    <p>Mueve y haz zoom para elegir qué parte se mostrará (formato 21:9)</p>
+                </div>
+                <div class="as-crop-body">
+                    <template x-if="cropperSrc">
+                        <img x-ref="slideCropperImg" :src="cropperSrc">
+                    </template>
+                </div>
+                <div class="as-crop-foot">
+                    <span class="as-crop-hint">Se guardará como imagen 1600×686px</span>
+                    <div class="as-crop-actions">
+                        <button type="button" @click="cancelSlideCrop()" class="as-btn cancel" style="width:auto;padding:8px 16px;">Cancelar</button>
+                        <button type="button" @click="confirmSlideCrop()" class="as-btn" style="width:auto;padding:8px 16px;">Recortar y usar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
 </div>
+
+<script>
+function carouselManager() {
+    return {
+        editingSlide: null,
+        showAddForm: false,
+        newImagePreview: null,
+        editImagePreview: null,
+
+        cropperOpen: false,
+        cropperSrc: null,
+        cropperInstance: null,
+        cropperTarget: null,   // 'new' | 'edit'
+        cropperInputEl: null,  // el <input type="file"> real que disparó el cambio
+
+        previewSlideImage(e, target) {
+            const file = e.target.files[0];
+            if (!file) return;
+            if (!file.type.startsWith('image/')) {
+                alert('Por favor selecciona un archivo de imagen válido (JPG, PNG, WEBP, etc.)');
+                e.target.value = '';
+                return;
+            }
+            this.cropperTarget  = target;
+            this.cropperInputEl = e.target;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                this.cropperSrc  = ev.target.result;
+                this.cropperOpen = true;
+                this.$nextTick(() => this.initSlideCropper());
+            };
+            reader.readAsDataURL(file);
+        },
+
+        initSlideCropper() {
+            if (this.cropperInstance) { this.cropperInstance.destroy(); this.cropperInstance = null; }
+            this.cropperInstance = new Cropper(this.$refs.slideCropperImg, {
+                aspectRatio: 21 / 9,
+                viewMode: 1,
+                autoCropArea: 1,
+                background: false,
+                movable: true,
+                zoomable: true,
+                scalable: false,
+                responsive: true,
+            });
+        },
+
+        confirmSlideCrop() {
+            if (!this.cropperInstance) return;
+            const canvas = this.cropperInstance.getCroppedCanvas({
+                width: 1600, height: 686, imageSmoothingQuality: 'high',
+            });
+            canvas.toBlob((blob) => {
+                const file = new File([blob], 'banner-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                this.cropperInputEl.files = dt.files;
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                if (this.cropperTarget === 'new') {
+                    this.newImagePreview = dataUrl;
+                } else {
+                    this.editImagePreview = dataUrl;
+                }
+
+                this.cropperOpen = false;
+                this.cropperInstance.destroy();
+                this.cropperInstance = null;
+                this.cropperSrc = null;
+            }, 'image/jpeg', 0.9);
+        },
+
+        cancelSlideCrop() {
+            this.cropperOpen = false;
+            if (this.cropperInstance) { this.cropperInstance.destroy(); this.cropperInstance = null; }
+            this.cropperSrc = null;
+            if (this.cropperInputEl) this.cropperInputEl.value = '';
+        },
+    }
+}
+</script>
 
 @endsection

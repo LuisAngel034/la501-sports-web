@@ -4,21 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Events\NotificationProcessed;
-use App\Models\Reservation;
-use App\Models\Setting;
 
 class ReservationController extends Controller
 {
-
-    public function index()
-    {
-        // Obtenemos las reservaciones ordenadas por las más recientes
-        $reservations = \App\Models\Reservation::orderBy('fecha_reservacion', 'desc')
-                        ->orderBy('hora_reservacion', 'desc')
-                        ->paginate(10);
-
-        return view('admin.reservations.index', compact('reservations'));
-    }
     public function store(Request $request)
     {
 
@@ -56,17 +44,5 @@ class ReservationController extends Controller
         ));
 
         return back()->with('success', 'Solicitud enviada. Espera nuestra confirmación.');
-    }
-
-    public function updateStatus(Reservation $reservation, $status)
-    {
-        $allowed = ['pendiente', 'confirmada', 'cancelada', 'finalizada'];
-
-        if (in_array($status, $allowed)) {
-            $reservation->update(['status' => $status]);
-            return back()->with('success', 'Estado actualizado.');
-        }
-
-        return back()->with('error', 'Estado no válido.');
     }
 }

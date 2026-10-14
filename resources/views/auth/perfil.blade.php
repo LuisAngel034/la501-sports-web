@@ -232,7 +232,7 @@ html:not(.dark) .pf {
         <div class="pf-card-bar gn" style="background: linear-gradient(90deg, var(--gn), var(--or));"></div>
         <div class="pf-card-body">
             <div class="pf-logros-hd" style="margin-bottom: 20px;">
-                <h2 class="pf-logros-ttl">📦 Mis Pedidos Recientes</h2>
+                <h2 class="pf-logros-ttl">Mis Pedidos Recientes</h2>
                 <span class="pf-logros-count">Total: <strong>{{ $orders->count() }}</strong> pedidos</span>
             </div>
 
@@ -275,6 +275,14 @@ html:not(.dark) .pf {
                                             <span style="display: inline-block; background: rgba(34,197,94,0.15); color: var(--gn2); border: 1px solid rgba(34,197,94,0.3); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 6px;">
                                                 ¡Listo!
                                             </span>
+                                        @elseif($order->status === 'delivering')
+                                            <span style="display: inline-block; background: rgba(59,130,246,0.15); color: #60A5FA; border: 1px solid rgba(59,130,246,0.3); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 6px;">
+                                                En Camino
+                                            </span>
+                                        @elseif($order->status === 'delivered')
+                                            <span style="display: inline-block; background: rgba(34,197,94,0.15); color: var(--gn2); border: 1px solid rgba(34,197,94,0.3); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 6px;">
+                                                Entregado
+                                            </span>
                                         @elseif($order->status === 'pending')
                                             <span style="display: inline-block; background: rgba(220,38,38,0.15); color: #EF4444; border: 1px solid rgba(220,38,38,0.3); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 4px 8px; border-radius: 6px;">
                                                 Pago Pendiente
@@ -286,7 +294,7 @@ html:not(.dark) .pf {
                                         @endif
                                     </td>
                                     <td style="padding: 14px 10px; text-align: right;">
-                                        <a href="{{ route('payment.confirmation', $order->id) }}"
+                                        <a href="{{ route('order.track', $order->trackingToken()) }}"
                                            style="display: inline-inline-flex; align-items: center; justify-content: center; background: rgba(249,115,22,0.1); border: 1px solid rgba(249,115,22,0.25); color: var(--or); padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; text-decoration: none; transition: all 0.15s;"
                                            onmouseover="this.style.background='var(--or)'; this.style.color='white';"
                                            onmouseout="this.style.background='rgba(249,115,22,0.1)'; this.style.color='var(--or)';">
